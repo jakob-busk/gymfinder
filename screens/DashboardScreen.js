@@ -17,7 +17,7 @@ export default function DashboardScreen({ user }) {
       <Text style={GlobalStyle.sectionLabel}>Anbefalede fitness centre</Text>
 
       <View style={GlobalStyle.infoBox}>
-        <Text style={GlobalStyle.infoTitle}>Dine oplysninger (overview hentet fra profil)</Text>
+        <Text style={GlobalStyle.infoTitle}>Dine oplysninger</Text>
         <Text>Adresse: {user.address}</Text>
         <Text>Studerende: {user.isStudent ? 'JA' : 'NEJ'}</Text>
       </View>
