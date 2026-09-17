@@ -3,16 +3,16 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import { MACHINES, SUBSCRIPTION_TYPES } from '../data/const';
 
-export default function ProfileScreen({ user, setUser }) {
+export default function ProfileScreen({ user, setUser }) { // Profil siden. Brugeren kan ændre sine personlige oplysninger og præferencer. Ændringerne gemmes i state i App.js.
   function updateField(field, value) {
     setUser((current) => ({ ...current, [field]: value }));
   }
 
-  function updatePreference(field, value) {
+  function updatePreference(field, value) { // Opdaterer brugerens præferencer i state. Bruger spread operatoren for at bevare de eksisterende præferencer og kun ændre den specifikke præference, der er blevet opdateret.
     setUser((current) => ({ ...current, preferences: { ...current.preferences, [field]: value } }));
   }
 
-  function toggleMachine(machine) {
+  function toggleMachine(machine) { // slår en maskine til eller fra i brugerens præferencer. Hvis maskinen allerede er valgt, fjernes den fra listen. Hvis den ikke er valgt, tilføjes den til listen.
     const current = user.preferences.machines;
     const next = current.includes(machine)
       ? current.filter((item) => item !== machine)
@@ -20,7 +20,7 @@ export default function ProfileScreen({ user, setUser }) {
     updatePreference('machines', next);
   }
 
-  return (
+  return ( // Render funktionen returnerer en ScrollView, der indeholder alle profiloplysningerne og præferencerne. Brugeren kan ændre sine oplysninger og præferencer, og ændringerne gemmes i state i App.js.
     <ScrollView style={GlobalStyle.container}>
       <Text style={GlobalStyle.title}>Profil</Text>
 

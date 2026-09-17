@@ -4,6 +4,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import { getPriceExplanation } from '../data/gymLogic';
 
+// Fitness center kortet for fitnesscentrene. Gentages for hver fitness center i listen på dashboard siden. 
 export default function GymCard({ gym, isRecommended }) {
   const [expanded, setExpanded] = useState(false);
 

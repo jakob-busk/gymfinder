@@ -6,7 +6,7 @@ import GymCard from '../components/GymCard';
 import { GYMS, SORT_OPTIONS } from '../data/const';
 import { getVisibleGyms } from '../data/gymLogic';
 
-export default function DashboardScreen({ user }) {
+export default function DashboardScreen({ user }) { // Hele dashboard siden. Vi henter de anbefalede fitness centre og viser dem i en liste. Brugeren kan sortere listen efter pris, afstand eller anbefaling.
   const [sortBy, setSortBy] = useState('Pris');
 
   const { visibleGyms, recommendedId } = getVisibleGyms(GYMS, user.preferences, sortBy);

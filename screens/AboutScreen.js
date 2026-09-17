@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 import GlobalStyle from '../styles/GlobalStyle';
 
-export default function AboutScreen() {
+export default function AboutScreen() { // Om os siden, som forklarer hvad GymFinder er og hvordan det fungerer.
   return (
     <View style={GlobalStyle.container}>
       <Text style={GlobalStyle.title}>Om os</Text>

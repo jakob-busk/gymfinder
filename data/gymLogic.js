@@ -1,7 +1,7 @@
 // Beregner den "ærlige årspris": det brugeren reelt betaler i gennemsnit pr. måned
 // over et år, når man tager højde for studiepris/kampagnepris og oprettelsesgebyr.
 // Rækkefølge pr. måned: studiepris (hvis aktiv) > kampagnepris (hvis aktiv) > standardpris.
-export function getPriceBreakdown(gym) {
+export function getPriceBreakdown(gym) { // Tager et gym-objekt som input og returnerer en oversigt over priserne.
   const monthlyPrices = [];
 
   for (let month = 1; month <= 12; month++) {
@@ -23,7 +23,7 @@ export function getPriceBreakdown(gym) {
   return { monthlyPrices, total, honestYearlyPrice };
 }
 
-export function getPriceExplanation(gym) {
+export function getPriceExplanation(gym) { // Tager et gym-objekt som input og returnerer en tekstforklaring af priserne.
   const { honestYearlyPrice } = getPriceBreakdown(gym);
   const lines = [];
 
@@ -46,7 +46,7 @@ export function getPriceExplanation(gym) {
   return lines.join(' ');
 }
 
-export function matchesPreferences(gym, preferences) {
+export function matchesPreferences(gym, preferences) { // Funktion for at tjekke om et fitnesscenter matcher brugerens præferencer. Returnerer true eller false.
   if (gym.subscriptionType !== preferences.subscriptionType) return false;
   if (preferences.sauna !== null && gym.sauna !== preferences.sauna) return false;
   return preferences.machines.every((machine) => gym.machines.includes(machine));
@@ -55,7 +55,7 @@ export function matchesPreferences(gym, preferences) {
 // Hårdt filter på præferencer, derefter sortering af de tilbageværende centre.
 // "Anbefalet" er altid det billigste center blandt dem, der matcher alle præferencer —
 // uafhængig af hvilken sortering brugeren har valgt.
-export function getVisibleGyms(gyms, preferences, sortBy) {
+export function getVisibleGyms(gyms, preferences, sortBy) { // Funktion for at filtrere og sortere fitnesscentre baseret på brugerens præferencer og valgte sorteringsmetode. Returnerer et objekt med synlige centre og det anbefalede center. Central for logikken
   const matching = gyms
     .filter((gym) => matchesPreferences(gym, preferences))
     .map((gym) => ({ ...gym, honestYearlyPrice: getPriceBreakdown(gym).honestYearlyPrice }));

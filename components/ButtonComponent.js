@@ -1,7 +1,7 @@
 import { Pressable, Text } from 'react-native';
 import GlobalStyle from '../styles/GlobalStyle';
 
-// type: 'primary' | 'secondary'
+// Genbrugeligt knap komponenet. Bruges alle steder i appen hvor der er en knap (sortering, tilmelding, osv.)
 export default function ButtonComponent({ title, type = 'secondary', onPress }) {
   const isPrimary = type === 'primary';
 

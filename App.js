@@ -10,7 +10,7 @@ import { DEFAULT_USER } from './data/const';
 import { colors } from './styles/GlobalStyle';
 
 const Tab = createBottomTabNavigator();
-
+// App komponenten som håndterer navigationen mellem de tre sider: Dashboard, Profil og Om os
 export default function App() {
   const [user, setUser] = useState(DEFAULT_USER);
 
