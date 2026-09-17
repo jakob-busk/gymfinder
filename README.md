@@ -4,6 +4,9 @@ GymFinder er en React Native-app (Expo), der sammenligner tilbud fra fitnesscent
 ## Demovideo
 https://youtube.com/shorts/1Kq23Akv9TQ?feature=share
 
+## Github link
+https://github.com/jakob-busk/gymfinder
+
 ## Kør projektet
 1. Installer dependencies:
 npm install
