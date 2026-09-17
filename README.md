@@ -2,7 +2,7 @@
 GymFinder er en React Native-app (Expo), der sammenligner tilbud fra fitnesscentre og anbefaler brugeren det abonnement, der passer bedst til deres oplysninger og præferencer. Det "rigtige abonnement" baserer sig på den "ærlige årspris" (hvad man reelt betaler i gennemsnit pr. måned over et år, inkl. kampagne- og studietilbud), ikke bare den reklamerede månedspris.
 
 ## Demovideo
-LINK
+https://youtube.com/shorts/1Kq23Akv9TQ?feature=share
 
 ## Kør projektet
 1. Installer dependencies:
