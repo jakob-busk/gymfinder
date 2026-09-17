@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "min_app",
-    "slug": "min_app",
+    "name": "GymFinder",
+    "slug": "gymfinder",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
