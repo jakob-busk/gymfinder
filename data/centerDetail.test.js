@@ -76,7 +76,10 @@ describe('matchCenter', () => {
   test('viser alle Tilbud, også dem brugerens Filtre ville skjule på Find', () => {
     const match = matchCenter({
       center: center({
-        offers: [offer({ id: 'bundet', bindingMonths: 12 }), offer({ id: 'fri', standardPrice: 350 })],
+        offers: [
+          offer({ id: 'bundet', bindingMonths: 12 }),
+          offer({ id: 'fri', standardPrice: 350 }),
+        ],
       }),
       chains: [CHAIN],
       user: user({ preferences: { noBinding: true } }),
@@ -173,9 +176,21 @@ describe('turns30Notice', () => {
     );
     // Måned 3 løber 22. dec.–22. jan., og brugeren fylder 30 den 15. januar 2027.
     expect(turns30Notice('1997-01-15', best)).toEqual({
+      offerName: 'Basis',
       birthdayMonth: 'januar 2027',
       fromPeriod: 3,
+      priceBefore: 200,
+      priceAfter: 250,
     });
+  });
+
+  test('advarer ikke, når den billigste mulighed har fast pris, fx Makkerpris', () => {
+    const best = bestOfferFor(
+      { standardPrice: { under30: 200, over30: 250 }, partnerPrice: 150 },
+      { birthDate: '1997-01-15', discountProfile: ['partner'] },
+    );
+    expect(best.yearlyOption.kind).toBe('partner');
+    expect(turns30Notice('1997-01-15', best)).toBeNull();
   });
 
   test('advarer ikke, når prisen ikke afhænger af alderen, eller brugeren ikke fylder 30', () => {

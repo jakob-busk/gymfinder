@@ -91,14 +91,24 @@ export function priceBreakdown(pricedOffer) {
   };
 }
 
-// Advarsel, når brugeren fylder 30 inden for året, og Tilbuddets Standardpris stiger med det.
-// Returnerer { birthdayMonth: 'marts 2027', fromPeriod: 5 } eller null.
+// Advarsel, når brugeren fylder 30 inden for året, og prisen for den billigste mulighed stiger
+// med det. Ingen advarsel, hvis den valgte mulighed har fast pris (fx Makkerpris).
+// Returnerer { offerName, birthdayMonth: 'marts 2027', fromPeriod: 5, priceBefore, priceAfter }
+// eller null. Priserne er inkl. Admingebyr.
 export function turns30Notice(birthDate, pricedOffer) {
-  if (!birthDate || pricedOffer?.turns30InMonth == null) return null;
+  const fromPeriod = pricedOffer?.turns30InMonth;
+  if (!birthDate || fromPeriod == null) return null;
+  const before = pricedOffer.monthlyBreakdown[fromPeriod - 2];
+  const after = pricedOffer.monthlyBreakdown[fromPeriod - 1];
+  if (!before || !after || after.total <= before.total) return null;
+
   const [year, month] = birthDate.split('-').map(Number);
   return {
+    offerName: pricedOffer.offer.name,
     birthdayMonth: `${MONTH_NAMES[month - 1]} ${year + 30}`,
-    fromPeriod: pricedOffer.turns30InMonth,
+    fromPeriod,
+    priceBefore: before.total,
+    priceAfter: after.total,
   };
 }
 
