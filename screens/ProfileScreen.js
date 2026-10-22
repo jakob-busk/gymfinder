@@ -67,6 +67,26 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
+  // Kun under udvikling (Expo Go): starter forfra med onboarding som en ny anonym bruger, så
+  // onboarding kan testes igen. Den gamle anonyme brugers data bliver liggende i databasen.
+  const handleStartOver = () => {
+    const message = 'Dine oplysninger fjernes fra telefonen, og onboarding starter igen.';
+    Alert.alert('Start forfra?', message, [
+      { text: 'Annuller', style: 'cancel' },
+      {
+        text: 'Start forfra',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await logOut();
+          } catch (error) {
+            Alert.alert('Kunne ikke starte forfra', accountErrorMessage(error));
+          }
+        },
+      },
+    ]);
+  };
+
   const renderAccount = () => {
     if (!accountsAvailable || !account) {
       return (
@@ -101,6 +121,9 @@ export default function ProfileScreen({ navigation }) {
             title="Jeg har allerede en konto"
             onPress={() => navigation.navigate('Log ind')}
           />
+          {__DEV__ && (
+            <ButtonComponent title="Start forfra (kun under udvikling)" onPress={handleStartOver} />
+          )}
         </View>
       </View>
     );
