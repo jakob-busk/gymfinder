@@ -5,6 +5,9 @@
 import { DISCOUNT_GROUPS } from './matchning.js';
 import { facilityRows } from './centerDetail.js';
 
+// Navnet på Ronnies værktøj til opslag af Centre andre steder (se data/ronnieLookup.js).
+export const RONNIE_LOOKUP_TOOL_NAME = 'find_centre_naer_sted';
+
 const round = (amount) => Math.round(amount);
 
 function bindingText(bindingMonths) {
@@ -12,9 +15,10 @@ function bindingText(bindingMonths) {
   return bindingMonths === 0 ? 'Ingen' : `${bindingMonths} mdr.`;
 }
 
-// Ét Center som kompakt data til prompten: faciliteter som Ja/Nej/Ikke oplyst og hvert Tilbud
-// med brugerens Ærlig årspris, den billigste mulighed for brugeren, gebyrer og Binding.
-function centerFacts(match) {
+// Ét Center som kompakt data til prompten (og til svar fra opslag af andre steder): faciliteter
+// som Ja/Nej/Ikke oplyst og hvert Tilbud med brugerens Ærlig årspris, den billigste mulighed for
+// brugeren, gebyrer og Binding.
+export function centerFacts(match) {
   const { center, chain, distanceKm, offers } = match;
   return {
     id: center.id,
@@ -65,11 +69,15 @@ export function buildRonnieSystemPrompt({ matches, user }) {
     '  ("billigsteMulighed", fx Kampagnepris eller Studierabat).',
     '- "Ikke oplyst" betyder, at det er ukendt. Sig det ærligt i stedet for at gætte.',
     '- Kan ønsket ikke opfyldes blandt Centrene, så sig det og foreslå det nærmeste alternativ.',
-    '- Spørger brugeren om et sted, der ikke er med i listen, så sig, at du kun kender Centrene',
-    '  her, og at brugeren kan ændre sin adresse på Profil.',
+    '- Spørger brugeren om Centre et andet sted i landet (fx ved et sommerhus, arbejdet eller en',
+    `  by), så kald værktøjet "${RONNIE_LOOKUP_TOOL_NAME}" med stednavnet, og svar ud fra de Centre,`,
+    '  det giver. Sig, hvilket sted afstandene er fra. Står der i opslagets "besked", at stedet',
+    '  ikke kunne findes, ligger uden for Danmark, eller at der ingen Centre er, så sig det venligt',
+    '  og bed evt. om et mere præcist stednavn (by eller postnummer). Gæt aldrig på Centre.',
     '',
     'Svarformat: JSON med "tekst" (dit svar til brugeren) og "centerIds" (id på hvert Center,',
-    'du nævner eller anbefaler i teksten, i samme rækkefølge). Brug kun id\'er fra listen.',
+    'du nævner eller anbefaler i teksten, i samme rækkefølge). Brug kun id\'er fra listen eller',
+    'fra dine opslag.',
     'Skriv Centrenes navne i teksten præcis som i "navn".',
     '',
     ...userFacts(user),
