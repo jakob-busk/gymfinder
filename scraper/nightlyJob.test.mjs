@@ -119,6 +119,11 @@ describe('normal kørsel', () => {
     assert.equal(sats.validOffers, 9);
     assert.equal(sats.newOffers.length, 9);
     assert.deepEqual(sats.failures, []);
+
+    const markdown = formatReport(report);
+    assert.match(markdown, /## sats: OK/);
+    const roskildeRow = '| SATS Roskilde | Basic | 399 / 499 | 0 kr i 1 md. | 0 | 0 md. |';
+    assert.ok(markdown.includes(roskildeRow));
   });
 
   test('appen kan læse de skrevne data og beregne Ærlig årspris med Matchning', async () => {
@@ -147,7 +152,7 @@ describe('normal kørsel', () => {
     assert.equal(Math.round(roskildeResult.honestYearlyPrice * 100) / 100, 457.42);
   });
 
-  test('anden nat med samme priser: ingen prisændringer, nyt "sidst set" og ny historik', async () => {
+  test('anden nat med samme priser: ingen ændringer, nyt "sidst set" og ny historik', async () => {
     const db = createFakeDatabase();
     await runNight(db, NIGHT_1);
     const { report } = await runNight(db, NIGHT_2);
@@ -217,7 +222,7 @@ describe('normal kørsel', () => {
 });
 
 describe('sanity-fejl', () => {
-  test('et Tilbud med umulig pris skrives ikke; de gamle data beholdes og fejlen logges', async () => {
+  test('et Tilbud med umulig pris skrives ikke; gamle data beholdes, fejlen logges', async () => {
     const db = createFakeDatabase();
     await runNight(db, NIGHT_1);
     const routes = satsRoutes();
@@ -279,7 +284,12 @@ describe('sanity-fejl', () => {
     // Kampagnen gælder Basic i hele Kæden. Roskilde har Basic til 399 kr, så kun dér fejler den.
     assert.deepEqual(
       report.chains[0].failures.map((failure) => [failure.offerId, failure.problems]),
-      [['sats-434-1club-allday-nobnd-gx', ['Kampagnepris 399 er ikke lavere end Standardpris 399']]],
+      [
+        [
+          'sats-434-1club-allday-nobnd-gx',
+          ['Kampagnepris 399 er ikke lavere end Standardpris 399'],
+        ],
+      ],
     );
     const offers = db.snapshot().Offers;
     assert.equal(offers['sats-412'][BASIC_412].campaignPrice, 399);
@@ -393,7 +403,7 @@ describe('kædeniveau', () => {
     assert.equal(report.chains[0].reason, 'Kæden kunne ikke hentes: Siden har ingen data-props');
   });
 
-  test('alle centersider ændret: Kæden springes over i stedet for at skrive tomme data', async () => {
+  test('alle centersider ændret: Kæden springes over i stedet for tomme data', async () => {
     const routes = satsRoutes();
     for (const url of Object.keys(routes)) {
       if (url.includes('/traeningscenter/')) routes[url] = '<html>Ny side</html>';
@@ -526,7 +536,7 @@ describe('forsvundne Centre og Tilbud ("sidst set")', () => {
     assert.equal(db.snapshot().Offers['sats-412'][OFFPEAK].missingNights, 1);
   });
 
-  test('de håndindtastede SATS-Centre udfases efter 3 nætter, når scraperen tager over', async () => {
+  test('håndindtastede SATS-Centre udfases efter 3 nætter, når scraperen tager over', async () => {
     const db = seededDatabase();
     await runNight(db, NIGHT_1);
     assert.equal(db.snapshot().Centers['sats-oesterbro'].missingNights, 1);

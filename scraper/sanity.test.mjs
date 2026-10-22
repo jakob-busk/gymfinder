@@ -63,7 +63,7 @@ describe('koordinater i Danmark', () => {
     Gedser: [54.5745, 11.9258],
     'Rønne (Bornholm)': [55.1009, 14.7066],
     'Nexø (Bornholm)': [55.0603, 15.1311],
-    Nykøbing_Mors: [56.7953, 8.8581],
+    'Nykøbing Mors': [56.7953, 8.8581],
   };
   for (const [name, [latitude, longitude]] of Object.entries(places)) {
     test(`${name} ligger i Danmark`, () => {
@@ -165,7 +165,10 @@ describe('Tilbud', () => {
 
 describe('kædeniveau', () => {
   test('0 Centre springer Kæden over', () => {
-    assert.equal(chainSkipReason({ centersFound: 0, failures: 0, validOffers: 0 }), 'Kæden gav 0 Centre');
+    assert.equal(
+      chainSkipReason({ centersFound: 0, failures: 0, validOffers: 0 }),
+      'Kæden gav 0 Centre',
+    );
   });
 
   test('præcis 20 % fejl er tilladt', () => {

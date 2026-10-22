@@ -105,6 +105,7 @@ function processChain({ chainId, result, previous, today, update }) {
     newOffers: [],
     missing: [],
     removed: [],
+    offers: [],
   };
 
   const skipReason = chainSkipReason({ centersFound, failures: failures.length, validOffers });
@@ -124,6 +125,15 @@ function processChain({ chainId, result, previous, today, update }) {
     const previousOffers = previous.offers[center.id] ?? {};
     for (const offer of okOffers) {
       update[`${OFFERS}/${center.id}/${offer.id}`] = clean({ ...offer, lastSeen: today });
+      report.offers.push({
+        center: center.name,
+        offer: offer.name,
+        standardPrice: offer.standardPrice,
+        campaignPrice: offer.campaignPrice ?? null,
+        campaignMonths: offer.campaignMonths ?? 0,
+        signupFee: offer.signupFee,
+        bindingMonths: offer.bindingMonths ?? null,
+      });
       update[`${PRICE_HISTORY_PATH}/${center.id}/${offer.id}/${today}`] = clean({
         standardPrice: offer.standardPrice,
         campaignPrice: offer.campaignPrice,
@@ -204,6 +214,7 @@ export async function runNightlyJob({ db, scrapers, today, dryRun = false }) {
         newOffers: [],
         missing: [],
         removed: [],
+        offers: [],
       });
       continue;
     }
@@ -216,6 +227,18 @@ export async function runNightlyJob({ db, scrapers, today, dryRun = false }) {
 
   const ok = chains.every((chain) => chain.status === 'written');
   return { ok, update, report: { date: today, dryRun, chains } };
+}
+
+const show = (value) => (value == null ? '?' : String(value));
+
+function offerRow({ center, offer, standardPrice, campaignPrice, campaignMonths, ...rest }) {
+  const price =
+    typeof standardPrice === 'number'
+      ? `${standardPrice}`
+      : `${show(standardPrice?.under30)} / ${show(standardPrice?.over30)}`;
+  const campaign = campaignPrice == null ? '–' : `${campaignPrice} kr i ${campaignMonths} md.`;
+  const binding = rest.bindingMonths == null ? '?' : `${rest.bindingMonths} md.`;
+  return `| ${center} | ${offer} | ${price} | ${campaign} | ${show(rest.signupFee)} | ${binding} |`;
 }
 
 // Rapporten som Markdown, til loggen og GitHub Actions' job-oversigt.
@@ -233,7 +256,6 @@ export function formatReport({ date, dryRun, chains }) {
       `- Prisændringer: ${chain.priceChanges.length}`,
       `- Forsvundet (beholdt): ${chain.missing.length}`,
       `- Fjernet efter ${REMOVE_AFTER_MISSING_NIGHTS} nætter: ${chain.removed.length}`,
-      '',
     );
     for (const failure of chain.failures) {
       const where = [failure.centerId, failure.offerId].filter(Boolean).join(' / ');
@@ -254,6 +276,14 @@ export function formatReport({ date, dryRun, chains }) {
       lines.push(`- Fjernet ${[entry.centerId, entry.offerId].filter(Boolean).join(' / ')}`);
     }
     lines.push('');
+    if (chain.offers.length > 0) {
+      lines.push(
+        '| Center | Tilbud | Standardpris (u30 / 30+) | Kampagne | Oprettelse | Binding |',
+        '|---|---|---|---|---|---|',
+      );
+      for (const offer of chain.offers) lines.push(offerRow(offer));
+      lines.push('');
+    }
   }
 
   return lines.join('\n');

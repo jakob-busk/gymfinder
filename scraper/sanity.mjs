@@ -100,7 +100,9 @@ export function offerProblems(offer, previous) {
     if (!isNumber(offer.campaignPrice) || offer.campaignPrice < 0) {
       problems.push('Kampagnepris er ikke et gyldigt tal');
     } else if (!(offer.campaignPrice < lowest)) {
-      problems.push(`Kampagnepris ${offer.campaignPrice} er ikke lavere end Standardpris ${lowest}`);
+      problems.push(
+        `Kampagnepris ${offer.campaignPrice} er ikke lavere end Standardpris ${lowest}`,
+      );
     }
   }
 
