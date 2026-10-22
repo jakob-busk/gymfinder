@@ -19,6 +19,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "GymFinder bruger din placering til at vise afstanden til fitnesscentre nær dig."
+        }
+      ]
+    ]
   }
 }
