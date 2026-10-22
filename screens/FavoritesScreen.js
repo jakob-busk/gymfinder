@@ -7,7 +7,9 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import InfoButton from '../components/InfoButton';
 import PriceAlertEditor from '../components/PriceAlertEditor';
+import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
+import ScreenHeader from '../components/ScreenHeader';
 import { formatKr } from '../data/centerDetail';
 import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoriteRows } from '../data/favorites';
@@ -143,7 +145,7 @@ export default function FavoritesScreen({ navigation }) {
             </Text>
           )}
         </Pressable>
-        <ButtonComponent title="Fjern" onPress={() => handleRemove(row)} />
+        <ButtonComponent title="Fjern" type="text" size="small" onPress={() => handleRemove(row)} />
       </View>
       {row.match && (
         <PriceAlertEditor
@@ -181,8 +183,20 @@ export default function FavoritesScreen({ navigation }) {
     );
   };
 
+  // Ronnie siger til, når en Favorit er faldet i pris. Beløbene står i rækkerne, ikke hos Ronnie.
+  const priceDrops = rows.filter(
+    (row) => row.priceChange != null && row.priceChange <= -MIN_VISIBLE_CHANGE,
+  ).length;
+
   const renderHeader = () => (
     <View>
+      {priceDrops > 0 && (
+        <RonnieHint pose="jubler">
+          {priceDrops === 1
+            ? 'En af dine Favoritter er faldet i pris. Se den herunder.'
+            : `${priceDrops} af dine Favoritter er faldet i pris. Se dem herunder.`}
+        </RonnieHint>
+      )}
       {(!account || account.isAnonymous) && (
         <Text style={GlobalStyle.noticeText}>
           {accountsAvailable
@@ -201,7 +215,7 @@ export default function FavoritesScreen({ navigation }) {
 
   const renderEmpty = () => (
     <View style={GlobalStyle.centeredContent}>
-      <RonnieMascot size="small" />
+      <RonnieMascot size="small" pose="peger" />
       <Text style={GlobalStyle.emptyText}>
         Du har ingen Favoritter endnu. Tryk ♥ på et Center for at følge prisen.
       </Text>
@@ -225,7 +239,7 @@ export default function FavoritesScreen({ navigation }) {
 
   return (
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
-      <Text style={GlobalStyle.title}>Favoritter</Text>
+      <ScreenHeader title="Favoritter" />
       {renderContent()}
     </SafeAreaView>
   );

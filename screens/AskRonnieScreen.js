@@ -16,6 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import RonnieMascot from '../components/RonnieMascot';
+import ScreenHeader from '../components/ScreenHeader';
 import { RONNIE_SUGGESTIONS, ronnieErrorMessage, ronnieMatches } from '../data/ronnie';
 import { remainingNotice, ronnieWeekOffMessage } from '../data/ronnieUsage';
 import { UserContext } from '../data/UserContext';
@@ -167,7 +168,7 @@ export default function AskRonnieScreen({ navigation, route }) {
           <RonnieMascot />
           <View style={GlobalStyle.infoBox}>
             <Text style={GlobalStyle.infoTitle}>Ronnie holder fri lige nu</Text>
-            <Text>{ronnieErrorMessage({ code: 'missingKey' })}</Text>
+            <Text style={GlobalStyle.bodyText}>{ronnieErrorMessage({ code: 'missingKey' })}</Text>
           </View>
           <Text style={GlobalStyle.mutedText}>
             Indtil da kan du finde det Center med den laveste Ærlig årspris på Find.
@@ -176,6 +177,41 @@ export default function AskRonnieScreen({ navigation, route }) {
       </SafeAreaView>
     );
   }
+
+  // Under samtalen: Ronnie tænker, ugens grænse, antal spørgsmål tilbage og fejl.
+  const footer = (
+    <>
+      {sending && (
+        <View style={GlobalStyle.bubbleRow}>
+          <RonnieMascot size="avatar" />
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      )}
+
+      {weekOff && (
+        <View style={[GlobalStyle.infoBox, GlobalStyle.paragraph]}>
+          <RonnieMascot size="small" pose="trækker på skuldrene" />
+          <Text style={GlobalStyle.infoTitle}>Ronnie holder fri resten af ugen</Text>
+          <Text style={GlobalStyle.bodyText}>{ronnieWeekOffMessage(new Date())}</Text>
+        </View>
+      )}
+
+      {notice && <Text style={[GlobalStyle.mutedText, GlobalStyle.paragraph]}>{notice}</Text>}
+
+      {error && !weekOff && (
+        <View style={[GlobalStyle.warningBox, GlobalStyle.paragraph]}>
+          <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
+          <Text style={GlobalStyle.bodyText}>{error}</Text>
+          <View style={GlobalStyle.paragraph}>
+            <ButtonComponent title="Prøv igen" onPress={handleRetry} disabled={sending} />
+          </View>
+        </View>
+      )}
+    </>
+  );
+
+  const busy = sending || loading || weekOff;
+  const openCenter = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
 
   const renderMessage = ({ item: message }) => {
     if (message.role === 'user') {
@@ -199,7 +235,10 @@ export default function AskRonnieScreen({ navigation, route }) {
             {message.centerIds.map((centerId) => (
               <ButtonComponent
                 key={centerId}
-                title={`Se ${centerName(centerId)} →`}
+                title={`Se ${centerName(centerId)}`}
+                type="ghost"
+                size="small"
+                icon="location-outline"
                 onPress={() => navigation.navigate('CenterDetaljer', { centerId })}
               />
             ))}
@@ -225,21 +264,26 @@ export default function AskRonnieScreen({ navigation, route }) {
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={
             <>
-              <Text style={GlobalStyle.title}>Spørg Ronnie</Text>
+              <ScreenHeader title="Spørg Ronnie" />
 
               {messages.length === 0 && (
                 <>
-                  <RonnieMascot size="small" />
-                  <Text style={GlobalStyle.centeredText}>
-                    Hej, jeg er Ronnie! Skriv, hvad du leder efter, fx &quot;billigt med sauna uden
-                    binding&quot;. Jeg sammenligner Centrene tæt på dig på din Ærlige årspris, og
-                    jeg kan også slå Centre op andre steder i landet, fx ved dit sommerhus.
-                  </Text>
-                  <View style={GlobalStyle.choiceList}>
+                  {/* Ronnies første besked, som en taleboble fra ham. */}
+                  <View style={GlobalStyle.greetingRow}>
+                    <RonnieMascot size="small" />
+                    <View style={[GlobalStyle.bubbleRonnie, GlobalStyle.greetingBubble]}>
+                      <Text style={GlobalStyle.bubbleText}>
+                        Hej, jeg er Ronnie, din AI-hjælper! Skriv for hjælp.
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[GlobalStyle.choiceList, GlobalStyle.chatSuggestions]}>
                     {RONNIE_SUGGESTIONS.map((suggestion) => (
                       <ButtonComponent
                         key={suggestion}
                         title={suggestion}
+                        type="ghost"
+                        icon="chatbubble-ellipses-outline"
                         onPress={() => handleSend(suggestion)}
                         disabled={sending || loading || weekOff}
                       />
@@ -249,37 +293,7 @@ export default function AskRonnieScreen({ navigation, route }) {
               )}
             </>
           }
-          ListFooterComponent={
-            <>
-              {sending && (
-                <View style={GlobalStyle.bubbleRow}>
-                  <RonnieMascot size="avatar" />
-                  <ActivityIndicator color={colors.primary} />
-                </View>
-              )}
-
-              {weekOff && (
-                <View style={[GlobalStyle.infoBox, GlobalStyle.paragraph]}>
-                  <Text style={GlobalStyle.infoTitle}>Ronnie holder fri resten af ugen</Text>
-                  <Text>{ronnieWeekOffMessage(new Date())}</Text>
-                </View>
-              )}
-
-              {notice && (
-                <Text style={[GlobalStyle.mutedText, GlobalStyle.paragraph]}>{notice}</Text>
-              )}
-
-              {error && !weekOff && (
-                <View style={[GlobalStyle.warningBox, GlobalStyle.paragraph]}>
-                  <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
-                  <Text>{error}</Text>
-                  <View style={GlobalStyle.paragraph}>
-                    <ButtonComponent title="Prøv igen" onPress={handleRetry} disabled={sending} />
-                  </View>
-                </View>
-              )}
-            </>
-          }
+          ListFooterComponent={footer}
         />
 
         <View style={GlobalStyle.chatInputRow}>

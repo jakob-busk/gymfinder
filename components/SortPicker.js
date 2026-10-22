@@ -1,21 +1,18 @@
-import { View } from 'react-native';
-
-import GlobalStyle from '../styles/GlobalStyle';
-import ButtonComponent from './ButtonComponent';
+import SelectMenu from './SelectMenu';
 import { SORT_OPTIONS } from '../data/matchning';
 
-// Række med en knap pr. sortering. Den valgte sortering (sortBy) er fremhævet.
-export default function SortPicker({ sortBy, onChange }) {
+const OPTIONS = SORT_OPTIONS.map((option) => ({ value: option.id, label: option.label }));
+
+// Sortering som én knap, der åbner en liste (i stedet for en række knapper). full fylder bredden.
+export default function SortPicker({ sortBy, onChange, full = false }) {
   return (
-    <View style={GlobalStyle.sortRow}>
-      {SORT_OPTIONS.map((option) => (
-        <ButtonComponent
-          key={option.id}
-          title={option.label}
-          type={sortBy === option.id ? 'primary' : 'secondary'}
-          onPress={() => onChange(option.id)}
-        />
-      ))}
-    </View>
+    <SelectMenu
+      icon="swap-vertical"
+      title="Sortér efter"
+      value={sortBy}
+      options={OPTIONS}
+      onChange={onChange}
+      full={full}
+    />
   );
 }

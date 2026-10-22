@@ -1,24 +1,36 @@
-import { Image } from 'react-native';
+import { Image, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 
-const RONNIE = require('../assets/ronnie.png');
-
-const SIZES = {
-  large: GlobalStyle.ronnieLarge,
-  small: GlobalStyle.ronnieSmall,
-  avatar: GlobalStyle.ronnieAvatar,
+// Ronnies positurer. Indtil videre findes kun tommel op; de andre falder tilbage til den.
+// Positurer, der bruges i appen: vinker (Velkomst), peger (Adresse, tomme Favoritter),
+// tænker (Rabatprofil), jubler (Afslut onboarding, prisfald), sveder/løfter (Find henter) og
+// trækker på skuldrene (ingen resultater, Ronnie holder fri).
+const POSES = {
+  'tommel op': require('../assets/ronnie.png'),
 };
 
-// Ronnie, GymFinders maskot. size er 'large' (velkomst), 'small' (tomme tilstande, Spørg
-// Ronnie) eller 'avatar' (ved Ronnies beskeder i chatten).
-export default function RonnieMascot({ size = 'large' }) {
+const SIZES = {
+  large: 'ronnieLarge',
+  small: 'ronnieSmall',
+  avatar: 'ronnieAvatar',
+  tiny: 'ronnieTiny',
+};
+
+// Ronnie, GymFinders maskot, med neon-glød. size er 'large' (Velkomst, afslutning), 'small'
+// (tomme tilstande, Spørg Ronnie), 'avatar' (ved Ronnies beskeder i chatten) eller 'tiny' (i
+// knapper og hints). pose er den positur, der passer til stedet (se POSES).
+// Ronnie er kun med ved godt nyt, aldrig ved priser, advarsler, fejl eller login.
+export default function RonnieMascot({ size = 'large', pose = 'tommel op' }) {
+  const centered = size === 'large' || size === 'small';
   return (
-    <Image
-      source={RONNIE}
-      style={SIZES[size] ?? GlobalStyle.ronnieLarge}
-      resizeMode="contain"
-      accessibilityLabel="Ronnie, GymFinders maskot"
-    />
+    <View style={[GlobalStyle.ronnieGlow, centered && GlobalStyle.centeredSelf]}>
+      <Image
+        source={POSES[pose] ?? POSES['tommel op']}
+        style={GlobalStyle[SIZES[size]] ?? GlobalStyle.ronnieLarge}
+        resizeMode="contain"
+        accessibilityLabel="Ronnie, GymFinders maskot"
+      />
+    </View>
   );
 }

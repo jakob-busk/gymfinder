@@ -35,7 +35,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
         <Pressable onPress={onClose} accessibilityRole="button">
           <Text style={GlobalStyle.link}>Luk</Text>
         </Pressable>
-        <ButtonComponent title="Se mere →" type="primary" onPress={onShowDetails} />
+        <ButtonComponent title="Se detaljer" type="primary" size="small" onPress={onShowDetails} />
       </View>
     </View>
   );

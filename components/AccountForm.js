@@ -43,6 +43,7 @@ export default function AccountForm({ mode = 'create', submitLabel, onSubmit }) 
             value={name}
             onChangeText={setName}
             placeholder="Dit navn"
+            placeholderTextColor={colors.muted}
             autoComplete="name"
             textContentType="name"
           />
@@ -55,6 +56,7 @@ export default function AccountForm({ mode = 'create', submitLabel, onSubmit }) 
         value={email}
         onChangeText={setEmail}
         placeholder="navn@eksempel.dk"
+        placeholderTextColor={colors.muted}
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="email"
@@ -68,6 +70,7 @@ export default function AccountForm({ mode = 'create', submitLabel, onSubmit }) 
         value={password}
         onChangeText={setPassword}
         placeholder={isCreate ? 'Mindst 6 tegn' : 'Din adgangskode'}
+        placeholderTextColor={colors.muted}
         secureTextEntry
         autoCapitalize="none"
         autoComplete={isCreate ? 'new-password' : 'current-password'}

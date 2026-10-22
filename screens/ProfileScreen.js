@@ -1,173 +1,79 @@
 // Ansvarlig: Jakob
-import { useContext } from 'react';
-import { Alert, Text, View, ScrollView } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
-import ButtonComponent from '../components/ButtonComponent';
-import AccountForm from '../components/AccountForm';
-import AddressField from '../components/AddressField';
-import BirthDateField from '../components/BirthDateField';
-import DiscountProfilePicker from '../components/DiscountProfilePicker';
-import CurrentMembershipEditor from '../components/CurrentMembershipEditor';
-import PreferencesEditor from '../components/PreferencesEditor';
-import { UserContext } from '../data/UserContext';
-import { accountErrorMessage } from '../data/account';
-import { useCenterData } from '../services/CenterData';
+import ScreenHeader from '../components/ScreenHeader';
+import SettingsRow from '../components/SettingsRow';
+import { useProfileSections } from '../components/useProfileSections';
 
-// Profil: brugeren kan rette alt fra onboarding: adresse, fødselsdato, Rabatprofil,
-// Nuværende medlemskab og Præferencer. Ændringer slår straks igennem i Matchning på Find og
-// gemmes automatisk (Users/<uid>/profile i Firebase og lokalt). Om os nås herfra.
-// Under Konto kan en anonym bruger gemme sin profil eller logge ind, og en bruger med konto kan
-// logge ud.
-export default function ProfileScreen({ navigation }) {
-  const { user, setUser, account, accountsAvailable, createAccount, logOut } =
-    useContext(UserContext);
-  const { chains } = useCenterData();
-
-  const updateField = (field, value) => {
-    setUser((current) => ({ ...current, [field]: value }));
-  };
-
-  // Adresse og fødselsdato er krævet. Mens brugeren retter dem til noget ufærdigt (null),
-  // beholder Profil den gamle værdi, så appen ikke springer tilbage til onboarding.
-  // Felterne viser selv, at den gamle værdi stadig gælder.
-  const handleAddress = (place) => {
-    if (place) setUser((current) => ({ ...current, ...place }));
-  };
-
-  const handleBirthDate = (birthDate) => {
-    if (birthDate) updateField('birthDate', birthDate);
-  };
-
-  const handleCreateAccount = async (form) => {
-    await createAccount(form);
-    Alert.alert('Din profil er gemt', 'Du kan nu logge ind med din e-mail på en anden telefon.');
-  };
-
-  const handleLogOut = () => {
-    Alert.alert(
-      'Log ud?',
-      'Dine oplysninger fjernes fra denne telefon, men ligger stadig på din konto. Du kan ' +
-        'logge ind igen når som helst.',
-      [
-        { text: 'Annuller', style: 'cancel' },
-        {
-          text: 'Log ud',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logOut();
-            } catch (error) {
-              Alert.alert('Kunne ikke logge ud', accountErrorMessage(error));
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  // Kun under udvikling (Expo Go): starter forfra med onboarding som en ny anonym bruger, så
-  // onboarding kan testes igen. Den gamle anonyme brugers data bliver liggende i databasen.
-  const handleStartOver = () => {
-    const message = 'Dine oplysninger fjernes fra telefonen, og onboarding starter igen.';
-    Alert.alert('Start forfra?', message, [
-      { text: 'Annuller', style: 'cancel' },
-      {
-        text: 'Start forfra',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logOut();
-          } catch (error) {
-            Alert.alert('Kunne ikke starte forfra', accountErrorMessage(error));
-          }
-        },
-      },
-    ]);
-  };
-
-  const renderAccount = () => {
-    if (!accountsAvailable || !account) {
-      return (
-        <Text style={GlobalStyle.stepIntro}>Dine oplysninger gemmes kun på denne telefon.</Text>
-      );
-    }
-
-    if (!account.isAnonymous) {
-      const accountLabel = account.name ? `${account.name} (${account.email})` : account.email;
-      return (
-        <View style={GlobalStyle.accountBox}>
-          <Text style={GlobalStyle.stepIntro}>
-            Du er logget ind som {accountLabel}.
-            Dine oplysninger, Favoritter og Prisalarmer følger din konto.
-          </Text>
-          <View style={GlobalStyle.accountActions}>
-            <ButtonComponent title="Log ud" onPress={handleLogOut} />
-          </View>
-        </View>
-      );
-    }
-
-    return (
-      <View style={GlobalStyle.accountBox}>
-        <Text style={GlobalStyle.stepIntro}>
-          Du bruger GymFinder anonymt, så dine oplysninger er knyttet til denne telefon. Gem din
-          profil, så følger alt med, også Favoritter og Prisalarmer, hvis du skifter telefon.
-        </Text>
-        <AccountForm mode="create" onSubmit={handleCreateAccount} />
-        <View style={GlobalStyle.accountActions}>
-          <ButtonComponent
-            title="Jeg har allerede en konto"
-            onPress={() => navigation.navigate('Log ind')}
+// En gruppe rækker, én pr. sektion, med det valgte under navnet.
+function SectionRows({ sections, onPress }) {
+  return (
+    <View style={GlobalStyle.group}>
+      {sections.map((section, index) => (
+        <View key={section.key}>
+          {index > 0 && <View style={GlobalStyle.groupDivider} />}
+          <SettingsRow
+            icon={section.icon}
+            label={section.title}
+            value={section.summary}
+            onPress={() => onPress(section)}
           />
-          {__DEV__ && (
-            <ButtonComponent title="Start forfra (kun under udvikling)" onPress={handleStartOver} />
-          )}
         </View>
-      </View>
-    );
-  };
+      ))}
+    </View>
+  );
+}
+
+// Profil: en liste som i telefonens Indstillinger med adresse, fødselsdato, Rabatprofil,
+// Nuværende medlemskab, Præferencer og Konto. Hver række viser det valgte og åbner Redigér profil
+// med kun den ene ting at rette. Ændringer slår straks igennem i Matchning på Find og gemmes
+// automatisk (Users/<uid>/profile i Firebase og lokalt). Om os nås herfra, og under udvikling kan
+// man starte forfra med onboarding.
+export default function ProfileScreen({ navigation }) {
+  const { sections, handleStartOver, canStartOver } = useProfileSections(navigation);
+  const details = sections.filter((section) => section.key !== 'account');
+  const account = sections.filter((section) => section.key === 'account');
+  const edit = (section) => navigation.navigate('Redigér profil', { section: section.key });
 
   return (
     <SafeAreaView style={GlobalStyle.screen} edges={['top']}>
-      <ScrollView style={GlobalStyle.container} keyboardShouldPersistTaps="handled">
-        <View style={GlobalStyle.titleRow}>
-          <Text style={GlobalStyle.title}>Profil</Text>
-          <ButtonComponent title="Om os" onPress={() => navigation.navigate('Om os')} />
+      <ScrollView style={GlobalStyle.container} contentContainerStyle={GlobalStyle.scrollEnd}>
+        <ScreenHeader title="Profil" />
+        <Text style={GlobalStyle.mutedText}>
+          Det her bruger vi til at regne din Ærlige årspris og finde Centre til dig.
+        </Text>
+
+        <Text style={GlobalStyle.groupTitle}>Dine oplysninger</Text>
+        <SectionRows sections={details} onPress={edit} />
+
+        <Text style={GlobalStyle.groupTitle}>Konto</Text>
+        <SectionRows sections={account} onPress={edit} />
+
+        <Text style={GlobalStyle.groupTitle}>Mere</Text>
+        <View style={GlobalStyle.group}>
+          <SettingsRow
+            icon="information-circle-outline"
+            label="Om GymFinder og Ronnie"
+            onPress={() => navigation.navigate('Om os')}
+          />
         </View>
 
-        <Text style={GlobalStyle.sectionLabel}>Adresse</Text>
-        <AddressField
-          address={user.address}
-          location={user.location}
-          onChange={handleAddress}
-        />
-
-        <Text style={GlobalStyle.sectionLabel}>Fødselsdato</Text>
-        <BirthDateField birthDate={user.birthDate} onChange={handleBirthDate} />
-
-        <Text style={GlobalStyle.sectionLabel}>Rabatprofil</Text>
-        <DiscountProfilePicker
-          discountProfile={user.discountProfile}
-          onChange={(discountProfile) => updateField('discountProfile', discountProfile)}
-        />
-
-        <Text style={GlobalStyle.sectionLabel}>Nuværende medlemskab</Text>
-        <CurrentMembershipEditor
-          currentMembership={user.currentMembership}
-          chains={chains}
-          onChange={(currentMembership) => updateField('currentMembership', currentMembership)}
-        />
-
-        <Text style={GlobalStyle.sectionLabel}>Præferencer</Text>
-        <PreferencesEditor
-          preferences={user.preferences}
-          onChange={(preferences) => updateField('preferences', preferences)}
-        />
-
-        <Text style={GlobalStyle.sectionLabel}>Konto</Text>
-        {renderAccount()}
+        {/* Kun under udvikling (Expo Go): så onboarding kan testes igen. */}
+        {__DEV__ && canStartOver && (
+          <>
+            <Text style={GlobalStyle.groupTitle}>Kun under udvikling</Text>
+            <View style={GlobalStyle.group}>
+              <SettingsRow
+                icon="refresh-outline"
+                label="Start forfra med onboarding"
+                onPress={handleStartOver}
+                danger
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

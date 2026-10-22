@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 
-import GlobalStyle from '../styles/GlobalStyle';
-import ButtonComponent from './ButtonComponent';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
+import SegmentedControl from './SegmentedControl';
+import SelectMenu from './SelectMenu';
 import { parseMonthlyPrice } from '../data/userProfile';
 
 // Nuværende medlemskab: brugerens egen månedspris og eventuelt hvilken Kæde, eller "Ingen".
@@ -44,23 +45,24 @@ export default function CurrentMembershipEditor({ currentMembership, chains, onC
       setError('Skriv først din månedspris.');
       return;
     }
-    onChange({ monthlyPrice: price, chainId: chainId === id ? null : id });
+    onChange({ monthlyPrice: price, chainId: id });
+  };
+
+  const handleChoice = (member) => {
+    if (member) setHasMembership(true);
+    else handleNone();
   };
 
   return (
     <View>
-      <View style={GlobalStyle.sortRow}>
-        <ButtonComponent
-          title="Jeg er medlem et sted"
-          type={hasMembership ? 'primary' : 'secondary'}
-          onPress={() => setHasMembership(true)}
-        />
-        <ButtonComponent
-          title="Ingen"
-          type={hasMembership ? 'secondary' : 'primary'}
-          onPress={handleNone}
-        />
-      </View>
+      <SegmentedControl
+        options={[
+          { value: false, label: 'Ingen' },
+          { value: true, label: 'Jeg er medlem et sted' },
+        ]}
+        value={hasMembership}
+        onChange={handleChoice}
+      />
 
       {hasMembership && (
         <View>
@@ -70,22 +72,22 @@ export default function CurrentMembershipEditor({ currentMembership, chains, onC
             value={priceText}
             onChangeText={handlePriceChange}
             placeholder="Fx 299"
+            placeholderTextColor={colors.muted}
             keyboardType="decimal-pad"
             accessibilityLabel="Månedspris i kr"
           />
           {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
 
           <Text style={GlobalStyle.fieldLabel}>Hos hvilken Kæde? (valgfrit)</Text>
-          <View style={GlobalStyle.sortRow}>
-            {chains.map((chain) => (
-              <ButtonComponent
-                key={chain.id}
-                title={chain.name}
-                type={chainId === chain.id ? 'primary' : 'secondary'}
-                onPress={() => handleChain(chain.id)}
-              />
-            ))}
-          </View>
+          <SelectMenu
+            title="Hos hvilken Kæde?"
+            value={chainId}
+            options={chains.map((chain) => ({ value: chain.id, label: chain.name }))}
+            onChange={handleChain}
+            placeholder="Vælg Kæde"
+            allowNone
+            full
+          />
         </View>
       )}
     </View>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import { getCurrentPlace, searchAddresses } from '../services/Location';
 import {
@@ -138,6 +138,7 @@ export default function AddressField({ address, location, onChange }) {
         onChangeText={handleChangeText}
         onSubmitEditing={handleRetry}
         placeholder="Fx Østerbrogade 79, 2100 København Ø"
+        placeholderTextColor={colors.muted}
         autoComplete="street-address"
         textContentType="fullStreetAddress"
         autoCorrect={false}
@@ -174,7 +175,13 @@ export default function AddressField({ address, location, onChange }) {
 
       <View style={GlobalStyle.sortRow}>
         {error && <ButtonComponent title="Prøv igen" type="primary" onPress={handleRetry} />}
-        <ButtonComponent title="Brug min placering" onPress={handleUseMyLocation} disabled={busy} />
+        <ButtonComponent
+          title="Brug min placering"
+          type="ghost"
+          icon="locate-outline"
+          onPress={handleUseMyLocation}
+          disabled={busy}
+        />
         {busy && <ActivityIndicator />}
       </View>
     </View>

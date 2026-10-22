@@ -1,28 +1,29 @@
 // Ansvarlig: Christian
-import { useContext, useMemo } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { useContext, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
-import OfferPriceCard from '../components/OfferPriceCard';
+import OfferReceipt from '../components/OfferReceipt';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { openSignupPage } from '../services/Signup';
 
-// Centerdetalje: adresse, Distance, faciliteter og Kæde, og alle Centrets Tilbud med brugerens
-// Ærlig årspris, Kvartalspris og prisudregning måned for måned. Priserne kommer fra Matchning,
-// så de er de samme som på Find. Viser også 30-års-advarsel, Spar mere-forslag, Makkerpris og
-// "Gå til tilmelding" og "Spørg Ronnie om dette center". ♥ i titelrækken gør Centret til Favorit.
-// "Gå til tilmelding" åbner det billigste Tilbud for brugeren; har Centret flere Tilbud, har hvert
-// Tilbud også sin egen knap, der åbner tilmeldingen til netop det medlemskab.
+// Centerdetalje: Kæde, adresse og Distance, og Centrets Tilbud som faner. Det valgte Tilbud vises
+// som en kvittering for brugerens første år, der ender i Ærlig årspris (se OfferReceipt).
+// Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
+// for brugeren valgt. "Tilmeld dig ..." åbner tilmeldingen til det valgte Tilbud. Viser også
+// 30-års-advarsel, Spar mere-forslag, faciliteter og "Spørg Ronnie om dette center".
+// ♥ i titelrækken gør Centret til Favorit.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
   const { centers, chains, loading } = useCenterData();
+  const [selectedOfferId, setSelectedOfferId] = useState(null);
   const center = centers.find((entry) => entry.id === centerId);
 
   const match = useMemo(
@@ -57,8 +58,8 @@ export default function CenterDetailScreen({ navigation, route }) {
     offers.map((priced) => [priced.offer.id, priced.offer.name]),
   );
 
-  // Åbner tilmeldingen til ét Tilbud i Centret; uden Tilbud det billigste for brugeren.
-  const handleSignup = (pricedOffer = bestOffer) => openSignupPage(center, chain, pricedOffer);
+  const selected = offers.find((priced) => priced.offer.id === selectedOfferId) ?? bestOffer;
+  const distance = match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null;
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
   // sættes ind, hvis man spørger om samme Center igen.
@@ -69,38 +70,15 @@ export default function CenterDetailScreen({ navigation, route }) {
     });
   };
 
-  return (
-    <ScrollView style={GlobalStyle.screen} contentContainerStyle={GlobalStyle.stepContent}>
-      <View style={GlobalStyle.titleRow}>
-        <Text style={[GlobalStyle.title, GlobalStyle.shrinkText]}>{center.name}</Text>
-        <FavoriteButton center={center} chain={chain} />
-      </View>
-      <Text style={GlobalStyle.cardTitle}>{chain?.name}</Text>
-      <Text style={GlobalStyle.distanceText}>
-        {center.address}
-        {match.distanceKm != null ? ` · ${match.distanceKm.toFixed(1)} km fra dig` : ''}
-      </Text>
-
-      <View style={GlobalStyle.infoBox}>
-        <Text style={GlobalStyle.infoTitle}>Billigst for dig: {bestOffer.yearlyOption.label}</Text>
-        <Text>
-          {bestOffer.offer.name} til {formatKr(Math.round(bestOffer.honestYearlyPrice))}/md i
-          ærlig årspris.
-        </Text>
-        {match.savingPerMonth != null && match.savingPerMonth > 0 && (
-          <Text style={GlobalStyle.savingText}>
-            Du sparer {formatKr(Math.round(match.savingPerMonth))}/md i forhold til dit nuværende
-            medlemskab.
-          </Text>
-        )}
-      </View>
-
+  // 30-års-advarsel og Spar mere-forslag. Ronnie er aldrig med her.
+  const notices = (
+    <>
       {ageNotice && (
         <View style={GlobalStyle.warningBox}>
           <Text style={GlobalStyle.warningTitle}>Prisen stiger, når du fylder 30</Text>
-          <Text>
-            Du fylder 30 i {ageNotice.birthdayMonth}. Fra måned {ageNotice.fromPeriod} stiger
-            prisen på {ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}
+          <Text style={GlobalStyle.bodyText}>
+            Du fylder 30 i {ageNotice.birthdayMonth}. Fra måned {ageNotice.fromPeriod} stiger prisen
+            på {ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}
             {formatKr(ageNotice.priceAfter)}/md. Det er regnet med i din ærlige årspris.
           </Text>
         </View>
@@ -112,7 +90,7 @@ export default function CenterDetailScreen({ navigation, route }) {
             <Text style={GlobalStyle.infoTitle}>Spar mere</Text>
             <InfoButton term="savingSuggestion" />
           </View>
-          <Text>
+          <Text style={GlobalStyle.bodyText}>
             Bliv {suggestion.label} for {suggestion.membershipPricePerYear} kr/år og spar{' '}
             {formatKr(Math.round(suggestion.savingPerYear))}/år her (
             {offerNames[suggestion.offerId]} til{' '}
@@ -120,38 +98,96 @@ export default function CenterDetailScreen({ navigation, route }) {
           </Text>
         </View>
       ))}
+    </>
+  );
+
+  return (
+    <ScrollView style={GlobalStyle.screen} contentContainerStyle={GlobalStyle.stepContent}>
+      <View style={GlobalStyle.titleRow}>
+        <Text style={[GlobalStyle.title, GlobalStyle.shrinkText, GlobalStyle.screenHeaderTitle]}>
+          {center.name}
+        </Text>
+        <FavoriteButton center={center} chain={chain} />
+      </View>
+      <Text style={[GlobalStyle.mutedText, GlobalStyle.spacedBelow]}>
+        {[chain?.name, center.address, distance].filter(Boolean).join(' · ')}
+      </Text>
+
+      {offers.length > 1 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={GlobalStyle.offerTabs}
+        >
+          {offers.map((priced) => {
+            const active = priced === selected;
+            return (
+              <Pressable
+                key={priced.offer.id}
+                style={[GlobalStyle.offerTab, active && GlobalStyle.offerTabActive]}
+                onPress={() => setSelectedOfferId(priced.offer.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[GlobalStyle.offerTabText, active && GlobalStyle.offerTabTextActive]}>
+                  {priced.offer.name}
+                </Text>
+                <Text style={GlobalStyle.offerTabPrice}>
+                  {Math.round(priced.honestYearlyPrice)} kr/md
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      <OfferReceipt
+        pricedOffer={selected}
+        chain={chain}
+        user={user}
+        isCheapest={selected === bestOffer && offers.length > 1}
+      />
+
+      {match.savingPerMonth > 0 && selected === bestOffer && (
+        <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
+          Du sparer {formatKr(Math.round(match.savingPerMonth))}/md i forhold til dit nuværende
+          medlemskab.
+        </Text>
+      )}
+
+      <View style={[GlobalStyle.choiceList, GlobalStyle.paragraph]}>
+        <ButtonComponent
+          title={`Tilmeld dig ${selected.offer.name}`}
+          type="primary"
+          icon="open-outline"
+          full
+          onPress={() => openSignupPage(center, chain, selected)}
+        />
+        <Text style={[GlobalStyle.mapLegend, GlobalStyle.centeredText]}>
+          Åbner {selected.offer.name} på {chain?.name ?? 'kædens'} egen side.
+        </Text>
+        <ButtonComponent
+          title="Spørg Ronnie om dette center"
+          type="text"
+          ronnie
+          onPress={handleAskRonnie}
+        />
+      </View>
+
+      {notices}
 
       <View style={GlobalStyle.inlineRow}>
         <Text style={GlobalStyle.sectionLabel}>Faciliteter</Text>
         {facilities.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
       </View>
-      {facilities.map((row) => (
-        <View key={row.key} style={GlobalStyle.feeRow}>
-          <Text style={GlobalStyle.feeLabel}>{row.label}</Text>
-          <Text style={GlobalStyle.feeValue}>{row.value}</Text>
-        </View>
-      ))}
-
-      <Text style={GlobalStyle.sectionLabel}>
-        {offers.length === 1 ? 'Tilbud i Centret' : `${offers.length} Tilbud i Centret`}
-      </Text>
-      {offers.map((priced) => (
-        <OfferPriceCard
-          key={priced.offer.id}
-          pricedOffer={priced}
-          user={user}
-          isCheapest={priced === bestOffer}
-          // Med flere Tilbud får hvert sin egen tilmeldingsknap.
-          onSignup={offers.length > 1 ? () => handleSignup(priced) : undefined}
-        />
-      ))}
-
-      <ButtonComponent title="Gå til tilmelding" type="primary" onPress={() => handleSignup()} />
-      <Text style={[GlobalStyle.mapLegend, GlobalStyle.paragraph]}>
-        Åbner {bestOffer.offer.name}, der er billigst for dig, på {chain?.name ?? 'kædens'} egen
-        side.
-      </Text>
-      <ButtonComponent title="Spørg Ronnie om dette center" onPress={handleAskRonnie} />
+      <View style={GlobalStyle.facilityGrid}>
+        {facilities.map((row) => (
+          <View key={row.key} style={GlobalStyle.facilityCell}>
+            <Text style={GlobalStyle.mapLegend}>{row.label}</Text>
+            <Text style={GlobalStyle.feeValue}>{row.value}</Text>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
@@ -10,129 +9,63 @@ import { openSignupPage } from '../services/Signup';
 
 const kr = (amount) => `${Math.round(amount)} kr`;
 
-// Kort tekst om hvordan Ærlig årspris er regnet ud for det billigste Tilbud.
-function priceLines(pricedOffer) {
-  const lines = [`Billigst for dig: ${pricedOffer.yearlyOption.label}.`];
-  const first = pricedOffer.monthlyBreakdown[0];
-  const last = pricedOffer.monthlyBreakdown[pricedOffer.monthlyBreakdown.length - 1];
-  const perPeriod = pricedOffer.paymentsPerYear === 12 ? 'md' : '30 dage';
-
-  if (first.total === last.total) {
-    lines.push(`${kr(first.total)}/${perPeriod} hele året.`);
-  } else {
-    lines.push(
-      `Starter på ${kr(first.total)}/${perPeriod}, derefter ${kr(last.total)}/${perPeriod}.`,
-    );
-  }
-  if (pricedOffer.signupFee > 0) {
-    lines.push(`Oprettelsesgebyr på ${kr(pricedOffer.signupFee)} er fordelt over året.`);
-  }
-  if (pricedOffer.turns30InMonth != null) {
-    lines.push(`Du fylder 30, så prisen stiger fra måned ${pricedOffer.turns30InMonth}.`);
-  }
-  if (pricedOffer.partnerRequirement && pricedOffer.yearlyOption.kind === 'partner') {
-    lines.push(`Krav for Makkerpris: ${pricedOffer.partnerRequirement}`);
-  }
-  return lines;
-}
-
-// Kort for ét Center i listen. Viser Ærlig årspris for det billigste Tilbud for brugeren, og ♥
-// gør Centret til Favorit.
-// onShowDetails kaldes ved tryk på "Se mere" (åbner Centerdetalje).
+// Kort for ét Center i listen: navn, Ærlig årspris for det billigste Tilbud for brugeren, og kun
+// to handlinger: "Se detaljer" (åbner Centerdetalje, ligesom et tryk på navnet) og "Tilmeld".
+// ♥ gør Centret til Favorit. Detaljerne om tilbuddet står på Centerdetalje.
 export default function CenterCard({ match, isRecommended, onShowDetails }) {
-  const [expanded, setExpanded] = useState(false);
   const { center, chain, bestOffer } = match;
-  const binding = bestOffer.bindingMonths;
+  const details = [
+    chain?.name,
+    match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <View style={GlobalStyle.card}>
+    <View style={[GlobalStyle.card, isRecommended && GlobalStyle.cardHighlighted]}>
       <View style={GlobalStyle.cardHeader}>
-        <Text style={[GlobalStyle.cardTitle, GlobalStyle.shrinkText]}>{center.name}</Text>
-        <View style={GlobalStyle.inlineRow}>
+        <Pressable
+          style={GlobalStyle.cardTitleArea}
+          onPress={onShowDetails}
+          accessibilityRole="button"
+        >
           {isRecommended && (
-            <View style={GlobalStyle.badge}>
+            <View style={[GlobalStyle.badge, GlobalStyle.badgeInline]}>
               <Text style={GlobalStyle.badgeText}>ANBEFALET</Text>
             </View>
           )}
-          <FavoriteButton center={center} chain={chain} />
-        </View>
+          <Text style={GlobalStyle.cardTitle}>{center.name}</Text>
+          <Text style={GlobalStyle.mutedText}>{details}</Text>
+        </Pressable>
+        <FavoriteButton center={center} chain={chain} />
       </View>
 
-      <View style={GlobalStyle.inlineRow}>
-        <Text style={GlobalStyle.priceText}>{kr(match.honestYearlyPrice)}/md (ærlig årspris)</Text>
+      <View style={GlobalStyle.cardPriceRow}>
+        <Text style={GlobalStyle.cardPrice}>{kr(match.honestYearlyPrice)}</Text>
+        <Text style={GlobalStyle.cardPriceUnit}>/md · ærlig årspris</Text>
         <InfoButton term="honestYearlyPrice" />
       </View>
-      <View style={GlobalStyle.inlineRow}>
-        <Text style={GlobalStyle.distanceText}>
-          Kvartalspris {kr(match.quarterlyPrice)}/md
-          {match.distanceKm != null ? ` · ${match.distanceKm.toFixed(1)} km fra dig` : ''}
-        </Text>
-        <InfoButton term="quarterlyPrice" />
-      </View>
+      <Text style={GlobalStyle.mutedText}>De første 3 mdr. {kr(match.quarterlyPrice)}/md</Text>
       <NotStatedRow notStated={match.notStated} />
       {match.savingPerMonth != null && match.savingPerMonth > 0 && (
-        <Text style={GlobalStyle.savingText}>
+        <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
           Du sparer {kr(match.savingPerMonth)}/md i forhold til dit nuværende medlemskab
         </Text>
       )}
 
-      <Pressable onPress={() => setExpanded(!expanded)}>
-        <Text style={GlobalStyle.link}>Om tilbuddet {expanded ? '↑' : '↓'}</Text>
-      </Pressable>
-
-      {expanded && (
-        <View style={GlobalStyle.detailsBox}>
-          <Text style={GlobalStyle.detailsHeading}>
-            {chain?.name} · {bestOffer.offer.name} ({bestOffer.offer.subscriptionType})
-          </Text>
-          <Text>{priceLines(bestOffer).join(' ')}</Text>
-          {bestOffer.adminFee > 0 && (
-            <View style={GlobalStyle.inlineRow}>
-              <Text>Heraf admingebyr: {kr(bestOffer.adminFee)} pr. betaling</Text>
-              <InfoButton term="adminFee" />
-            </View>
-          )}
-          {bestOffer.yearlyOption.kind === 'partner' && (
-            <View style={GlobalStyle.inlineRow}>
-              <Text>Prisen er Makkerpris pr. person</Text>
-              <InfoButton term="partnerPrice" />
-            </View>
-          )}
-          <View style={GlobalStyle.inlineRow}>
-            <Text>
-              Binding:{' '}
-              {binding == null ? 'Ikke oplyst' : binding === 0 ? 'Ingen' : `${binding} mdr.`}
-            </Text>
-            <InfoButton term="binding" />
-          </View>
-
-          {match.savingSuggestions.map((suggestion) => (
-            <View key={suggestion.discountGroup}>
-              <View style={GlobalStyle.inlineRow}>
-                <Text style={GlobalStyle.detailsHeading}>Spar mere</Text>
-                <InfoButton term="savingSuggestion" />
-              </View>
-              <Text>
-                Bliv {suggestion.label} for {suggestion.membershipPricePerYear} kr/år og spar{' '}
-                {kr(suggestion.savingPerYear)}/år her.
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {onShowDetails && (
-        <Pressable onPress={onShowDetails}>
-          <Text style={GlobalStyle.link}>Se mere →</Text>
-        </Pressable>
-      )}
-
-      <ButtonComponent
-        title="Gå til tilmelding"
-        type="primary"
-        // Det billigste Tilbud for brugeren, som kortet viser.
-        onPress={() => openSignupPage(center, chain, bestOffer)}
-      />
+      <View style={GlobalStyle.cardActions}>
+        {onShowDetails && (
+          <ButtonComponent title="Se detaljer" type="text" size="small" onPress={onShowDetails} />
+        )}
+        <ButtonComponent
+          title="Tilmeld"
+          type="primary"
+          size="small"
+          icon="open-outline"
+          // Det billigste Tilbud for brugeren, som kortet viser.
+          onPress={() => openSignupPage(center, chain, bestOffer)}
+        />
+      </View>
     </View>
   );
 }
