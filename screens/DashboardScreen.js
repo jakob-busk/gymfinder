@@ -1,48 +1,62 @@
+// Ansvarlig: Jakob
 import { useState } from 'react';
 import { View, Text, FlatList } from 'react-native';
+
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
-import GymCard from '../components/GymCard';
-import { GYMS, SORT_OPTIONS } from '../data/const';
-import { getVisibleGyms } from '../data/gymLogic';
+import CenterCard from '../components/CenterCard';
+import { CENTERS, CHAINS } from '../data/const';
+import { DISCOUNT_GROUPS, SORT_OPTIONS, matchCenters } from '../data/matchning';
 
-export default function DashboardScreen({ user }) { // Hele dashboard siden. Vi henter de anbefalede fitness centre og viser dem i en liste. Brugeren kan sortere listen efter pris, afstand eller anbefaling.
-  const [sortBy, setSortBy] = useState('Pris');
+// Dashboard: viser Centre for brugeren via Matchning. Brugerens Præferencer bruges som Filtre,
+// og Anbefalet er altid lavest Ærlig årspris blandt sikre match, uanset sortering.
+export default function DashboardScreen({ user }) {
+  const [sortBy, setSortBy] = useState('honestYearlyPrice');
 
-  const { visibleGyms, recommendedId } = getVisibleGyms(GYMS, user.preferences, sortBy);
+  const { centers, recommendedId } = matchCenters({
+    centers: CENTERS,
+    chains: CHAINS,
+    user,
+    filters: user.preferences,
+    sortBy,
+    location: user.location,
+    today: new Date(),
+  });
+  const discountLabels = user.discountProfile.map((group) => DISCOUNT_GROUPS[group].label);
 
   return (
     <View style={GlobalStyle.container}>
       <Text style={GlobalStyle.title}>Dashboard</Text>
-      <Text style={GlobalStyle.sectionLabel}>Anbefalede fitness centre</Text>
 
       <View style={GlobalStyle.infoBox}>
         <Text style={GlobalStyle.infoTitle}>Dine oplysninger</Text>
         <Text>Adresse: {user.address}</Text>
-        <Text>Studerende: {user.isStudent ? 'JA' : 'NEJ'}</Text>
+        <Text>Rabatprofil: {discountLabels.length > 0 ? discountLabels.join(', ') : 'Ingen'}</Text>
       </View>
 
       <Text style={GlobalStyle.sectionLabel}>Sorter efter</Text>
       <View style={GlobalStyle.sortRow}>
         {SORT_OPTIONS.map((option) => (
           <ButtonComponent
-            key={option}
-            title={option}
-            type={sortBy === option ? 'primary' : 'secondary'}
-            onPress={() => setSortBy(option)}
+            key={option.id}
+            title={option.label}
+            type={sortBy === option.id ? 'primary' : 'secondary'}
+            onPress={() => setSortBy(option.id)}
           />
         ))}
       </View>
 
-      {visibleGyms.length === 0 ? (
+      {centers.length === 0 ? (
         <Text style={GlobalStyle.emptyText}>
-          Ingen centre matcher alle dine præferencer lige nu. Prøv at justere dine præferencer på Profil-siden.
+          Ingen Centre matcher dine Filtre lige nu. Prøv at løsne dem på Profil-siden.
         </Text>
       ) : (
         <FlatList
-          data={visibleGyms}
-          keyExtractor={(gym) => gym.id}
-          renderItem={({ item }) => <GymCard gym={item} isRecommended={item.id === recommendedId} />}
+          data={centers}
+          keyExtractor={(match) => match.center.id}
+          renderItem={({ item }) => (
+            <CenterCard match={item} isRecommended={item.center.id === recommendedId} />
+          )}
         />
       )}
     </View>

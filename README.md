@@ -16,9 +16,14 @@ npx expo start
 
 3. Scan QR-koden med Expo Go-appen. Computer og telefon skal være på samme WiFi-netværk.
 
+## Test
+Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre, Anbefalet og sortering) testes med Jest via jest-expo:
+
+npm test
+
 ## Skærme
-- **Dashboard**: liste over fitnesscentre, sorteret efter pris/distance/præferencer, med den bedst matchende anbefaling fremhævet. Ren mock-data
-- **Profil**: brugerens oplysninger og redigerbare præferencer (maskiner, sauna, abonnementstype). Også ren mock-data
+- **Dashboard**: liste over Centre via Matchning, sorteret efter Ærlig årspris, Kvartalspris, pris høj→lav eller afstand, med det Anbefalede fremhævet. Håndindtastede eksempeldata
+- **Profil**: brugerens oplysninger, Rabatprofil og redigerbare Præferencer (maskiner, faciliteter, binding, maks. afstand)
 - **Om os**: kort om GymFinder
 
 ## Teknologi
