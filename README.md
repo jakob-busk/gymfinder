@@ -55,7 +55,7 @@ Oversættelsen mellem databasen og Matchning ligger i `data/centerData.js`. Data
 
 Reglerne lægges op ved at indsætte filens indhold under Realtime Database → Regler i konsollen eller med `firebase deploy --only database`.
 
-**Seed af centerdata.** `scraper/seed.mjs` lægger de håndindtastede Kæder, Centre og Tilbud i databasen. Kæder, som den natlige scraper har overtaget (i dag SATS), springes over. Hver Kæde, hvert Center og hvert Centers Tilbud overskrives på sin egen sti i én samlet opdatering, så scriptet kan køres flere gange med samme resultat. Brugerdata røres ikke.
+**Seed af centerdata.** `scraper/seed.mjs` lægger de håndindtastede Kæder, Centre og Tilbud i databasen. Kæder, som den natlige scraper har overtaget (i dag SATS og LOOP), springes over. Hver Kæde, hvert Center og hvert Centers Tilbud overskrives på sin egen sti i én samlet opdatering, så scriptet kan køres flere gange med samme resultat. Brugerdata røres ikke.
 1. Kopiér `scraper/.env.example` til `scraper/.env`, og indsæt service account-JSON'en (Projektindstillinger → Service accounts → Generate new private key) og database-URL'en. Nøglefilen må aldrig committes.
 2. Kør:
 
@@ -91,7 +91,7 @@ Ronnie kalder OpenAI (`gpt-4o-mini`) direkte fra appen (`services/Ronnie.js`).
 ## Natlig scraper
 **Ansvarlig:** Jakob
 
-`scraper/` er et selvstændigt Node-projekt (Node 22, ingen Expo og ingen AI), der henter rigtige Centre og Tilbud fra kædernes hjemmesider og skriver dem til Realtime Database med firebase-admin. I dag scrapes SATS; de øvrige Kæder bruger håndindtastede data, indtil deres parser har bestået alle tre testlag.
+`scraper/` er et selvstændigt Node-projekt (Node 22, ingen Expo og ingen AI), der henter rigtige Centre og Tilbud fra kædernes hjemmesider og skriver dem til Realtime Database med firebase-admin. I dag scrapes SATS og LOOP; de øvrige Kæder bruger håndindtastede data, indtil deres parser har bestået alle tre testlag.
 
 **Hvornår.** GitHub Actions (`.github/workflows/scraper.yml`) kører hver nat kl. 02:17 UTC (03:17 dansk vintertid) og kan startes manuelt under Actions → Natlig scraper → Run workflow, evt. som tør kørsel. Testene køres før hver kørsel. Rapporten står i jobbets oversigt og som artefakt.
 
@@ -100,6 +100,8 @@ Ronnie kalder OpenAI (`gpt-4o-mini`) direkte fra appen (`services/Ronnie.js`).
 - `FIREBASE_DATABASE_URL`: database-URL'en
 
 **Høflighed.** Ærlig User-Agent, ét kald ad gangen og 2,5 sekunders pause mellem kaldene. SATS koster ca. 32 kald pr. nat: centerlisten, én side pr. Center og tre checkout-sider til gebyr og kampagne.
+
+**LOOP** koster 2 kald pr. nat: centerlisten (alle Centre med priser, Admingebyr, kampagne og familiemedlemskab i ét inline objekt) og prissiden med rabatkortene (Studerende og Ældre Sagen 15 %, Oprettelse 199 kr). LOOP opkræver pr. 30 dage, så Tilbuddene har `billingIntervalDays: 30`, og Ærlig årspris regnes med 365/30 betalinger. Kampagnen "100 kr. resten af året" fordeles på de hele 30-dages-perioder til slutdatoen. Familiemedlemskabet (Træn med en makker) gemmes som Makkerpris pr. person for to: (589 + 10) / 2 = 299,50 kr pr. 30 dage.
 
 **Regler.**
 - Et Tilbud skrives kun, hvis prisen ligger mellem 50 og 2.000 kr/md, Centrets koordinater ligger i Danmark, de påkrævede felter er udfyldt, Kampagneprisen er lavere end Standardprisen, og Standardprisen højst har ændret sig ±50 % siden sidste nat. Ellers beholdes de gamle data, og fejlen logges.
@@ -115,13 +117,14 @@ npm test                                  # parser, sanity-regler og nat-job (in
 npm run scrape:dry-run -- --limit 3       # live-kørsel uden skrivning, kun 3 Centre
 npm run scrape:dry-run -- --report r.md   # hele live-kørslen med rapport, intet skrives
 npm run verify                            # stikprøve: 3 tilfældige Centre mod hjemmesiden
+npm run verify:loop                       # LOOP: live-tjek og stikprøve (ca. 12 kald)
 npm run scrape                            # skriver til databasen
 ```
 
 **Tre testlag.** En Kæde er først "færdig", når alle tre er grønne:
-1. `npm test`: SATS-parseren mod gemte, trimmede svar fra sats.dk (`scraper/fixtures/sats/`) med præcist forventede Centre og Tilbud, sanity-reglerne og nat-jobbet end-to-end med en falsk database (normal kørsel, sanity-fejl, kæde-fejl, forsvundet 1/2/3 nætter).
+1. `npm test`: SATS-parseren mod gemte, trimmede svar fra sats.dk (`scraper/fixtures/sats/`) med præcist forventede Centre og Tilbud, sanity-reglerne og nat-jobbet end-to-end med en falsk database (normal kørsel, sanity-fejl, kæde-fejl, forsvundet 1/2/3 nætter). LOOP-parseren testes på samme måde mod `scraper/fixtures/loop/`, inkl. den urørte centerliste med alle 137 Centre.
 2. Live-kørsel uden skrivning, der laver en rapport.
-3. Stikprøve-bevis i `docs/verifikation-sats.md`: tre tilfældige Centre, hvor scraperens tal sammenlignes med de priser og den adresse, en besøgende ser på siden. Køres igen, hver gang parseren ændres.
+3. Stikprøve-bevis i `docs/verifikation-sats.md`: tre tilfældige Centre, hvor scraperens tal sammenlignes med de priser og den adresse, en besøgende ser på siden. Køres igen, hver gang parseren ændres. For LOOP laver `npm run verify:loop` både live-kørslen og stikprøven i `docs/verifikation-loop.md` (adresse og åbningstid på centersiden, priskortenes tekster og Ældre Sagens egen side).
 
 ## Skærme
 Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, Spørg Ronnie, Favoritter og Profil). Centerdetalje og Filtre åbnes som stack oven på fanerne, og Om os åbnes fra Profil.
