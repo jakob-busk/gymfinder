@@ -379,6 +379,71 @@ const GlobalStyle = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
   },
+  // Spørg Ronnie: chatbobler (brugeren til højre, Ronnie til venstre med avatar) og inputfeltet.
+  chatContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  ronnieAvatar: {
+    width: 40,
+    height: 40,
+    marginRight: 8,
+  },
+  bubbleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginTop: 12,
+  },
+  bubble: {
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 12,
+    maxWidth: '85%',
+  },
+  bubbleUser: {
+    backgroundColor: colors.primary,
+    alignSelf: 'flex-end',
+  },
+  bubbleRonnie: {
+    flexShrink: 1,
+    marginTop: 0,
+    backgroundColor: colors.inputBackground,
+  },
+  bubbleUserText: {
+    color: colors.background,
+    fontWeight: '600',
+  },
+  bubbleText: {
+    color: colors.text,
+    lineHeight: 20,
+  },
+  chatButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    marginLeft: 48,
+  },
+  chatInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.inputBackground,
+  },
+  chatInput: {
+    flex: 1,
+    maxHeight: 100,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.inputBackground,
+  },
 });
 
 export { colors };
