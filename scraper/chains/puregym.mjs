@@ -21,7 +21,8 @@
 // priser. Den bruges kun af stikprøven (puregymVerification.mjs), så natten ikke koster et
 // ekstra kald pr. Center.
 
-import { parseDanishNumber, wholeMonthsUntil } from './sats.mjs';
+import { parseAmount } from './amount.mjs';
+import { wholeMonthsUntil } from './sats.mjs';
 
 export const PUREGYM_BASE_URL = 'https://www.puregym.dk';
 export const PUREGYM_CENTER_LIST_URL = `${PUREGYM_BASE_URL}/find-center`;
@@ -152,8 +153,8 @@ export function parseCenterList(html) {
       centerName,
       pageUrl: pagePath ? new URL(pagePath, PUREGYM_BASE_URL).href : undefined,
       teaserPrices: {
-        from: parseDanishNumber(body.match(/class="map__teaser__price"[^>]*>([^<]*)</)?.[1]),
-        standardFrom: parseDanishNumber(
+        from: parseAmount(body.match(/class="map__teaser__price"[^>]*>([^<]*)</)?.[1]),
+        standardFrom: parseAmount(
           body.match(/class="map__teaser__price__note">([^<]*)</)?.[1],
         ),
       },
@@ -177,7 +178,7 @@ export function parseCenterList(html) {
 // kortbetaling; GymFinder regner med kort, så brugeren får den billigste mulighed.
 export function parsePriceList(html) {
   const rows = [...html.matchAll(/<tr[^>]*>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>/g)].map(
-    ([, label, value]) => ({ label: textOf(label), value: parseDanishNumber(textOf(value)) }),
+    ([, label, value]) => ({ label: textOf(label), value: parseAmount(textOf(value)) }),
   );
   if (rows.length === 0) throw new Error('Prislisten har ingen rækker');
 
@@ -250,7 +251,7 @@ export function parseLegalText(html) {
   const end = text.match(/frem til (\d{2})-(\d{2})-(\d{4})/);
   const headline = html.match(/<strong>([\s\S]*?)<\/strong>/)?.[1];
   const legal = {};
-  if (normal) legal.normalPrice = parseDanishNumber(normal[1]);
+  if (normal) legal.normalPrice = parseAmount(normal[1]);
   if (end) legal.campaignEndDate = `${end[3]}-${end[2]}-${end[1]}`;
   if (headline) legal.campaignText = textOf(headline);
   // Ingen Binding: opsigelse med løbende måned + 1 måned.

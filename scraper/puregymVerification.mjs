@@ -9,7 +9,7 @@
 
 import { distanceKm } from '../data/matchning.js';
 import { AGE_GROUPS, decodeEntities, offerNameFrom } from './chains/puregym.mjs';
-import { parseDanishNumber } from './chains/sats.mjs';
+import { parseAmount } from './chains/amount.mjs';
 
 const AGE_LABELS = { under30: 'under 30', over30: '30+' };
 
@@ -29,10 +29,10 @@ export function parseVisibleCards(ajaxText) {
     const name = card.match(/class="card__title-prefix">\s*([^<]*?)\s*</)?.[1];
     const prefix = card.match(/class="card__price__prefix">([^<]*)</)?.[1];
     const title = card.match(/class="card__price__title">([^<]*)</)?.[1];
-    const currentPrice = parseDanishNumber(title);
+    const currentPrice = parseAmount(title);
     return {
       name: offerNameFrom(name ? decodeEntities(name) : undefined),
-      standardPrice: prefix ? parseDanishNumber(prefix) : currentPrice,
+      standardPrice: prefix ? parseAmount(prefix) : currentPrice,
       currentPrice,
     };
   });

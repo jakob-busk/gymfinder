@@ -12,7 +12,6 @@ import {
   membershipsForCenter,
   offerNameFromTitle,
   offersForCenter,
-  parseAmount,
   parseCampaignText,
   parseCenterList,
   parseCenterPage,
@@ -457,15 +456,6 @@ describe('Fitness X navne og tal', () => {
     for (const [title, name] of Object.entries(cases)) {
       assert.equal(offerNameFromTitle(title), name, title);
     }
-  });
-
-  test('beløb med og uden tusindtalspunktum', () => {
-    assert.equal(parseAmount('1050'), 1050);
-    assert.equal(parseAmount('1.200 kr.'), 1200);
-    assert.equal(parseAmount('189,50'), 189.5);
-    assert.equal(parseAmount('60'), 60);
-    assert.equal(parseAmount(''), null);
-    assert.equal(parseAmount(null), null);
   });
 });
 

@@ -20,6 +20,7 @@
 // acf.centre er håndvedligeholdt og indeholder skrald ("abc", "efg", tomme lister); kun GUID'er
 // tæller, så skrald aldrig knytter et medlemskab til et Center.
 
+import { parseAmount } from './amount.mjs';
 import { wholeMonthsUntil } from './sats.mjs';
 
 export const FITNESSX_BASE_URL = 'https://fitnessx.dk';
@@ -60,16 +61,6 @@ const decodeEntities = (text) =>
     .replace(/&nbsp;/g, ' ')
     .replace(/&quot;/g, '"')
     .replace(/&amp;/g, '&');
-
-// Beløb i kroner: "1050" → 1050, "1.200 kr." → 1200, "189,50" → 189.5, "60" → 60.
-// Fitness X skriver beløb over 1.000 både med og uden punktum. Andet end et tal → null.
-export function parseAmount(text) {
-  if (text == null) return null;
-  const match = String(text).match(/\d{1,3}(?:\.\d{3})+(?:,\d+)?(?!\d)|\d+(?:,\d+)?/);
-  if (!match) return null;
-  const value = Number(match[0].replace(/\./g, '').replace(',', '.'));
-  return Number.isFinite(value) ? value : null;
-}
 
 // HTML → ren tekst på én linje.
 export const plainText = (html) =>
