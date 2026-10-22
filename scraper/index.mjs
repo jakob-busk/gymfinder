@@ -6,10 +6,14 @@
 //   ... --chain puregym                 kun én Kæde
 //   ... --report <fil>                  gemmer rapporten som Markdown
 //
+// Efter scraping sendes push for opfyldte Prisalarmer via Expo Push Service (gratis). En tør
+// kørsel sender aldrig push; rapporten viser i stedet, hvilke alarmer der ville være sendt.
+//
 // Exit-kode 1, hvis en Kæde blev sprunget over eller jobbet fejlede, så kørslen bliver rød.
 import { appendFile, writeFile } from 'node:fs/promises';
 
 import { CHAIN_SCRAPERS } from './chains/index.mjs';
+import { createExpoPushClient } from './expoPush.mjs';
 import { createHttpClient } from './http.mjs';
 import { formatReport, runNightlyJob, todayInDenmark } from './nightlyJob.mjs';
 
@@ -45,7 +49,10 @@ try {
   if (scrapers.length === 0) throw new Error(`Ukendt Kæde: ${onlyChain}`);
 
   const db = connection?.db ?? null;
-  const { ok, report } = await runNightlyJob({ db, scrapers, today, dryRun });
+  const pushClient = dryRun
+    ? null
+    : createExpoPushClient({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+  const { ok, report } = await runNightlyJob({ db, scrapers, today, dryRun, pushClient });
   const markdown = formatReport(report);
 
   console.log(markdown);
