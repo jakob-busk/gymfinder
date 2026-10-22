@@ -30,6 +30,10 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/scraper/"
+    ],
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ]
