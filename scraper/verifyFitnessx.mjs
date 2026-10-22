@@ -1,7 +1,8 @@
 // Stikprøve-bevis for Fitness X (testlag 2 og 3): henter centerlisten, prislisten og 3 tilfældige
 // centersider fra fitnessx.dk, sammenligner scraperens tal med prislisten og centersidens adresse
 // og prissætter hele Kæden ud fra de hentede sider uden at skrive noget. Resultatet skrives i
-// docs/verifikation-fitnessx.md. Køres igen, hver gang Fitness X-parseren ændres. 5 kald i alt.
+// docs/verifikation-fitnessx.md. Køres igen, hver gang Fitness X-parseren ændres. 5 kald plus
+// én pr. Center uden GUID i centerlisten (i dag 9 kald i alt).
 //
 //   npm run verify:fitnessx
 //
@@ -40,6 +41,13 @@ try {
     const html = await http.getText(center.signupUrl);
     pages.push({ listed: center, html });
     results.push(compareFitnessxCenter(center, html, priceList));
+  }
+
+  // Centre uden GUID i centerlisten kan kun prissættes ud fra deres egen side; hent også dem,
+  // så hele Kæden er dækket (i dag 4 Centre).
+  const fetched = new Set(pages.map((page) => page.listed.id));
+  for (const center of withPage.filter((c) => !c.guid && !fetched.has(c.id))) {
+    pages.push({ listed: center, html: await http.getText(center.signupUrl) });
   }
 
   const { markdown, allOk } = formatFitnessxVerification({

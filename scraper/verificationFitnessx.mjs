@@ -71,7 +71,8 @@ export function compareFitnessxCenter(listed, centerHtml, priceList) {
     if (offer.partner) {
       const { partner } = offer;
       for (const [ageGroup, label] of AGE_GROUPS) {
-        const what = `${offer.name} med Træningsven, ${label}, for to (kr/md)`;
+        const name = offer.partnerOnly ? offer.name : `${offer.name} med Træningsven`;
+        const what = `${name}, ${label}, for to (kr/md)`;
         compare(what, partner.total[ageGroup], {
           category: partner.category,
           reformer: partner.reformer,
@@ -145,7 +146,8 @@ const show = (value) => (value == null ? '–' : String(value));
 export function formatFitnessxVerification({ date, results, wholeChain }) {
   const allOk =
     results.every((result) => result.checks.every((check) => check.ok)) &&
-    wholeChain.failures.length === 0;
+    wholeChain.failures.length === 0 &&
+    wholeChain.unresolved.length === 0;
   const lines = [
     '# Stikprøve: Fitness X',
     '',
@@ -156,8 +158,8 @@ export function formatFitnessxVerification({ date, results, wholeChain }) {
     'HTML\'en (de tegnes i browseren), så kolonnen "Hjemmeside" er det, en besøgende kan læse på',
     'Kædens prisliste (https://fitnessx.dk/oevrige-priser/) for Centrets Kategori, og adressen er',
     'adresselinjen øverst på centersiden. "Scraper" er det, scraperen læser i sidens',
-    '`sj_ajax_object`. Genereres med `npm run verify:fitnessx` i `scraper/` (5 kald: centerliste,',
-    'prisliste og tre centersider).',
+    '`sj_ajax_object`. Genereres med `npm run verify:fitnessx` i `scraper/` (centerliste,',
+    'prisliste, tre centersider og siderne for de Centre, der ikke har GUID i centerlisten).',
     '',
   ];
 
@@ -175,8 +177,9 @@ export function formatFitnessxVerification({ date, results, wholeChain }) {
     '## Hele Kæden (live, uden at skrive)',
     '',
     'Alle centersider har alle Kædens medlemskaber, så hvert Center i centerlisten er prissat ud',
-    'fra de tre hentede sider og tjekket med sanity-reglerne.',
+    'fra de hentede sider (som nat-jobbet ville gøre det) og tjekket med sanity-reglerne.',
     '',
+    `- Centre i centerlisten: ${wholeChain.centers + wholeChain.unresolved.length}`,
     `- Centre prissat: ${wholeChain.centers}`,
     `- Gyldige Tilbud: ${wholeChain.offers}`,
     `- Sanity-fejl: ${wholeChain.failures.length}`,

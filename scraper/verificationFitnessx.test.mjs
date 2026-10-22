@@ -75,6 +75,21 @@ describe('Fitness X-stikprøve mod prislisten og centersiden', () => {
     ]);
   });
 
+  test('Hjørrings Tilbud, der kun findes med Træningsven, sammenlignes som pris for to', () => {
+    // Viborgs gemte side har også Hjørrings medlemskaber; her lader siden, som om den er Hjørrings.
+    const html = withAjaxObject(fitnessxFixture('center-viborg.html'), (ajaxObject) => {
+      ajaxObject.medlemskabsdatalayer.location = listedNamed('Hjørring').guid;
+    });
+    const result = compareFitnessxCenter(listedNamed('Hjørring'), html, priceList);
+    const priceChecks = result.checks
+      .filter((check) => check.what.startsWith('Kategori'))
+      .map((check) => [check.what, check.scraper, check.website, check.ok]);
+    assert.deepEqual(priceChecks, [
+      ['Kategori 5 + Træningsven, under 30, for to (kr/md)', 300, 300, true],
+      ['Kategori 5 + Træningsven, 30+, for to (kr/md)', 350, 350, true],
+    ]);
+  });
+
   test('en pris, der afviger fra prislisten, opdages', () => {
     const html = withAjaxObject(fitnessxFixture('center-viborg.html'), (ajaxObject) => {
       const [kategori2Over30] = membershipsTitled(ajaxObject, /^Kategori 2 &#8211; Over 30$/);
