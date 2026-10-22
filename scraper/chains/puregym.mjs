@@ -262,9 +262,12 @@ export function parseLegalText(html) {
 // medlemskaberne med pris. Priserne tages fra settings-kommandoen (aktuel pris, dvs.
 // kampagnepris hvis der er en) og fra det med småt (normalpris og kampagnens slutdato).
 export function parseAjaxResponse(text) {
+  // Drupals reserveformat: JSON'en pakket ind i <textarea>. Drupal koder "<" i JSON'en som
+  // \u003C, så indholdet kan ikke selv lukke textarea'en.
+  const wrapped = text.trim().match(/^<textarea>([\s\S]*)<\/textarea>$/);
   let commands;
   try {
-    commands = JSON.parse(text);
+    commands = JSON.parse(wrapped ? wrapped[1] : text);
   } catch {
     throw new Error('Svaret fra formularen er ikke JSON');
   }
@@ -393,6 +396,10 @@ export function buildOffers({ center, byAgeGroup, fees, today }) {
 
 // ---------- Hentning ----------
 
+// Samme Accept som Drupals eget jQuery-kald. Uden den svarer PureGym med kommandolisten pakket
+// ind i <textarea> som text/html (Drupals reserveformat), hvilket parseAjaxResponse også kan læse.
+const DRUPAL_AJAX_ACCEPT = 'application/json, text/javascript, */*; q=0.01';
+
 // GET af formularen og én POST pr. Aldersgruppe. Resultat: { under30, over30 } som rå tekst.
 // `http.getText(url)` og `http.postForm(url, fields, headers)` som i http.mjs.
 export async function fetchCenterResponses({ http, center }) {
@@ -402,6 +409,7 @@ export async function fetchCenterResponses({ http, center }) {
   for (const ageGroup of AGE_GROUPS) {
     responses[ageGroup] = await http.postForm(form.ajaxUrl, formFieldsFor(form, ageGroup), {
       'X-Requested-With': 'XMLHttpRequest',
+      Accept: DRUPAL_AJAX_ACCEPT,
     });
   }
   return responses;

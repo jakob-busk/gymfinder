@@ -228,6 +228,15 @@ describe('PureGym ajax-svar (Drupal-kommandoer)', () => {
     );
   });
 
+  test('Drupals reserveformat (JSON i <textarea>) læses også', () => {
+    // Sådan svarer PureGym (text/html), hvis kaldet ikke beder om JSON. Drupal koder "<" som
+    // \u003C, ligesom JSON.stringify med replace nedenfor.
+    const commands = JSON.parse(puregymFixture('ajax-118-under30.json'));
+    const json = JSON.stringify(commands).replace(/</g, '\\u003C');
+    assert.ok(!json.includes('</'));
+    assert.deepEqual(parseAjaxResponse(`<textarea>${json}</textarea>`), parseAjaxResponse(json));
+  });
+
   test('et svar, der ikke er Drupal-kommandoer, giver en tydelig fejl', () => {
     assert.throws(() => parseAjaxResponse('<html>Fejl</html>'), /ikke JSON/);
     assert.throws(() => parseAjaxResponse('[]'), /ingen medlemskaber/);
@@ -432,7 +441,10 @@ describe('hele PureGym-kørslen (falsk HTTP med gemte svar)', () => {
         _triggering_element_name: 'under_30_submit',
         _triggering_element_value: 'Under 30 år',
       },
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+      },
     });
     assert.equal(http.posts[3].fields._triggering_element_value, '30 år eller over');
   });
