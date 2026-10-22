@@ -2,9 +2,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
-import InfoButton from './InfoButton';
+import NotStatedRow from './NotStatedRow';
 import { centerKeywords } from '../data/findView';
-import { NOT_STATED_LABELS } from '../data/matchning';
 
 // Boksen der vises på kortet, når man trykker på en Center-pin: Kæde, Ærlig årspris,
 // Distance, nøgleord og "Ikke oplyst" for aktive Filtre, hvor det er ukendt.
@@ -31,14 +30,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
         {match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : 'Afstand ukendt'}
         {keywords.length > 0 ? ` · ${keywords.join(', ')}` : ''}
       </Text>
-      {match.notStated.length > 0 && (
-        <View style={GlobalStyle.inlineRow}>
-          <Text style={GlobalStyle.notStatedText}>
-            Ikke oplyst: {match.notStated.map((key) => NOT_STATED_LABELS[key]).join(', ')}
-          </Text>
-          <InfoButton term="notStated" />
-        </View>
-      )}
+      <NotStatedRow notStated={match.notStated} />
       <View style={GlobalStyle.pinInfoActions}>
         <Pressable onPress={onClose} accessibilityRole="button">
           <Text style={GlobalStyle.link}>Luk</Text>

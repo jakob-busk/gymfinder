@@ -9,7 +9,8 @@ import CenterCard from '../components/CenterCard';
 import CenterMap from '../components/CenterMap';
 import CenterPinInfo from '../components/CenterPinInfo';
 import RonnieMascot from '../components/RonnieMascot';
-import { SORT_OPTIONS, matchCenters } from '../data/matchning';
+import SortPicker from '../components/SortPicker';
+import { matchCenters } from '../data/matchning';
 import { loosenFilterSuggestions } from '../data/findView';
 import { activeFilterCount } from '../data/filterSettings';
 import { UserContext } from '../data/UserContext';
@@ -103,16 +104,7 @@ export default function FindScreen({ navigation }) {
         <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
       )}
 
-      <View style={GlobalStyle.sortRow}>
-        {SORT_OPTIONS.map((option) => (
-          <ButtonComponent
-            key={option.id}
-            title={option.label}
-            type={sortBy === option.id ? 'primary' : 'secondary'}
-            onPress={() => setSortBy(option.id)}
-          />
-        ))}
-      </View>
+      <SortPicker sortBy={sortBy} onChange={setSortBy} />
 
       <View style={GlobalStyle.mapBox}>
         <CenterMap

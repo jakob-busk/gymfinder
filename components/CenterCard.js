@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
-import { SIGNUP_ERROR_MESSAGE } from '../data/errors';
-import { NOT_STATED_LABELS } from '../data/matchning';
+import NotStatedRow from './NotStatedRow';
 import { openSignupPage } from '../services/Signup';
 
 const kr = (amount) => `${Math.round(amount)} kr`;
@@ -45,16 +44,6 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
   const { center, chain, bestOffer } = match;
   const binding = bestOffer.bindingMonths;
 
-  const handleSignup = async () => {
-    try {
-      // Det billigste Tilbud for brugeren, som kortet viser.
-      await openSignupPage(center, chain, bestOffer);
-    } catch (error) {
-      console.error('Åbn tilmelding fejlede:', error);
-      Alert.alert('Kunne ikke åbne tilmeldingen', SIGNUP_ERROR_MESSAGE);
-    }
-  };
-
   return (
     <View style={GlobalStyle.card}>
       <View style={GlobalStyle.cardHeader}>
@@ -80,14 +69,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
         </Text>
         <InfoButton term="quarterlyPrice" />
       </View>
-      {match.notStated.length > 0 && (
-        <View style={GlobalStyle.inlineRow}>
-          <Text style={GlobalStyle.notStatedText}>
-            Ikke oplyst: {match.notStated.map((key) => NOT_STATED_LABELS[key]).join(', ')}
-          </Text>
-          <InfoButton term="notStated" />
-        </View>
-      )}
+      <NotStatedRow notStated={match.notStated} />
       {match.savingPerMonth != null && match.savingPerMonth > 0 && (
         <Text style={GlobalStyle.savingText}>
           Du sparer {kr(match.savingPerMonth)}/md i forhold til dit nuværende medlemskab
@@ -148,7 +130,8 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
       <ButtonComponent
         title="Gå til tilmelding"
         type="primary"
-        onPress={handleSignup}
+        // Det billigste Tilbud for brugeren, som kortet viser.
+        onPress={() => openSignupPage(center, chain, bestOffer)}
       />
     </View>
   );

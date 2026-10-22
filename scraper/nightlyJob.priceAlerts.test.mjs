@@ -8,7 +8,8 @@ import { CENTERS as SAMPLE_CENTERS, CHAINS as SAMPLE_CHAINS } from '../data/cons
 import { buildSeedUpdate } from '../data/centerData.js';
 import { scrapeSats } from './chains/sats.mjs';
 import { createExpoPushClient } from './expoPush.mjs';
-import { formatReport, runNightlyJob } from './nightlyJob.mjs';
+import { runNightlyJob } from './nightlyJob.mjs';
+import { formatReport } from './nightlyReport.mjs';
 import { createFakeDatabase } from './testing/fakeDatabase.mjs';
 import { createFakeFetch, createFakePushClient } from './testing/fakePush.mjs';
 import { createFixtureHttp, satsRoutes, withProps } from './testing/satsFixtures.mjs';

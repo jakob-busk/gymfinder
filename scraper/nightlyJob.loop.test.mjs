@@ -10,7 +10,8 @@ import { matchCenters } from '../data/matchning.js';
 import { CHAIN_SCRAPERS, SCRAPED_CHAIN_IDS } from './chains/index.mjs';
 import { LOOP_CENTER_LIST_URL, LOOP_PRICES_URL, scrapeLoop } from './chains/loop.mjs';
 import { scrapeSats } from './chains/sats.mjs';
-import { formatReport, runNightlyJob } from './nightlyJob.mjs';
+import { runNightlyJob } from './nightlyJob.mjs';
+import { formatReport } from './nightlyReport.mjs';
 import { createFakeDatabase } from './testing/fakeDatabase.mjs';
 import {
   centerListWith,

@@ -6,8 +6,6 @@
 //   npm run verify:puregym
 //
 // Exit-kode 1, hvis noget afviger.
-import { writeFile } from 'node:fs/promises';
-
 import {
   PUREGYM_CENTER_LIST_URL,
   PUREGYM_PRICE_LIST_URL,
@@ -16,17 +14,10 @@ import {
   parseCenterList,
   parsePriceList,
 } from './chains/puregym.mjs';
-import { createHttpClient } from './http.mjs';
-import { todayInDenmark } from './nightlyJob.mjs';
 import { PUREGYM_VERIFICATION_DESCRIPTION, compareCenter } from './puregymVerification.mjs';
-import { formatVerification, pickRandom } from './verification.mjs';
+import { SAMPLE_SIZE, formatVerification, pickRandom, runVerification } from './verification.mjs';
 
-const OUTPUT = new URL('../docs/verifikation-puregym.md', import.meta.url);
-const SAMPLE_SIZE = 3;
-
-try {
-  const today = todayInDenmark();
-  const http = createHttpClient();
+await runVerification('verifikation-puregym.md', async ({ http, today }) => {
   const listed = parseCenterList(await http.getText(PUREGYM_CENTER_LIST_URL));
   const fees = parsePriceList(await http.getText(PUREGYM_PRICE_LIST_URL));
 
@@ -50,7 +41,7 @@ try {
     }
   }
 
-  const { markdown, allOk } = formatVerification({
+  return formatVerification({
     chainName: 'PureGym',
     date: today,
     results,
@@ -61,10 +52,4 @@ try {
         `Admingebyr ved kortbetaling: ${fees.adminFee} kr/md.`,
     ],
   });
-  await writeFile(OUTPUT, markdown);
-  console.log(markdown);
-  if (!allOk) process.exitCode = 1;
-} catch (error) {
-  console.error('Stikprøven fejlede:', error);
-  process.exitCode = 1;
-}
+});

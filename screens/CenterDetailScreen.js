@@ -1,6 +1,6 @@
 // Ansvarlig: Christian
 import { useContext, useMemo } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
@@ -8,7 +8,6 @@ import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferPriceCard from '../components/OfferPriceCard';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
-import { SIGNUP_ERROR_MESSAGE } from '../data/errors';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
@@ -59,14 +58,7 @@ export default function CenterDetailScreen({ navigation, route }) {
   );
 
   // Åbner tilmeldingen til ét Tilbud i Centret; uden Tilbud det billigste for brugeren.
-  const handleSignup = async (pricedOffer = bestOffer) => {
-    try {
-      await openSignupPage(center, chain, pricedOffer);
-    } catch (error) {
-      console.error('Åbn tilmelding fejlede:', error);
-      Alert.alert('Kunne ikke åbne tilmeldingen', SIGNUP_ERROR_MESSAGE);
-    }
-  };
+  const handleSignup = (pricedOffer = bestOffer) => openSignupPage(center, chain, pricedOffer);
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
   // sættes ind, hvis man spørger om samme Center igen.

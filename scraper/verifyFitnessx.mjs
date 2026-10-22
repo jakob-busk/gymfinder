@@ -8,29 +8,20 @@
 //   npm run verify:fitnessx -- --center fitnessx-hasselager   et bestemt Center + 2 tilfældige
 //
 // Exit-kode 1, hvis noget afviger.
-import { writeFile } from 'node:fs/promises';
-
 import {
   FITNESSX_CENTER_LIST_URL,
   FITNESSX_PRICE_LIST_URL,
   parseCenterList,
   parsePriceList,
 } from './chains/fitnessx.mjs';
-import { createHttpClient } from './http.mjs';
-import { todayInDenmark } from './nightlyJob.mjs';
-import { pickRandom } from './verification.mjs';
 import {
   checkWholeChain,
   compareFitnessxCenter,
   formatFitnessxVerification,
-} from './verificationFitnessx.mjs';
+} from './fitnessxVerification.mjs';
+import { SAMPLE_SIZE, pickRandom, runVerification } from './verification.mjs';
 
-const OUTPUT = new URL('../docs/verifikation-fitnessx.md', import.meta.url);
-const SAMPLE_SIZE = 3;
-
-try {
-  const http = createHttpClient();
-  const today = todayInDenmark();
+await runVerification('verifikation-fitnessx.md', async ({ http, today }) => {
   const listed = parseCenterList(await http.getText(FITNESSX_CENTER_LIST_URL));
   const priceList = parsePriceList(await http.getText(FITNESSX_PRICE_LIST_URL));
 
@@ -61,15 +52,9 @@ try {
     pages.push({ listed: center, html: await http.getText(center.signupUrl) });
   }
 
-  const { markdown, allOk } = formatFitnessxVerification({
+  return formatFitnessxVerification({
     date: today,
     results,
     wholeChain: checkWholeChain(listed, pages, today),
   });
-  await writeFile(OUTPUT, markdown);
-  console.log(markdown);
-  if (!allOk) process.exitCode = 1;
-} catch (error) {
-  console.error('Stikprøven fejlede:', error);
-  process.exitCode = 1;
-}
+});

@@ -7,7 +7,7 @@ import {
   checkWholeChain,
   compareFitnessxCenter,
   formatFitnessxVerification,
-} from './verificationFitnessx.mjs';
+} from './fitnessxVerification.mjs';
 import {
   FIXTURE_CENTERS,
   defaultCenterList,

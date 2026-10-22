@@ -133,17 +133,16 @@ export default function App() {
   // Firebase-brugeren (anonym ved første opstart). null, hvis Firebase ikke er sat op.
   // Ved log ind skifter uid'et, og profilen for kontoen hentes.
   const { authUser, account, authReady, createAccount, logIn, logOut } = useAuthSession();
+  // Profil, Favoritter og Prisalarm venter alle på login og følger samme uid.
+  const session = { authReady, uid: authUser?.uid ?? null };
 
-  const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile({
-    authReady,
-    uid: authUser?.uid ?? null,
-  });
+  const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile(session);
 
-  // Favoritter følger samme uid som profilen og gemmes under Users/<uid>/favorites.
-  const favorites = useFavorites({ authReady, uid: authUser?.uid ?? null });
+  // Favoritter gemmes under Users/<uid>/favorites.
+  const favorites = useFavorites(session);
 
   // Prisalarm på Nuværende medlemskab (Users/<uid>/currentMembershipAlert).
-  const membershipAlert = useCurrentMembershipAlert({ authReady, uid: authUser?.uid ?? null });
+  const membershipAlert = useCurrentMembershipAlert(session);
 
   // Tryk på en Prisalarm (lokal eller push fra nat-jobbet) åbner Centerdetalje.
   const [navigationReady, setNavigationReady] = useState(false);

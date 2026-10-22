@@ -4,12 +4,12 @@ import assert from 'node:assert/strict';
 
 import { parseCenterList } from './chains/sats.mjs';
 import {
+  SATS_VERIFICATION_DESCRIPTION,
   compareCenter,
-  formatVerification,
   parseVisibleAddress,
   parseVisiblePricingCards,
-  pickRandom,
-} from './verification.mjs';
+} from './satsVerification.mjs';
+import { formatVerification, pickRandom } from './verification.mjs';
 import { satsFixture, withProps } from './testing/satsFixtures.mjs';
 
 const listed = (clubId) =>
@@ -83,6 +83,7 @@ describe('stikprøve mod hjemmesiden', () => {
       chainName: 'SATS',
       date: '2026-10-22',
       results: [{ centerId: 'sats-412', name: 'SATS Adelgade', url: 'u', checks: [ok, bad] }],
+      description: SATS_VERIFICATION_DESCRIPTION,
     });
     assert.equal(allOk, false);
     assert.match(markdown, /Resultat: \*\*AFVIGER\*\*/);

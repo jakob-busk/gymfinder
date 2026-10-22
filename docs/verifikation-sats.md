@@ -6,7 +6,7 @@ Resultat: **STEMMER**
 Tre tilfældige Centre er hentet fra hjemmesiden. Kolonnen "Scraper" er det, scraperen læser
 (sidernes data-props), og "Hjemmeside" er det, en besøgende ser: priserne på de synlige
 priskort og adresselinjen øverst på centersiden. Genereres med
-`npm run verify` i `scraper/`.
+`npm run verify:sats` i `scraper/`.
 
 ## SATS FRB - ABC (sats-411)
 

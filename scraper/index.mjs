@@ -15,7 +15,9 @@ import { appendFile, writeFile } from 'node:fs/promises';
 import { CHAIN_SCRAPERS } from './chains/index.mjs';
 import { createExpoPushClient } from './expoPush.mjs';
 import { createHttpClient } from './http.mjs';
-import { formatReport, runNightlyJob, todayInDenmark } from './nightlyJob.mjs';
+import { todayInDenmark } from './dates.mjs';
+import { runNightlyJob } from './nightlyJob.mjs';
+import { formatReport } from './nightlyReport.mjs';
 
 function argValue(name) {
   const index = process.argv.indexOf(name);

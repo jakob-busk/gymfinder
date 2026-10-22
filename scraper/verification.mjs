@@ -1,88 +1,14 @@
-// Stikprøve-bevis (testlag 3): sammenligner det, scraperen læser, med det, en besøgende ser
-// på sats.dk. Priserne læses her uafhængigt af parseren, direkte fra de synlige priskort i
-// HTML'en (ikke fra data-props), og adressen fra den synlige adresselinje øverst på siden.
-// Rene funktioner, så sammenligningen kan testes mod gemte sider.
+// Fælles for stikprøve-beviserne (testlag 3) for alle Kæder: tilfældigt udvalg af Centre,
+// rapporten som Markdown og skelettet, som verify*.mjs-scriptene kører i. Selve
+// sammenligningen ligger pr. Kæde i <kæde>Verification.mjs.
 
-import { parseAmount } from './chains/amount.mjs';
-import { parseCenterPage } from './chains/sats.mjs';
+import { writeFile } from 'node:fs/promises';
 
-const decodeEntities = (text) =>
-  text
-    .replace(/&amp;/g, '&')
-    .replace(/&#x27;|&#39;/g, "'")
-    .replace(/&quot;/g, '"');
+import { todayInDenmark } from './dates.mjs';
+import { createHttpClient } from './http.mjs';
 
-// De priskort, siden viser uden klik (Voksen under 30): [{ membershipId, name, price }].
-export function parseVisiblePricingCards(html) {
-  const cards = [];
-  const cardPattern = /<div class="pricing-card[^"]*" data-id="([^"]+)"/g;
-  const starts = [...html.matchAll(cardPattern)];
-
-  starts.forEach((match, i) => {
-    const block = html.slice(match.index, starts[i + 1]?.index ?? html.length);
-    const name = block.match(/pricing-card__name-wrapper"><div[^>]*>([^<]+)</)?.[1];
-    const price = block.match(/pricing-card__price"><div[^>]*>([^<]+)</)?.[1];
-    cards.push({
-      membershipId: match[1],
-      name: name ? decodeEntities(name.trim()) : undefined,
-      price: parseAmount(price),
-    });
-  });
-  return cards;
-}
-
-// Den synlige adresselinje øverst på centersiden (linket til kortet).
-export function parseVisibleAddress(html) {
-  const inner = html.match(/href="#club-page-map">([\s\S]*?)<\/a>/)?.[1];
-  if (inner == null) return undefined;
-  const text = inner.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '');
-  return decodeEntities(text).replace(/\s+/g, ' ').trim() || undefined;
-}
-
-const normalizeAddress = (address) => (address ?? '').replace(/[\s,]+/g, ' ').trim().toLowerCase();
-
-// Sammenligner ét Center. `listed` er Centret fra centerlisten (som parseCenterList giver det).
-// Resultat: { centerId, name, checks: [{ what, scraper, website, ok }] }.
-export function compareCenter(listed, centerHtml) {
-  const page = parseCenterPage(centerHtml);
-  const cards = parseVisiblePricingCards(centerHtml);
-  const checks = [];
-
-  // Samme valg som scrapeSats: centersidens adresse, ellers listens.
-  const scraperAddress = page.address ?? listed.address;
-  const visibleAddress = parseVisibleAddress(centerHtml);
-  checks.push({
-    what: 'Adresse',
-    scraper: scraperAddress,
-    website: visibleAddress,
-    ok: normalizeAddress(scraperAddress) === normalizeAddress(visibleAddress),
-  });
-
-  for (const offer of page.offers) {
-    const card = cards.find((candidate) => candidate.membershipId === `${offer.key}_U30`);
-    checks.push({
-      what: `${offer.name} under 30 (kr/md)`,
-      scraper: offer.standardPrice.under30,
-      website: card?.price,
-      ok: card != null && card.price === offer.standardPrice.under30 && card.name === offer.name,
-    });
-  }
-
-  // Et synligt priskort, som parseren ikke fandt, er også en fejl.
-  for (const card of cards) {
-    const known = page.offers.some((offer) => `${offer.key}_U30` === card.membershipId);
-    if (!known) {
-      checks.push({
-        what: `${card.name} under 30 (kr/md)`,
-        scraper: undefined,
-        website: card.price,
-        ok: false,
-      });
-    }
-  }
-
-  return { centerId: listed.id, name: listed.name, url: listed.signupUrl, checks };
-}
+// Antal tilfældige Centre i hver stikprøve.
+export const SAMPLE_SIZE = 3;
 
 // Vælger n tilfældige elementer. `random` kan sendes ind, så testene er deterministiske.
 export function pickRandom(items, n, random = Math.random) {
@@ -96,15 +22,8 @@ export function pickRandom(items, n, random = Math.random) {
 
 const show = (value) => (value == null ? '–' : String(value));
 
-const SATS_DESCRIPTION = [
-  'Tre tilfældige Centre er hentet fra hjemmesiden. Kolonnen "Scraper" er det, scraperen læser',
-  '(sidernes data-props), og "Hjemmeside" er det, en besøgende ser: priserne på de synlige',
-  'priskort og adresselinjen øverst på centersiden. Genereres med',
-  '`npm run verify` i `scraper/`.',
-];
-
 // `description` er forklaringen under overskriften (linjer); hver Kæde har sine egne kilder.
-export function formatVerification({ chainName, date, results, description = SATS_DESCRIPTION }) {
+export function formatVerification({ chainName, date, results, description }) {
   const allOk = results.every((result) => result.checks.every((check) => check.ok));
   const lines = [
     `# Stikprøve: ${chainName}`,
@@ -126,4 +45,21 @@ export function formatVerification({ chainName, date, results, description = SAT
     lines.push('');
   }
   return { markdown: lines.join('\n'), allOk };
+}
+
+// Kører én stikprøve: verify({ http, today }) henter og sammenligner og returnerer
+// { markdown, allOk } (fra formatVerification eller Kædens egen). Rapporten skrives i
+// docs/<docName> og i loggen. Exit-kode 1, hvis noget afviger, eller stikprøven fejler.
+export async function runVerification(docName, verify) {
+  try {
+    const http = createHttpClient();
+    const today = todayInDenmark();
+    const { markdown, allOk } = await verify({ http, today });
+    await writeFile(new URL(`../docs/${docName}`, import.meta.url), markdown);
+    console.log(markdown);
+    if (!allOk) process.exitCode = 1;
+  } catch (error) {
+    console.error('Stikprøven fejlede:', error);
+    process.exitCode = 1;
+  }
 }

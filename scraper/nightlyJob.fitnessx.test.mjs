@@ -12,7 +12,8 @@ import {
   scrapeFitnessx,
 } from './chains/fitnessx.mjs';
 import { scrapeSats } from './chains/sats.mjs';
-import { formatReport, runNightlyJob } from './nightlyJob.mjs';
+import { runNightlyJob } from './nightlyJob.mjs';
+import { formatReport } from './nightlyReport.mjs';
 import { createFakeDatabase } from './testing/fakeDatabase.mjs';
 import {
   FIXTURE_CENTERS,

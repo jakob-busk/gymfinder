@@ -8,10 +8,7 @@
 //   npm run verify:loop
 //
 // Exit-kode 1, hvis noget afviger.
-import { writeFile } from 'node:fs/promises';
-
 import { scrapeLoop } from './chains/loop.mjs';
-import { createHttpClient } from './http.mjs';
 import {
   AELDRE_SAGEN_LOOP_URL,
   LOOP_AJAX_URL,
@@ -20,15 +17,10 @@ import {
   formatLoopVerification,
   parseVisibleCenterPage,
 } from './loopVerification.mjs';
-import { runNightlyJob, todayInDenmark } from './nightlyJob.mjs';
-import { pickRandom } from './verification.mjs';
+import { runNightlyJob } from './nightlyJob.mjs';
+import { SAMPLE_SIZE, pickRandom, runVerification } from './verification.mjs';
 
-const OUTPUT = new URL('../docs/verifikation-loop.md', import.meta.url);
-const SAMPLE_SIZE = 3;
-
-try {
-  const http = createHttpClient();
-  const today = todayInDenmark();
+await runVerification('verifikation-loop.md', async ({ http, today }) => {
   const scraped = await scrapeLoop({ http, today });
 
   // Tør nat-kørsel på de samme data: sanity-regler og kædeniveau uden at skrive.
@@ -57,15 +49,9 @@ try {
   }
   results.push(compareAeldreSagen(scraped.chain, await http.getText(AELDRE_SAGEN_LOOP_URL)));
 
-  const { markdown, allOk } = formatLoopVerification({
+  return formatLoopVerification({
     date: today,
     results,
     liveRun: report.chains[0],
   });
-  await writeFile(OUTPUT, markdown);
-  console.log(markdown);
-  if (!allOk) process.exitCode = 1;
-} catch (error) {
-  console.error('Stikprøven fejlede:', error);
-  process.exitCode = 1;
-}
+});

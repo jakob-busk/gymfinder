@@ -6,7 +6,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import InfoButton from '../components/InfoButton';
 import PreferencesEditor from '../components/PreferencesEditor';
-import { SORT_OPTIONS } from '../data/matchning';
+import SortPicker from '../components/SortPicker';
 import { UserContext } from '../data/UserContext';
 import { useFilterSettings } from '../services/FilterSettings';
 
@@ -31,16 +31,7 @@ export default function FiltersScreen({ navigation }) {
   return (
     <ScrollView style={GlobalStyle.container} contentContainerStyle={GlobalStyle.filtersContent}>
       <Text style={GlobalStyle.sectionLabel}>Sortér efter</Text>
-      <View style={GlobalStyle.sortRow}>
-        {SORT_OPTIONS.map((option) => (
-          <ButtonComponent
-            key={option.id}
-            title={option.label}
-            type={sortBy === option.id ? 'primary' : 'secondary'}
-            onPress={() => setSortBy(option.id)}
-          />
-        ))}
-      </View>
+      <SortPicker sortBy={sortBy} onChange={setSortBy} />
 
       <Text style={GlobalStyle.sectionLabel}>Filtre</Text>
       <Text style={GlobalStyle.noticeText}>

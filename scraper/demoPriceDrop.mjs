@@ -10,7 +10,8 @@
 // rigtige priser tilbage. Nøgler som ved seed og scrape (scraper/.env); EXPO_ACCESS_TOKEN kun,
 // hvis push security er slået til i Expo-projektet.
 import { createExpoPushClient } from './expoPush.mjs';
-import { priceAlertLines, todayInDenmark } from './nightlyJob.mjs';
+import { todayInDenmark } from './dates.mjs';
+import { priceAlertLines } from './nightlyReport.mjs';
 import { runPriceDropDemo } from './priceDropDemo.mjs';
 
 function argValue(name) {
