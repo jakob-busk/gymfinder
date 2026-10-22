@@ -13,6 +13,9 @@ const colors = {
   // Pins på kortet på Find: Anbefalet og brugerens egen placering.
   recommendedPin: '#EF6C00',
   userPin: '#1565C0',
+  // Centerdetalje: advarsel om, at prisen stiger, når brugeren fylder 30.
+  warning: '#E65100',
+  warningLight: '#FFF3E0',
 };
 
 const GlobalStyle = StyleSheet.create({
@@ -315,6 +318,47 @@ const GlobalStyle = StyleSheet.create({
   suggestionText: {
     color: colors.text,
     alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  // Centerdetalje: gebyrrækker, prisudregning måned for måned og advarsler.
+  mutedText: {
+    color: colors.muted,
+  },
+  cardHighlighted: {
+    borderColor: colors.primary,
+  },
+  feeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 3,
+  },
+  feeLabel: {
+    flexShrink: 1,
+    color: colors.text,
+  },
+  feeValue: {
+    fontWeight: '600',
+    color: colors.text,
+  },
+  totalRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.muted,
+    marginTop: 4,
+    paddingTop: 6,
+  },
+  warningBox: {
+    backgroundColor: colors.warningLight,
+    borderWidth: 1,
+    borderColor: colors.warning,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  warningTitle: {
+    color: colors.warning,
+    fontWeight: 'bold',
     marginBottom: 4,
   },
 });
