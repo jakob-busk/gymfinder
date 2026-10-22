@@ -76,6 +76,18 @@ export default function OfferPriceCard({ pricedOffer, user, isCheapest }) {
             term="partnerPrice"
           />
         )}
+        {partner?.campaign && (
+          <FeeRow
+            label="Makkerpris, kampagne"
+            value={
+              `${formatKr(partner.campaign.price)}/${breakdown.perPeriod} de første ` +
+              `${partner.campaign.months} betalinger`
+            }
+          />
+        )}
+        {partner?.available && partner.signupFee !== (pricedOffer.offer.signupFee ?? 0) && (
+          <FeeRow label="Oprettelsesgebyr med makker" value={formatKr(partner.signupFee)} />
+        )}
       </View>
       {partner?.available && Boolean(partner.requirement) && (
         <Text style={GlobalStyle.mutedText}>Krav for Makkerpris: {partner.requirement}</Text>

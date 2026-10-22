@@ -314,6 +314,46 @@ describe('Aldersgruppe', () => {
     });
     expect(best.honestYearlyPrice).toBeCloseTo(192.533, 2);
   });
+
+  describe('Kampagnepris pr. Aldersgruppe', () => {
+    const campaignByAge = {
+      standardPrice: { under30: 299, over30: 349 },
+      campaignPrice: { under30: 99, over30: 149 },
+      campaignMonths: 2,
+    };
+
+    test('under 30 får under 30-kampagneprisen', () => {
+      // År: (2 * 99 + 10 * 299) / 12 = 3188 / 12 = 265,67. Kvartal: (2 * 99 + 299) / 3 = 165,67
+      const best = priceSingleOffer(campaignByAge, { userOverrides: { birthDate: '2000-01-01' } });
+      expect(best.honestYearlyPrice).toBeCloseTo(265.667, 2);
+      expect(best.quarterlyPrice).toBeCloseTo(165.667, 2);
+    });
+
+    test('30+ får 30+-kampagneprisen', () => {
+      // (2 * 149 + 10 * 349) / 12 = 3788 / 12 = 315,67
+      const best = priceSingleOffer(campaignByAge, { userOverrides: { birthDate: '1980-06-01' } });
+      expect(best.honestYearlyPrice).toBeCloseTo(315.667, 2);
+    });
+
+    test('fylder brugeren 30 i Kampagneperioden, gælder 30+-kampagneprisen fra den måned', () => {
+      // Fylder 30 d. 1/12-2026, som ligger i måned 2 (22/11 til 22/12).
+      // (99 + 149 + 10 * 349) / 12 = 3738 / 12 = 311,5
+      const best = priceSingleOffer(campaignByAge, { userOverrides: { birthDate: '1996-12-01' } });
+      expect(best.honestYearlyPrice).toBeCloseTo(311.5);
+      expect(best.monthlyBreakdown[0]).toMatchObject({ price: 99, kind: 'campaign' });
+      expect(best.monthlyBreakdown[1]).toMatchObject({ price: 149, kind: 'campaign' });
+      expect(best.turns30InMonth).toBe(2);
+    });
+
+    test('én Kampagnepris for alle virker stadig sammen med Standardpris pr. Aldersgruppe', () => {
+      // (2 * 99 + 10 * 349) / 12 = 3688 / 12 = 307,33
+      const best = priceSingleOffer(
+        { ...campaignByAge, campaignPrice: 99 },
+        { userOverrides: { birthDate: '1980-06-01' } },
+      );
+      expect(best.honestYearlyPrice).toBeCloseTo(307.333, 2);
+    });
+  });
 });
 
 describe('Træn med en makker', () => {
@@ -339,6 +379,75 @@ describe('Træn med en makker', () => {
   test('Makkerpris ignoreres for brugere uden makker', () => {
     const best = priceSingleOffer(partnerOffer);
     expect(best.honestYearlyPrice).toBeCloseTo(261.5);
+  });
+
+  const withPartner = (birthDate = '2000-01-01') => ({
+    userOverrides: { birthDate, discountProfile: ['partner'] },
+  });
+
+  test('Makkerpris kan variere pr. Aldersgruppe', () => {
+    const agePartner = { standardPrice: 400, partnerPrice: { under30: 180, over30: 220 } };
+    expect(priceSingleOffer(agePartner, withPartner('2000-01-01')).honestYearlyPrice).toBeCloseTo(
+      180,
+    );
+    expect(priceSingleOffer(agePartner, withPartner('1980-06-01')).honestYearlyPrice).toBeCloseTo(
+      220,
+    );
+    // Fylder 30 i måned 3: (2 * 180 + 10 * 220) / 12 = 2560 / 12 = 213,33
+    const turning30 = priceSingleOffer(agePartner, withPartner('1997-01-15'));
+    expect(turning30.honestYearlyPrice).toBeCloseTo(213.333, 2);
+    expect(turning30.turns30InMonth).toBe(3);
+    expect(turning30.partner).toEqual({ price: 180, campaign: null, signupFee: 0 });
+  });
+
+  test('Makkerpris kan have en kampagne de første perioder', () => {
+    // År: (2 * 50 + 10 * 250) / 12 = 2600 / 12 = 216,67. Kvartal: (2 * 50 + 250) / 3 = 116,67
+    const best = priceSingleOffer(
+      {
+        standardPrice: 400,
+        partnerPrice: 250,
+        partnerCampaignPrice: 50,
+        partnerCampaignMonths: 2,
+      },
+      withPartner(),
+    );
+    expect(best.yearlyOption.kind).toBe('partner');
+    expect(best.honestYearlyPrice).toBeCloseTo(216.667, 2);
+    expect(best.quarterlyPrice).toBeCloseTo(116.667, 2);
+    expect(best.monthlyBreakdown[1]).toMatchObject({ price: 50, kind: 'partnerCampaign' });
+    expect(best.monthlyBreakdown[2]).toMatchObject({ price: 250, kind: 'partner' });
+    expect(best.partner.campaign).toEqual({ price: 50, months: 2 });
+  });
+
+  test('Makkerprisens kampagne kan variere pr. Aldersgruppe', () => {
+    // 30+: (2 * 60 + 10 * 250) / 12 = 2620 / 12 = 218,33
+    const best = priceSingleOffer(
+      {
+        standardPrice: 400,
+        partnerPrice: 250,
+        partnerCampaignPrice: { under30: 40, over30: 60 },
+        partnerCampaignMonths: 2,
+      },
+      withPartner('1980-06-01'),
+    );
+    expect(best.honestYearlyPrice).toBeCloseTo(218.333, 2);
+  });
+
+  test('Makkerprisens eget Oprettelsesgebyr indgår i Ærlig årspris og Kvartalspris', () => {
+    // År: (80 + 12 * 300) / 12 = 306,67. Kvartal: (80 + 3 * 300) / 3 = 326,67
+    const offerWithFee = { standardPrice: 400, signupFee: 60, partnerPrice: 300 };
+    const best = priceSingleOffer({ ...offerWithFee, partnerSignupFee: 80 }, withPartner());
+    expect(best.honestYearlyPrice).toBeCloseTo(306.667, 2);
+    expect(best.quarterlyPrice).toBeCloseTo(326.667, 2);
+    expect(best.signupFee).toBe(80);
+    expect(best.partner.signupFee).toBe(80);
+
+    // Uden særligt gebyr gælder Tilbuddets: (60 + 12 * 300) / 12 = 305
+    expect(priceSingleOffer(offerWithFee, withPartner()).honestYearlyPrice).toBeCloseTo(305);
+  });
+
+  test('uden Makkerpris er partner null', () => {
+    expect(priceSingleOffer({}, withPartner()).partner).toBeNull();
   });
 });
 
@@ -369,6 +478,22 @@ describe('Filtre', () => {
       filters: { maxDistanceKm: 5 },
     });
     expect(ids(result)).toEqual(['naer']);
+  });
+
+  test('maks. afstand skjuler Centre uden koordinater, fordi Distance er ukendt', () => {
+    const centers = [
+      center({ id: 'naer', location: north(2) }),
+      center({ id: 'ukendt', location: null }),
+    ];
+    expect(ids(run({ centers, filters: { maxDistanceKm: 5 } }))).toEqual(['naer']);
+    // Uden maks. afstand vises Centret stadig.
+    expect(ids(run({ centers, filters: {} })).sort()).toEqual(['naer', 'ukendt']);
+  });
+
+  test('maks. afstand skjuler alle Centre, når brugerens placering ikke kendes', () => {
+    const centers = [center({ id: 'naer', location: north(2) })];
+    expect(ids(run({ centers, location: null, filters: { maxDistanceKm: 5 } }))).toEqual([]);
+    expect(ids(run({ centers, location: null, filters: {} }))).toEqual(['naer']);
   });
 
   test('kendt manglende facilitet skjuler Centret; ukendt giver "Ikke oplyst"', () => {

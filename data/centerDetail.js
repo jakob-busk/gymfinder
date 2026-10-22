@@ -48,6 +48,7 @@ export function matchCenter({ center, chains, user, today }) {
 
 function kindLabel(period, pricedOffer, ageMatters) {
   if (period.kind === 'campaign') return 'Kampagnepris';
+  if (period.kind === 'partnerCampaign') return 'Makkerpris (kampagne)';
   if (period.kind === 'discount' || period.kind === 'partner') {
     return pricedOffer.yearlyOption.label;
   }
@@ -128,15 +129,27 @@ export function feeSummary(pricedOffer) {
 }
 
 // Makkerpris for brugere i Rabatgruppen Træn med en makker. null for andre brugere.
-// Returnerer { available, price, requirement, isCheapest }; available = false, når Tilbuddet
-// ikke har en Makkerpris.
+// Returnerer { available, price, campaign, signupFee, requirement, isCheapest }; available =
+// false, når Tilbuddet ikke har en Makkerpris. price og campaign ({ price, months } | null)
+// gælder brugerens Aldersgruppe; signupFee er Oprettelsesgebyret pr. person med en makker.
 export function partnerInfo(user, pricedOffer) {
   if (!(user?.discountProfile ?? []).includes('partner')) return null;
-  const price = pricedOffer.offer.partnerPrice;
-  if (price == null) return { available: false, price: null, requirement: null, isCheapest: false };
+  const partner = pricedOffer.partner;
+  if (!partner) {
+    return {
+      available: false,
+      price: null,
+      campaign: null,
+      signupFee: null,
+      requirement: null,
+      isCheapest: false,
+    };
+  }
   return {
     available: true,
-    price,
+    price: partner.price,
+    campaign: partner.campaign,
+    signupFee: partner.signupFee,
     requirement: pricedOffer.partnerRequirement,
     isCheapest: pricedOffer.yearlyOption.kind === 'partner',
   };

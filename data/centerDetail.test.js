@@ -107,6 +107,31 @@ describe('matchCenter', () => {
 });
 
 describe('priceBreakdown', () => {
+  test('med Makkerpris, kampagne og eget Oprettelsesgebyr giver præcis Matchnings pris', () => {
+    // 30+: (80 + 2 * (50 + 15) + 10 * (300 + 15)) / 12 = (80 + 130 + 3150) / 12 = 280
+    const best = bestOfferFor(
+      {
+        standardPrice: { under30: 360, over30: 400 },
+        campaignPrice: { under30: 189, over30: 209 },
+        campaignMonths: 1,
+        signupFee: 60,
+        adminFee: 15,
+        partnerPrice: { under30: 280, over30: 300 },
+        partnerCampaignPrice: 50,
+        partnerCampaignMonths: 2,
+        partnerSignupFee: 80,
+      },
+      { discountProfile: ['partner'] },
+    );
+    const breakdown = priceBreakdown(best);
+    expect(best.yearlyOption.kind).toBe('partner');
+    expect(breakdown.honestYearlyPrice).toBeCloseTo(best.honestYearlyPrice, 10);
+    expect(breakdown.honestYearlyPrice).toBeCloseTo(280, 10);
+    expect(breakdown.signupFee).toBe(80);
+    expect(breakdown.rows[0]).toMatchObject({ kindLabel: 'Makkerpris (kampagne)', total: 65 });
+    expect(breakdown.rows[2]).toMatchObject({ kindLabel: 'Makkerpris', total: 315 });
+  });
+
   test('månedsudregningen giver præcis Matchnings Ærlig årspris', () => {
     const best = bestOfferFor({
       standardPrice: 299,
@@ -233,8 +258,29 @@ describe('partnerInfo', () => {
     expect(partnerInfo(user({ discountProfile: ['partner'] }), best)).toEqual({
       available: true,
       price: 224.5,
+      campaign: null,
+      signupFee: 0,
       requirement: 'I skal bo på samme adresse.',
       isCheapest: true,
+    });
+  });
+
+  test('viser Makkerpris for brugerens Aldersgruppe, kampagnen og eget Oprettelsesgebyr', () => {
+    const best = bestOfferFor(
+      {
+        signupFee: 60,
+        partnerPrice: { under30: 280, over30: 300 },
+        partnerCampaignPrice: { under30: 40, over30: 50 },
+        partnerCampaignMonths: 2,
+        partnerSignupFee: 80,
+      },
+      { discountProfile: ['partner'] },
+    );
+    expect(partnerInfo(user({ discountProfile: ['partner'] }), best)).toMatchObject({
+      available: true,
+      price: 300,
+      campaign: { price: 50, months: 2 },
+      signupFee: 80,
     });
   });
 
@@ -243,6 +289,8 @@ describe('partnerInfo', () => {
     expect(partnerInfo(partnerUser, bestOfferFor({}, { discountProfile: ['partner'] }))).toEqual({
       available: false,
       price: null,
+      campaign: null,
+      signupFee: null,
       requirement: null,
       isCheapest: false,
     });
