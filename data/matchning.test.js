@@ -47,7 +47,7 @@ function center(overrides = {}) {
 }
 
 function user(overrides = {}) {
-  return { birthDate: '2000-01-01', discountGroups: [], currentMembership: null, ...overrides };
+  return { birthDate: '2000-01-01', discountProfile: [], currentMembership: null, ...overrides };
 }
 
 function run(overrides = {}) {
@@ -103,10 +103,28 @@ describe('Ærlig årspris og Kvartalspris', () => {
   });
 
   test('månedsudregningen viser 12 måneder inkl. Admingebyr og Oprettelsesgebyr', () => {
-    const best = priceSingleOffer({ standardPrice: 299, campaignPrice: 99, campaignMonths: 3, adminFee: 10, signupFee: 199 });
+    const best = priceSingleOffer({
+      standardPrice: 299,
+      campaignPrice: 99,
+      campaignMonths: 3,
+      adminFee: 10,
+      signupFee: 199,
+    });
     expect(best.monthlyBreakdown).toHaveLength(12);
-    expect(best.monthlyBreakdown[0]).toMatchObject({ month: 1, price: 99, adminFee: 10, total: 109, kind: 'campaign' });
-    expect(best.monthlyBreakdown[3]).toMatchObject({ month: 4, price: 299, adminFee: 10, total: 309, kind: 'standard' });
+    expect(best.monthlyBreakdown[0]).toMatchObject({
+      month: 1,
+      price: 99,
+      adminFee: 10,
+      total: 109,
+      kind: 'campaign',
+    });
+    expect(best.monthlyBreakdown[3]).toMatchObject({
+      month: 4,
+      price: 299,
+      adminFee: 10,
+      total: 309,
+      kind: 'standard',
+    });
     expect(best.signupFee).toBe(199);
   });
 });
@@ -118,12 +136,12 @@ describe('Kampagne og Rabatter lægges aldrig sammen', () => {
     const best = priceSingleOffer(
       { standardPrice: 300, campaignPrice: 100, campaignMonths: 3 },
       {
-        chainOverrides: { discounts: [{ group: 'student', percentOff: 25 }] },
-        userOverrides: { discountGroups: ['student'] },
+        chainOverrides: { discounts: [{ discountGroup: 'student', percentOff: 25 }] },
+        userOverrides: { discountProfile: ['student'] },
       },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(225);
-    expect(best.yearlyOption).toMatchObject({ kind: 'discount', group: 'student' });
+    expect(best.yearlyOption).toMatchObject({ kind: 'discount', discountGroup: 'student' });
     expect(best.quarterlyPrice).toBeCloseTo(100);
     expect(best.quarterlyOption.kind).toBe('campaign');
   });
@@ -135,21 +153,21 @@ describe('Kampagne og Rabatter lægges aldrig sammen', () => {
       {
         chainOverrides: {
           discounts: [
-            { group: 'student', price: 249 },
-            { group: 'aeldreSagen', percentOff: 10 },
+            { discountGroup: 'student', price: 249 },
+            { discountGroup: 'aeldreSagen', percentOff: 10 },
           ],
         },
-        userOverrides: { discountGroups: ['student', 'aeldreSagen'] },
+        userOverrides: { discountProfile: ['student', 'aeldreSagen'] },
       },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(249);
-    expect(best.yearlyOption.group).toBe('student');
+    expect(best.yearlyOption.discountGroup).toBe('student');
   });
 
   test('Rabatter for Rabatgrupper brugeren ikke tilhører, tælles ikke med', () => {
     const best = priceSingleOffer(
       { standardPrice: 299 },
-      { chainOverrides: { discounts: [{ group: 'senior', price: 149 }] } },
+      { chainOverrides: { discounts: [{ discountGroup: 'senior', price: 149 }] } },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(299);
     expect(best.yearlyOption.kind).toBe('standard');
@@ -160,8 +178,8 @@ describe('Kampagne og Rabatter lægges aldrig sammen', () => {
     const best = priceSingleOffer(
       { standardPrice: 299 },
       {
-        chainOverrides: { discounts: [{ group: 'student', price: 149, months: 6 }] },
-        userOverrides: { discountGroups: ['student'] },
+        chainOverrides: { discounts: [{ discountGroup: 'student', price: 149, months: 6 }] },
+        userOverrides: { discountProfile: ['student'] },
       },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(224);
@@ -171,8 +189,12 @@ describe('Kampagne og Rabatter lægges aldrig sammen', () => {
     const best = priceSingleOffer(
       { standardPrice: 399, subscriptionType: 'Landsdækkende' },
       {
-        chainOverrides: { discounts: [{ group: 'student', price: 199, subscriptionTypes: ['Lokal center'] }] },
-        userOverrides: { discountGroups: ['student'] },
+        chainOverrides: {
+          discounts: [
+            { discountGroup: 'student', price: 199, subscriptionTypes: ['Lokal center'] },
+          ],
+        },
+        userOverrides: { discountProfile: ['student'] },
       },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(399);
@@ -183,8 +205,8 @@ describe('Kampagne og Rabatter lægges aldrig sammen', () => {
     const best = priceSingleOffer(
       { standardPrice: 249, signupFee: 299 },
       {
-        chainOverrides: { discounts: [{ group: 'student', percentOff: 0, signupFee: 0 }] },
-        userOverrides: { discountGroups: ['student'] },
+        chainOverrides: { discounts: [{ discountGroup: 'student', percentOff: 0, signupFee: 0 }] },
+        userOverrides: { discountProfile: ['student'] },
       },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(249);
@@ -225,8 +247,8 @@ describe('Aldersgruppe', () => {
   test('procent-Rabat regnes af den Standardpris, Aldersgruppen giver', () => {
     // 20 % af (2 * 199 + 10 * 249) / 12 = 240,67 * 0,8 = 192,53
     const best = priceSingleOffer(agePrices, {
-      chainOverrides: { discounts: [{ group: 'student', percentOff: 20 }] },
-      userOverrides: { birthDate: '1997-01-15', discountGroups: ['student'] },
+      chainOverrides: { discounts: [{ discountGroup: 'student', percentOff: 20 }] },
+      userOverrides: { birthDate: '1997-01-15', discountProfile: ['student'] },
     });
     expect(best.honestYearlyPrice).toBeCloseTo(192.533, 2);
   });
@@ -243,7 +265,9 @@ describe('Træn med en makker', () => {
 
   test('Makkerpris pr. person bruges, når brugeren træner med en makker', () => {
     // Uden makker: (3 * 149 + 9 * 299) / 12 = 261,5. Makkerpris: 199
-    const best = priceSingleOffer(partnerOffer, { userOverrides: { discountGroups: ['partner'] } });
+    const best = priceSingleOffer(partnerOffer, {
+      userOverrides: { discountProfile: ['partner'] },
+    });
     expect(best.honestYearlyPrice).toBeCloseTo(199);
     expect(best.yearlyOption.kind).toBe('partner');
     expect(best.quarterlyPrice).toBeCloseTo(149);
@@ -258,7 +282,9 @@ describe('Træn med en makker', () => {
 
 describe('Distance', () => {
   test('er luftlinje (haversine) fra brugerens placering', () => {
-    const result = run({ centers: [center({ location: { latitude: HOME.latitude + 1, longitude: HOME.longitude } })] });
+    const result = run({
+      centers: [center({ location: { latitude: HOME.latitude + 1, longitude: HOME.longitude } })],
+    });
     expect(result.centers[0].distanceKm).toBeCloseTo(111.19, 1);
   });
 
@@ -274,7 +300,10 @@ describe('Filtre', () => {
 
   test('maks. afstand er altid hård', () => {
     const result = run({
-      centers: [center({ id: 'naer', location: north(2) }), center({ id: 'fjern', location: north(10) })],
+      centers: [
+        center({ id: 'naer', location: north(2) }),
+        center({ id: 'fjern', location: north(10) }),
+      ],
       filters: { maxDistanceKm: 5 },
     });
     expect(ids(result)).toEqual(['naer']);
@@ -369,7 +398,12 @@ describe('Anbefalet', () => {
   const centers = [
     center({ id: 'sikker-dyr', location: north(1), offers: [offer({ standardPrice: 299 })] }),
     center({ id: 'sikker-billig', location: north(3), offers: [offer({ standardPrice: 249 })] }),
-    center({ id: 'ukendt-billigst', location: north(2), facilities: { sauna: null }, offers: [offer({ standardPrice: 149 })] }),
+    center({
+      id: 'ukendt-billigst',
+      location: north(2),
+      facilities: { sauna: null },
+      offers: [offer({ standardPrice: 149 })],
+    }),
   ];
 
   test('er lavest Ærlig årspris blandt sikre match', () => {
@@ -380,7 +414,9 @@ describe('Anbefalet', () => {
 
   test('er uafhængig af sorteringen', () => {
     for (const sortBy of ['honestYearlyPrice', 'quarterlyPrice', 'priceDesc', 'distance']) {
-      expect(run({ centers, filters: { sauna: true }, sortBy }).recommendedId).toBe('sikker-billig');
+      expect(run({ centers, filters: { sauna: true }, sortBy }).recommendedId).toBe(
+        'sikker-billig',
+      );
     }
   });
 
@@ -404,7 +440,10 @@ describe('Anbefalet', () => {
   });
 
   test('er null, når ingen Centre med sikkerhed matcher', () => {
-    const result = run({ centers: [center({ facilities: { sauna: null } })], filters: { sauna: true } });
+    const result = run({
+      centers: [center({ facilities: { sauna: null } })],
+      filters: { sauna: true },
+    });
     expect(result.centers).toHaveLength(1);
     expect(result.recommendedId).toBeNull();
   });
@@ -415,7 +454,11 @@ describe('Sortering', () => {
   // Y: år 200, kvartal 200, 1 km
   // Z: år 300, kvartal 300, 2 km
   const centers = [
-    center({ id: 'X', location: north(3), offers: [offer({ standardPrice: 300, campaignPrice: 100, campaignMonths: 3 })] }),
+    center({
+      id: 'X',
+      location: north(3),
+      offers: [offer({ standardPrice: 300, campaignPrice: 100, campaignMonths: 3 })],
+    }),
     center({ id: 'Y', location: north(1), offers: [offer({ standardPrice: 200 })] }),
     center({ id: 'Z', location: north(2), offers: [offer({ standardPrice: 300 })] }),
   ];
@@ -428,18 +471,19 @@ describe('Sortering', () => {
 });
 
 describe('Spar mere-forslag', () => {
-  const aeldreSagenChain = (price) => chain({ discounts: [{ group: 'aeldreSagen', price }] });
-  const suggestionsFor = (overrides) => run(overrides).centers[0].savingsSuggestions;
+  const aeldreSagenChain = (price) =>
+    chain({ discounts: [{ discountGroup: 'aeldreSagen', price }] });
+  const suggestionsFor = (overrides) => run(overrides).centers[0].savingSuggestions;
 
   test('foreslår Ældre Sagen, når Besparelsen er større end medlemsprisen', () => {
     // (300 - 249) * 12 = 612 kr/år > 310 kr/år
     expect(suggestionsFor({ chains: [aeldreSagenChain(249)] })).toEqual([
       expect.objectContaining({
-        group: 'aeldreSagen',
+        discountGroup: 'aeldreSagen',
         label: 'Ældre Sagen-medlem',
         membershipPricePerYear: 310,
         honestYearlyPrice: 249,
-        savingsPerYear: 612,
+        savingPerYear: 612,
       }),
     ]);
   });
@@ -450,12 +494,14 @@ describe('Spar mere-forslag', () => {
   });
 
   test('intet forslag, når brugeren allerede er medlem', () => {
-    const member = user({ discountGroups: ['aeldreSagen'] });
+    const member = user({ discountProfile: ['aeldreSagen'] });
     expect(suggestionsFor({ chains: [aeldreSagenChain(149)], user: member })).toEqual([]);
   });
 
   test('intet forslag for Rabatgrupper man ikke kan melde sig ind i', () => {
-    expect(suggestionsFor({ chains: [chain({ discounts: [{ group: 'student', price: 99 }] })] })).toEqual([]);
+    expect(
+      suggestionsFor({ chains: [chain({ discounts: [{ discountGroup: 'student', price: 99 }] })] }),
+    ).toEqual([]);
   });
 
   test('intet forslag til brugere under 18', () => {
@@ -467,17 +513,20 @@ describe('Spar mere-forslag', () => {
 describe('Nuværende medlemskab', () => {
   test('Besparelse pr. måned i forhold til Nuværende medlemskab', () => {
     const result = run({ user: user({ currentMembership: { monthlyPrice: 349 } }) });
-    expect(result.centers[0].savingsPerMonth).toBeCloseTo(49);
+    expect(result.centers[0].savingPerMonth).toBeCloseTo(49);
   });
 
   test('ingen Besparelse uden Nuværende medlemskab', () => {
-    expect(run().centers[0].savingsPerMonth).toBeNull();
+    expect(run().centers[0].savingPerMonth).toBeNull();
   });
 });
 
 describe('Uafhængighed', () => {
   test('modulet importerer intet fra React Native eller Expo, så nat-jobbet kan bruge det', () => {
-    const source = require('fs').readFileSync(require('path').join(__dirname, 'matchning.js'), 'utf8');
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'matchning.js'),
+      'utf8',
+    );
     expect(source).not.toMatch(/from ['"](react-native|expo)/);
     expect(source).not.toMatch(/require\(['"](react-native|expo)/);
   });
@@ -485,11 +534,18 @@ describe('Uafhængighed', () => {
 
 describe('Tom-tilstand', () => {
   test('ingen Centre giver tom liste og intet Anbefalet', () => {
-    expect(run({ centers: [] })).toEqual({ centers: [], recommendedId: null, recommendedOfferId: null });
+    expect(run({ centers: [] })).toEqual({
+      centers: [],
+      recommendedId: null,
+      recommendedOfferId: null,
+    });
   });
 
   test('når Filtrene skjuler alt, er listen tom og intet Anbefalet', () => {
-    const result = run({ centers: [center({ facilities: { sauna: false } })], filters: { sauna: true } });
+    const result = run({
+      centers: [center({ facilities: { sauna: false } })],
+      filters: { sauna: true },
+    });
     expect(result).toEqual({ centers: [], recommendedId: null, recommendedOfferId: null });
   });
 

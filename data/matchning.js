@@ -5,17 +5,17 @@
 // både i appen (Find, Centerdetalje, Favoritter, Ronnie) og af nat-jobbet (prisalarmer).
 // Al terminologi følger CONTEXT.md. Kode-navnene er engelske oversættelser:
 //
-//   Kæde = chain, Center = center, Tilbud = offer, Rabat = discount, Rabatgruppe = group,
-//   Rabatprofil = user.discountGroups, Ærlig årspris = honestYearlyPrice,
+//   Kæde = chain, Center = center, Tilbud = offer, Rabat = discount, Rabatgruppe = discountGroup,
+//   Rabatprofil = user.discountProfile, Ærlig årspris = honestYearlyPrice,
 //   Kvartalspris = quarterlyPrice, Standardpris = standardPrice, Kampagnepris = campaignPrice,
 //   Kampagneperiode = campaignMonths, Oprettelsesgebyr = signupFee, Admingebyr = adminFee,
 //   Binding = bindingMonths, Makkerpris = partnerPrice, Abonnementstype = subscriptionType,
-//   Nuværende medlemskab = user.currentMembership, Spar mere-forslag = savingsSuggestions.
+//   Nuværende medlemskab = user.currentMembership, Spar mere-forslag = savingSuggestions.
 //
 // Domænemodellen (input):
 //
 //   Kæde:   { id, name, website, discounts: [Rabat] }
-//   Rabat:  { group, price? | percentOff?, months?, subscriptionTypes?, signupFee? }
+//   Rabat:  { discountGroup, price? | percentOff?, months?, subscriptionTypes?, signupFee? }
 //           price = fast månedspris, percentOff = procent af Standardprisen.
 //           months = Rabatperiode (udeladt = hele året). subscriptionTypes = kun disse
 //           Abonnementstyper (udeladt = alle). signupFee = særligt Oprettelsesgebyr.
@@ -26,7 +26,7 @@
 //             signupFee, adminFee, bindingMonths, partnerPrice, partnerRequirement }
 //           standardPrice er et tal eller { under30, over30 } (Aldersgruppe).
 //           bindingMonths = null betyder ukendt.
-//   Bruger: { birthDate: 'YYYY-MM-DD', discountGroups: ['student', ...],
+//   Bruger: { birthDate: 'YYYY-MM-DD', discountProfile: ['student', ...],
 //             currentMembership: { monthlyPrice, chainId? } | null }
 
 // Rabatgrupperne. Kun grupper med en medlemspris kan man "melde sig ind i" (Spar mere-forslag).
@@ -100,7 +100,7 @@ function discountAppliesTo(discount, offer) {
 // Alle de muligheder brugeren har ret til for et Tilbud. Hver mulighed er en pris pr. måned
 // for de 12 måneder. Muligheder lægges aldrig sammen: Rabatter regnes af Standardprisen,
 // ikke af Kampagneprisen.
-function optionsFor(offer, chain, groups, ageGroups) {
+function optionsFor(offer, chain, profile, ageGroups) {
   const signupFee = offer.signupFee ?? 0;
   const standard = (i) => standardPriceFor(offer, ageGroups[i]);
 
@@ -109,7 +109,7 @@ function optionsFor(offer, chain, groups, ageGroups) {
     {
       id: hasCampaign ? 'campaign' : 'standard',
       kind: hasCampaign ? 'campaign' : 'standard',
-      group: null,
+      discountGroup: null,
       label: hasCampaign ? 'Kampagnepris' : 'Standardpris',
       signupFee,
       month: (i) =>
@@ -120,28 +120,30 @@ function optionsFor(offer, chain, groups, ageGroups) {
   ];
 
   for (const discount of chain?.discounts ?? []) {
-    if (!groups.includes(discount.group) || !discountAppliesTo(discount, offer)) continue;
+    if (!profile.includes(discount.discountGroup) || !discountAppliesTo(discount, offer)) continue;
     const months = discount.months ?? MONTHS_IN_YEAR;
     options.push({
-      id: `discount-${discount.group}`,
+      id: `discount-${discount.discountGroup}`,
       kind: 'discount',
-      group: discount.group,
-      label: DISCOUNT_GROUPS[discount.group]?.optionLabel ?? 'Rabat',
+      discountGroup: discount.discountGroup,
+      label: DISCOUNT_GROUPS[discount.discountGroup]?.optionLabel ?? 'Rabat',
       signupFee: discount.signupFee ?? signupFee,
       month: (i) => {
         if (i >= months) return { price: standard(i), kind: 'standard' };
         const price =
-          discount.price != null ? discount.price : standard(i) * (1 - (discount.percentOff ?? 0) / 100);
+          discount.price != null
+            ? discount.price
+            : standard(i) * (1 - (discount.percentOff ?? 0) / 100);
         return { price, kind: 'discount' };
       },
     });
   }
 
-  if (offer.partnerPrice != null && groups.includes('partner')) {
+  if (offer.partnerPrice != null && profile.includes('partner')) {
     options.push({
       id: 'partner',
       kind: 'partner',
-      group: 'partner',
+      discountGroup: 'partner',
       label: DISCOUNT_GROUPS.partner.optionLabel,
       signupFee,
       month: () => ({ price: offer.partnerPrice, kind: 'partner' }),
@@ -170,12 +172,17 @@ function cheapest(items, key) {
 }
 
 function describeOption(option) {
-  return { id: option.id, kind: option.kind, group: option.group, label: option.label };
+  return {
+    id: option.id,
+    kind: option.kind,
+    discountGroup: option.discountGroup,
+    label: option.label,
+  };
 }
 
 // Prissætter ét Tilbud for brugeren. 12- og 3-måneders-vinduet vælger hver sin billigste mulighed.
-function priceOffer(offer, chain, groups, ageGroups) {
-  const priced = optionsFor(offer, chain, groups, ageGroups).map((option) => {
+function priceOffer(offer, chain, profile, ageGroups) {
+  const priced = optionsFor(offer, chain, profile, ageGroups).map((option) => {
     const breakdown = breakdownFor(option, offer, ageGroups);
     return {
       option,
@@ -187,7 +194,9 @@ function priceOffer(offer, chain, groups, ageGroups) {
 
   const yearly = cheapest(priced, 'honestYearlyPrice');
   const quarterly = cheapest(priced, 'quarterlyPrice');
-  const turns30Index = ageGroups.findIndex((group, i) => i > 0 && group === 'over30' && ageGroups[i - 1] === 'under30');
+  const turns30Index = ageGroups.findIndex(
+    (group, i) => i > 0 && group === 'over30' && ageGroups[i - 1] === 'under30',
+  );
   const ageMatters = typeof offer.standardPrice !== 'number';
 
   return {
@@ -251,7 +260,8 @@ function checkCenter(center, filters) {
   const wantedMachines = filters.machines ?? [];
   if (wantedMachines.length > 0) {
     if (center.machines == null) notStated.push('machines');
-    else if (!wantedMachines.every((machine) => center.machines.includes(machine))) return { fail: true };
+    else if (!wantedMachines.every((machine) => center.machines.includes(machine)))
+      return { fail: true };
   }
 
   return { fail: false, notStated };
@@ -274,25 +284,30 @@ function checkOffer(offer, filters) {
 
 // Rabatgrupper brugeren kan melde sig ind i, hvor Besparelsen i dette Center er større
 // end medlemsprisen (fx Ældre Sagen 310 kr/år).
-function savingsSuggestionsFor(offers, chain, user, groups, ageGroups, today, currentBest) {
+function savingSuggestionsFor(offers, chain, user, profile, ageGroups, today, currentBest) {
   const age = user?.birthDate ? ageOn(toDate(user.birthDate), today) : null;
 
   return Object.entries(DISCOUNT_GROUPS)
-    .filter(([group, info]) => info.membershipPricePerYear != null && !groups.includes(group))
+    .filter(
+      ([discountGroup, info]) =>
+        info.membershipPricePerYear != null && !profile.includes(discountGroup),
+    )
     .filter(([, info]) => info.minAge == null || age == null || age >= info.minAge)
-    .map(([group, info]) => {
-      const withGroup = offers.map((offer) => priceOffer(offer, chain, [...groups, group], ageGroups));
+    .map(([discountGroup, info]) => {
+      const withGroup = offers.map((offer) =>
+        priceOffer(offer, chain, [...profile, discountGroup], ageGroups),
+      );
       const best = cheapest(withGroup, 'honestYearlyPrice');
       return {
-        group,
+        discountGroup,
         label: info.label,
         membershipPricePerYear: info.membershipPricePerYear,
         offerId: best.offer.id,
         honestYearlyPrice: best.honestYearlyPrice,
-        savingsPerYear: (currentBest - best.honestYearlyPrice) * MONTHS_IN_YEAR,
+        savingPerYear: (currentBest - best.honestYearlyPrice) * MONTHS_IN_YEAR,
       };
     })
-    .filter((suggestion) => suggestion.savingsPerYear > suggestion.membershipPricePerYear);
+    .filter((suggestion) => suggestion.savingPerYear > suggestion.membershipPricePerYear);
 }
 
 // ---------- Sortering ----------
@@ -320,10 +335,10 @@ function sortCenters(results, sortBy) {
 // Output: { centers: [CenterMatch], recommendedId, recommendedOfferId }
 //
 // CenterMatch: { center, chain, distanceKm, offers: [PrisetTilbud], bestOffer, honestYearlyPrice,
-//                quarterlyPrice, notStated, isSureMatch, bestSureOffer, savingsSuggestions,
-//                savingsPerMonth }
+//                quarterlyPrice, notStated, isSureMatch, bestSureOffer, savingSuggestions,
+//                savingPerMonth }
 //   notStated = aktive Filtre, der er "Ikke oplyst" for Centret / det billigste Tilbud.
-//   savingsPerMonth = Besparelse i forhold til Nuværende medlemskab (null hvis intet).
+//   savingPerMonth = Besparelse i forhold til Nuværende medlemskab (null hvis intet).
 // PrisetTilbud: { offer, honestYearlyPrice, quarterlyPrice, yearlyOption, quarterlyOption,
 //                 monthlyBreakdown, signupFee, adminFee, bindingMonths, turns30InMonth,
 //                 partnerRequirement, notStated }
@@ -333,7 +348,7 @@ function sortCenters(results, sortBy) {
 export function matchCenters({ centers, chains, user, filters, sortBy, location, today }) {
   const activeFilters = filters ?? {};
   const todayDate = toDate(today ?? new Date());
-  const groups = user?.discountGroups ?? [];
+  const profile = user?.discountProfile ?? [];
   const ageGroups = ageGroupsForWindow(user?.birthDate, todayDate);
   const chainsById = Object.fromEntries((chains ?? []).map((chain) => [chain.id, chain]));
   const currentPrice = user?.currentMembership?.monthlyPrice ?? null;
@@ -348,17 +363,20 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
     if (centerCheck.fail) continue;
 
     const chain = chainsById[center.chainId] ?? null;
-    const eligibleOffers = (center.offers ?? []).filter((offer) => !checkOffer(offer, activeFilters).fail);
+    const eligibleOffers = (center.offers ?? []).filter(
+      (offer) => !checkOffer(offer, activeFilters).fail,
+    );
     if (eligibleOffers.length === 0) continue;
 
     const offers = eligibleOffers
       .map((offer) => ({
-        ...priceOffer(offer, chain, groups, ageGroups),
+        ...priceOffer(offer, chain, profile, ageGroups),
         notStated: checkOffer(offer, activeFilters).notStated,
       }))
       .sort((a, b) => a.honestYearlyPrice - b.honestYearlyPrice);
     const bestOffer = offers[0];
-    const sureOffers = centerCheck.notStated.length === 0 ? offers.filter((o) => o.notStated.length === 0) : [];
+    const sureOffers =
+      centerCheck.notStated.length === 0 ? offers.filter((o) => o.notStated.length === 0) : [];
 
     results.push({
       center,
@@ -371,18 +389,27 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
       notStated: [...centerCheck.notStated, ...bestOffer.notStated],
       isSureMatch: sureOffers.length > 0,
       bestSureOffer: sureOffers[0] ?? null,
-      savingsSuggestions: savingsSuggestionsFor(
-        eligibleOffers, chain, user, groups, ageGroups, todayDate, bestOffer.honestYearlyPrice,
+      savingSuggestions: savingSuggestionsFor(
+        eligibleOffers,
+        chain,
+        user,
+        profile,
+        ageGroups,
+        todayDate,
+        bestOffer.honestYearlyPrice,
       ),
-      savingsPerMonth: currentPrice == null ? null : currentPrice - bestOffer.honestYearlyPrice,
+      savingPerMonth: currentPrice == null ? null : currentPrice - bestOffer.honestYearlyPrice,
     });
   }
 
   // Anbefalet: lavest Ærlig årspris blandt sikre match, uafhængig af sorteringen.
   const sure = results.filter((result) => result.isSureMatch);
-  const recommended = sure.length > 0
-    ? sure.reduce((best, r) => (r.bestSureOffer.honestYearlyPrice < best.bestSureOffer.honestYearlyPrice ? r : best))
-    : null;
+  const recommended =
+    sure.length > 0
+      ? sure.reduce((best, r) =>
+          r.bestSureOffer.honestYearlyPrice < best.bestSureOffer.honestYearlyPrice ? r : best,
+        )
+      : null;
 
   return {
     centers: sortCenters(results, sortBy),
