@@ -62,7 +62,8 @@ export function withAjaxObject(html, mutate) {
 export const membershipsTitled = (ajaxObject, pattern) =>
   ajaxObject.medlemskaber.filter((membership) => pattern.test(membership.title));
 
-const LIST_ITEM = /<div class="center_map_list_item[ "][\s\S]*?<\/div><!--\.center_map_list_item-->/g;
+const LIST_ITEM =
+  /<div class="center_map_list_item[ "][\s\S]*?<\/div><!--\.center_map_list_item-->/g;
 const itemName = (item) => item.match(/<h2[^>]*>([^<]*)<\/h2>/)?.[1].trim();
 
 // Den rigtige centerliste skåret ned til de navngivne Centre. `mutateItem(name, html)` kan ændre

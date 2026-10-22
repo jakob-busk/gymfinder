@@ -250,7 +250,9 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
     });
     const { offers, warnings } = offersFrom(html);
     assert.deepEqual(offers.map((offer) => offer.name), ['Kategori 2', 'Kategori 1']);
-    assert.deepEqual(warnings, ['UMEUS – Grønttorvet – 270 kr./md.: ingen Aldersgruppe, springes over']);
+    assert.deepEqual(warnings, [
+      'UMEUS – Grønttorvet – 270 kr./md.: ingen Aldersgruppe, springes over',
+    ]);
   });
 
   test('siden kender sit eget GUID og sin synlige adresse', () => {
@@ -406,7 +408,8 @@ describe('Fitness X kampagner i fri tekst', () => {
   test('tekstvarianter: dato med ord eller tal, og tekst der ikke er en kampagne', () => {
     assert.deepEqual(
       parseCampaignText(
-        'Træn for kun <strong>189 kr./md.</strong> frem til 31. december 2026. Herefter 360 kr./md. ',
+        'Træn for kun <strong>189 kr./md.</strong> frem til 31. december 2026. ' +
+          'Herefter 360 kr./md. ',
       ),
       { format: 'A', price: 189, endDate: '2026-12-31', after: 360 },
     );
@@ -426,7 +429,8 @@ describe('Fitness X kampagner i fri tekst', () => {
     assert.equal(parseCampaignText('Få fri adgang til <span>xxx</span> og 30 andre centre.'), null);
     assert.equal(
       parseCampaignText(
-        'Lige nu får du adgang til gratis reformerhold, på Fasanvej, helt frem til 1. marts 2027. ' +
+        'Lige nu får du adgang til gratis reformerhold, på Fasanvej, ' +
+          'helt frem til 1. marts 2027. ' +
           'Få fri adgang til xxx og 32 andre centre. Træn to for kun 650 kr./md.',
       ),
       null,

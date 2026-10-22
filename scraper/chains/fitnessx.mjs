@@ -40,7 +40,8 @@ export const FITNESSX_CHAIN = {
 // Ingen Binding: opsigelse med løbende måned + 1 måned (https://fitnessx.dk/medlemsbetingelser/).
 const BINDING_MONTHS = 0;
 
-// Engangsbeløb for at tilføje en Træningsven (https://fitnessx.dk/split-regningen-med-din-traeningsven/).
+// Engangsbeløb for at tilføje en Træningsven.
+// Kilde: https://fitnessx.dk/split-regningen-med-din-traeningsven/
 const PARTNER_FEE = 100;
 
 const DANISH_MONTHS = [
@@ -265,16 +266,18 @@ export function membershipsForCenter(ajaxObject, guid) {
   return (ajaxObject.medlemskaber ?? []).filter((membership) => {
     const centre = membership?.acf?.centre;
     if (!Array.isArray(centre)) return false;
-    return centre.some(
-      (value) => typeof value === 'string' && GUID_PATTERN.test(value) && value.toLowerCase() === target,
-    );
+    const isTarget = (value) =>
+      typeof value === 'string' && GUID_PATTERN.test(value) && value.toLowerCase() === target;
+    return centre.some(isTarget);
   });
 }
 
 export function extractAjaxObject(html) {
   const ajaxObject = extractJsObject(html, 'var sj_ajax_object =');
   if (!ajaxObject) throw new Error('Siden har ingen sj_ajax_object');
-  if (!Array.isArray(ajaxObject.medlemskaber)) throw new Error('sj_ajax_object har ingen medlemskaber');
+  if (!Array.isArray(ajaxObject.medlemskaber)) {
+    throw new Error('sj_ajax_object har ingen medlemskaber');
+  }
   return ajaxObject;
 }
 
@@ -389,8 +392,10 @@ function partnerFromGroup(group) {
 }
 
 // Den billigste Træningsven-mulighed pr. person (30+, da Makkerpris er ét tal).
-const cheapestPartner = (partners) =>
-  [...partners].sort((a, b) => (a.perPerson.over30 ?? Infinity) - (b.perPerson.over30 ?? Infinity))[0];
+const cheapestPartner = (partners) => {
+  const price = (partner) => partner.perPerson.over30 ?? Infinity;
+  return [...partners].sort((a, b) => price(a) - price(b))[0];
+};
 
 // Læser Centrets Tilbud ud fra sj_ajax_object. `guid` er Centrets GUID (fra siden selv eller
 // centerlisten). Resultat: { offers: [Tilbud-udkast], warnings }.
@@ -591,8 +596,8 @@ const FEE_LABELS = [
 // Kaster kun, hvis selve centerlisten ikke kan hentes eller læses.
 //
 // Kald: centerlisten, prislisten og én centerside pr. Center med link. Et Center uden link til
-// centersiden prissættes ud fra en anden centerside, da alle sider har hele Kædens medlemskaber;
-// det kræver, at centerlisten har Centrets GUID.
+// centersiden prissættes ud fra de andre centersider, da alle sider har hele Kædens medlemskaber;
+// det kræver, at centerlisten har Centrets GUID. Dets tilmeldingslink er Kædens tilmeldingsside.
 export async function scrapeFitnessx({ http, today, limit } = {}) {
   const listed = parseCenterList(await http.getText(FITNESSX_CENTER_LIST_URL));
   const selected = limit ? listed.slice(0, limit) : listed;
