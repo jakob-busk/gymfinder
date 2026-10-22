@@ -29,6 +29,7 @@ jest.mock('firebase/database', () => ({
 }));
 
 const {
+  clearLocalUserData,
   loadOnboardingDone,
   loadUserProfile,
   saveOnboardingDone,
@@ -111,4 +112,17 @@ test('onboarding-status huskes på telefonen', async () => {
   await saveOnboardingDone();
 
   expect(await loadOnboardingDone()).toBe(true);
+});
+
+test('efter log ud er telefonen ryddet, men profilen ligger stadig på kontoen', async () => {
+  await saveUserProfile('uid-1', PROFILE);
+  await saveOnboardingDone();
+
+  await clearLocalUserData('uid-1');
+
+  expect(await loadOnboardingDone()).toBe(false);
+  expect(await loadUserProfile('uid-2')).toBeNull();
+  expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
+  mockDatabase.failReads = true;
+  expect(await loadUserProfile('uid-1')).toBeNull();
 });
