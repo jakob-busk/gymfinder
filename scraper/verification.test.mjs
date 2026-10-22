@@ -6,6 +6,7 @@ import { parseCenterList } from './chains/sats.mjs';
 import {
   compareCenter,
   formatVerification,
+  parseVisibleAddress,
   parseVisiblePricingCards,
   pickRandom,
 } from './verification.mjs';
@@ -50,12 +51,18 @@ describe('stikprøve mod hjemmesiden', () => {
     });
   });
 
-  test('en adresse, der afviger mellem listen og centersiden, opdages', () => {
-    const result = compareCenter(
-      { ...listed('412'), address: 'Adelgade 9, 1304 København K' },
-      satsFixture('center-412-adelgade.html'),
+  test('læser den synlige adresselinje', () => {
+    assert.equal(
+      parseVisibleAddress(satsFixture('center-434-roskilde.html')),
+      'Ro´s Torv 1, 1. 46, 4000, Roskilde',
     );
-    assert.deepEqual(result.checks[0], {
+  });
+
+  test('en adresse i data-props, der afviger fra den synlige, opdages', () => {
+    const html = withProps(satsFixture('center-412-adelgade.html'), (props) => {
+      props.pageHeader.addressLink.text = 'Adelgade 9, 1304, København K';
+    });
+    assert.deepEqual(compareCenter(listed('412'), html).checks[0], {
       what: 'Adresse',
       scraper: 'Adelgade 9, 1304 København K',
       website: 'Adelgade 5-7, 1304, København K',

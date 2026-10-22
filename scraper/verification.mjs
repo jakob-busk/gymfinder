@@ -1,9 +1,9 @@
 // Stikprøve-bevis (testlag 3): sammenligner det, scraperen læser, med det, en besøgende ser
 // på sats.dk. Priserne læses her uafhængigt af parseren, direkte fra de synlige priskort i
-// HTML'en (ikke fra data-props), og adressen fra centersidens overskrift (ikke fra listen).
+// HTML'en (ikke fra data-props), og adressen fra den synlige adresselinje øverst på siden.
 // Rene funktioner, så sammenligningen kan testes mod gemte sider.
 
-import { extractProps, parseCenterPage, parseDanishNumber } from './chains/sats.mjs';
+import { parseCenterPage, parseDanishNumber } from './chains/sats.mjs';
 
 const decodeEntities = (text) =>
   text
@@ -30,6 +30,14 @@ export function parseVisiblePricingCards(html) {
   return cards;
 }
 
+// Den synlige adresselinje øverst på centersiden (linket til kortet).
+export function parseVisibleAddress(html) {
+  const inner = html.match(/href="#club-page-map">([\s\S]*?)<\/a>/)?.[1];
+  if (inner == null) return undefined;
+  const text = inner.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '');
+  return decodeEntities(text).replace(/\s+/g, ' ').trim() || undefined;
+}
+
 const normalizeAddress = (address) => (address ?? '').replace(/[\s,]+/g, ' ').trim().toLowerCase();
 
 // Sammenligner ét Center. `listed` er Centret fra centerlisten (som parseCenterList giver det).
@@ -39,12 +47,14 @@ export function compareCenter(listed, centerHtml) {
   const cards = parseVisiblePricingCards(centerHtml);
   const checks = [];
 
-  const pageAddress = extractProps(centerHtml).pageHeader?.addressLink?.text;
+  // Samme valg som scrapeSats: centersidens adresse, ellers listens.
+  const scraperAddress = page.address ?? listed.address;
+  const visibleAddress = parseVisibleAddress(centerHtml);
   checks.push({
     what: 'Adresse',
-    scraper: listed.address,
-    website: pageAddress,
-    ok: normalizeAddress(listed.address) === normalizeAddress(pageAddress),
+    scraper: scraperAddress,
+    website: visibleAddress,
+    ok: normalizeAddress(scraperAddress) === normalizeAddress(visibleAddress),
   });
 
   for (const offer of page.offers) {
@@ -61,7 +71,12 @@ export function compareCenter(listed, centerHtml) {
   for (const card of cards) {
     const known = page.offers.some((offer) => `${offer.key}_U30` === card.membershipId);
     if (!known) {
-      checks.push({ what: `${card.name} under 30 (kr/md)`, scraper: undefined, website: card.price, ok: false });
+      checks.push({
+        what: `${card.name} under 30 (kr/md)`,
+        scraper: undefined,
+        website: card.price,
+        ok: false,
+      });
     }
   }
 
@@ -89,8 +104,8 @@ export function formatVerification({ chainName, date, results }) {
     `Resultat: **${allOk ? 'STEMMER' : 'AFVIGER'}**`,
     '',
     'Tre tilfældige Centre er hentet fra hjemmesiden. Kolonnen "Scraper" er det, scraperen læser',
-    '(centerlisten og data-props), og "Hjemmeside" er det, en besøgende ser: priserne på de',
-    'synlige priskort og adressen i centersidens overskrift. Genereres med',
+    '(sidernes data-props), og "Hjemmeside" er det, en besøgende ser: priserne på de synlige',
+    'priskort og adresselinjen øverst på centersiden. Genereres med',
     '`npm run verify` i `scraper/`.',
     '',
   ];
@@ -99,9 +114,8 @@ export function formatVerification({ chainName, date, results }) {
     lines.push(`## ${result.name} (${result.centerId})`, '', result.url, '');
     lines.push('| Felt | Scraper | Hjemmeside | Stemmer |', '|---|---|---|---|');
     for (const check of result.checks) {
-      lines.push(
-        `| ${check.what} | ${show(check.scraper)} | ${show(check.website)} | ${check.ok ? 'ja' : 'NEJ'} |`,
-      );
+      const cells = [check.what, show(check.scraper), show(check.website), check.ok ? 'ja' : 'NEJ'];
+      lines.push(`| ${cells.join(' | ')} |`);
     }
     lines.push('');
   }

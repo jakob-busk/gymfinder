@@ -2,10 +2,12 @@
 // Matchnings form (se data/matchning.js).
 //
 // Kilder (alle sider har præcis ét <script data-props="true" type="application/json">):
-//   /traeningscenter                 centerliste: props.clubs[] med adresse, koordinater, faciliteter
-//   /traeningscenter/<…>/<center>    centerside: props.becomeMemberSection.views[] med priser
-//                                    pr. Aldersgruppe (under-30 / over-30) og medlemstype
-//   /bliv-medlem-sats/tilpas-medlemskab?…  checkout: Oprettelsesgebyr og aktiv kampagne
+//   /traeningscenter               centerliste: props.clubs[] med adresse, koordinater og
+//                                  faciliteter
+//   /traeningscenter/<…>/<center>  centerside: props.becomeMemberSection.views[] med priser
+//                                  pr. Aldersgruppe (under-30 / over-30) og medlemstype
+//   /bliv-medlem-sats/tilpas-medlemskab?…
+//                                  checkout: Oprettelsesgebyr, Binding og aktiv kampagne
 //
 // Gebyr og kampagne står kun på checkout-siden og er ens på tværs af Centre, så der hentes én
 // checkout pr. medlemskab (Basic, Flexible, Premium) i det første Center, ikke én pr. Center.
@@ -48,8 +50,11 @@ const DANISH_MONTHS = [
 
 // ---------- Fælles hjælpere ----------
 
+const DATA_PROPS_PATTERN =
+  /<script data-props="true" type="application\/json">([\s\S]*?)<\/script>/;
+
 export function extractProps(html) {
-  const match = html.match(/<script data-props="true" type="application\/json">([\s\S]*?)<\/script>/);
+  const match = html.match(DATA_PROPS_PATTERN);
   if (!match) throw new Error('Siden har ingen data-props');
   return JSON.parse(match[1]);
 }
@@ -122,10 +127,16 @@ export function parseCenterList(html) {
 
 // ---------- Centerside ----------
 
+// Centersidens adresse er mere fuldstændig end listens (fx "Fisketorvet Shopping Center,
+// Kalvebod Brygge 59" mod kun "Fisketorvet Shopping Center"). Siden skriver "1304, København K";
+// kommaet efter postnummeret fjernes, så formatet er det samme som i resten af appen.
+const normalizePageAddress = (text) =>
+  text?.trim().replace(/\s+/g, ' ').replace(/, (\d{4}),\s*/, ', $1 ') || undefined;
+
 // Rabatprocent ud fra en færdigberegnet rabatpris, fx 439,20 af 549 → 20.
 const percentOff = (discounted, full) => Math.round((1 - discounted / full) * 1000) / 10;
 
-// Returnerer Centrets Tilbud (uden gebyr og kampagne, som kommer fra checkout) og de
+// Returnerer Centrets adresse, Tilbud (uden gebyr og kampagne, som kommer fra checkout) og de
 // Rabatprocenter, siden viser for Studerende og Senior.
 export function parseCenterPage(html) {
   const props = extractProps(html);
@@ -170,6 +181,7 @@ export function parseCenterPage(html) {
 
   return {
     clubId: props.clubId != null ? String(props.clubId) : undefined,
+    address: normalizePageAddress(props.pageHeader?.addressLink?.text),
     offers: [...offersByKey.values()],
     discountPercents,
   };
@@ -368,6 +380,7 @@ export async function scrapeSats({ http, today, limit } = {}) {
     const { clubId, ...centerData } = center;
     return {
       ...centerData,
+      address: page.address ?? center.address,
       offers: page.offers.map((offer) => buildOffer(center, offer, termsByKey.get(offer.key))),
     };
   });

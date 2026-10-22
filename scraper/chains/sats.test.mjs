@@ -24,6 +24,7 @@ import {
 } from '../testing/satsFixtures.mjs';
 
 const TODAY = '2026-10-22';
+const ADELGADE_URL = 'https://www.sats.dk/traeningscenter/kobenhavn/kbh-adelgade';
 
 const checkoutLink = (memberType, clubId, membershipId) =>
   'https://www.sats.dk/bliv-medlem-sats/tilpas-medlemskab?memberTypeId=' +
@@ -75,6 +76,8 @@ describe('SATS centerside', () => {
     const page = parseCenterPage(satsFixture('center-412-adelgade.html'));
 
     assert.equal(page.clubId, '412');
+    // Siden skriver "1304, København K"; kommaet efter postnummeret fjernes.
+    assert.equal(page.address, 'Adelgade 5-7, 1304 København K');
     assert.deepEqual(page.offers, [
       {
         key: '1CLUB_ALLDAY_NOBND_GX',
@@ -124,7 +127,10 @@ describe('SATS centerside', () => {
     ]) {
       const { discountPercents } = parseCenterPage(satsFixture(file));
       // Studerende findes i begge Aldersgrupper (6 priser), Senior kun over 30 (3 priser).
-      assert.deepEqual(discountPercents, { student: [20, 20, 20, 20, 20, 20], senior: [20, 20, 20] });
+      assert.deepEqual(discountPercents, {
+        student: [20, 20, 20, 20, 20, 20],
+        senior: [20, 20, 20],
+      });
     }
   });
 
@@ -327,6 +333,23 @@ describe('hele SATS-kørslen (falsk HTTP med gemte svar)', () => {
         },
       ],
     });
+  });
+
+  test('centersidens fulde adresse bruges frem for listens kortere', async () => {
+    // Fx står Fisketorvet i listen kun som "Fisketorvet Shopping Center, 1560 København V".
+    const routes = satsRoutes();
+    routes[SATS_CENTER_LIST_URL] = withProps(centerListWith(), (props) => {
+      props.clubs[0].address.streetAddress = 'Kongens Nytorv';
+    });
+    const result = await scrapeSats({ http: createFixtureHttp(routes), today: TODAY });
+    assert.equal(result.centers[0].address, 'Adelgade 5-7, 1304 København K');
+
+    // Mangler adressen på centersiden, bruges listens.
+    routes[ADELGADE_URL] = withProps(routes[ADELGADE_URL], (props) => {
+      delete props.pageHeader.addressLink;
+    });
+    const fallback = await scrapeSats({ http: createFixtureHttp(routes), today: TODAY });
+    assert.equal(fallback.centers[0].address, 'Kongens Nytorv, 1304 København K');
   });
 
   test('er høflig: én liste, én side pr. Center og kun tre checkouts i alt', async () => {
