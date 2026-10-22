@@ -5,6 +5,8 @@ import {
   fromStoredFavorites,
   newFavorite,
   removeFavorite,
+  toStoredFavorite,
+  toStoredFavorites,
 } from './favorites';
 
 // Adfærdstests for Favoritter: hvilken pris der følges, rækkerne på Favoritter-skærmen og
@@ -131,6 +133,39 @@ describe('fromStoredFavorites', () => {
 
   test('ugyldige værdier springes over', () => {
     expect(fromStoredFavorites({ a: true, b: 'x' })).toEqual({});
+  });
+});
+
+// Som Realtime Database: null og tomme objekter gemmes ikke.
+function throughDatabase(value) {
+  if (value === null || typeof value !== 'object') return value;
+  const entries = Object.entries(value)
+    .map(([key, child]) => [key, throughDatabase(child)])
+    .filter(([, child]) => child != null);
+  return entries.length === 0 ? null : Object.fromEntries(entries);
+}
+
+describe('toStoredFavorite', () => {
+  test('en Prisalarm uden tærskel overlever databasen og er stadig slået til', () => {
+    const favorite = {
+      addedAt: 'x',
+      honestYearlyPrice: 249,
+      priceAlert: { thresholdPerMonth: null },
+    };
+    const stored = toStoredFavorite(favorite);
+
+    expect(stored.priceAlert).toEqual({ thresholdPerMonth: 0 });
+    expect(fromStoredFavorites({ a: throughDatabase(stored) }).a).toEqual(favorite);
+  });
+
+  test('tærskel og ingen Prisalarm gemmes uændret', () => {
+    const favorites = {
+      a: { addedAt: 'x', honestYearlyPrice: 249, priceAlert: { thresholdPerMonth: 50 } },
+      b: { addedAt: 'x', honestYearlyPrice: null, priceAlert: null },
+    };
+
+    expect(toStoredFavorites(favorites)).toEqual(favorites);
+    expect(fromStoredFavorites(throughDatabase(toStoredFavorites(favorites)))).toEqual(favorites);
   });
 });
 

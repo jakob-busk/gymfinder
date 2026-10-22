@@ -11,9 +11,9 @@
 //     addedAt: ISO-tidspunkt,
 //     honestYearlyPrice: tal | null,    Ærlig årspris, sidst brugeren fik den at vide (ved ♥ og
 //                                       senere ved en Prisalarm). Grundlag for Besparelse ved fald.
-//     priceAlert: { thresholdPerMonth: tal | null } | null
+//     priceAlert: { thresholdPerMonth: tal } | null
 //                                       Prisalarm på Favoritten. null/udeladt = ingen alarm;
-//                                       thresholdPerMonth = null betyder ethvert fald.
+//                                       thresholdPerMonth = 0 (eller udeladt) betyder ethvert fald.
 //   }
 //
 // Hver Favorit skrives på sin egen sti, så en Prisalarm kan slås til på én Favorit uden at røre
@@ -48,6 +48,27 @@ export function fromStoredFavorites(stored) {
     if (favorite) favorites[centerId] = favorite;
   }
   return favorites;
+}
+
+// Favorit → det, der gemmes i databasen. En Prisalarm uden tærskel gemmes som tærskel 0, da
+// databasen hverken gemmer null eller tomme objekter: { thresholdPerMonth: null } ville forsvinde
+// helt, og alarmen ville være slået fra, næste gang den læses. fromStoredFavorites læser 0 som
+// "ingen tærskel".
+export function toStoredFavorite(favorite) {
+  const { priceAlert, ...rest } = favorite;
+  return {
+    ...rest,
+    priceAlert: priceAlert ? { thresholdPerMonth: priceAlert.thresholdPerMonth ?? 0 } : null,
+  };
+}
+
+export function toStoredFavorites(favorites) {
+  return Object.fromEntries(
+    Object.entries(favorites ?? {}).map(([centerId, favorite]) => [
+      centerId,
+      toStoredFavorite(favorite),
+    ]),
+  );
 }
 
 // Den laveste Ærlig årspris blandt Centrets Tilbud for brugeren, eller null, hvis Centret ikke

@@ -8,6 +8,8 @@ import {
   fromStoredFavorites,
   newFavorite,
   removeFavorite,
+  toStoredFavorite,
+  toStoredFavorites,
 } from '../data/favorites';
 import { setFavoritePriceAlert } from '../data/priceAlerts';
 
@@ -34,7 +36,7 @@ async function saveLocalFavorites(uid, favorites) {
 async function uploadFavoritesSavedWithoutLogin(uid) {
   const local = await loadLocalFavorites(null);
   if (Object.keys(local).length === 0) return false;
-  await update(ref(rtdb, favoritesPath(uid)), local);
+  await update(ref(rtdb, favoritesPath(uid)), toStoredFavorites(local));
   await AsyncStorage.removeItem(localFavoritesKey(null));
   return true;
 }
@@ -92,7 +94,7 @@ export async function storeFavorite(uid, favorites, centerId) {
   if (!rtdb || !uid) return;
   const path = `${favoritesPath(uid)}/${centerId}`;
   const favorite = favorites[centerId];
-  if (favorite) await set(ref(rtdb, path), favorite);
+  if (favorite) await set(ref(rtdb, path), toStoredFavorite(favorite));
   else await remove(ref(rtdb, path));
 }
 
