@@ -100,7 +100,7 @@ En Prisalarm kan slås til på hver Favorit og på Nuværende medlemskab (Favori
 **Hvornår en alarm er opfyldt** (`data/priceAlerts.js`, ren JavaScript, som nat-jobbet også kan importere):
 - *Favorit:* Besparelse = den gemte Ærlig årspris (`honestYearlyPrice` på Favoritten) minus den aktuelle. Om faldet skyldes en Kampagnepris eller en lavere Standardpris, er ligegyldigt.
 - *Nuværende medlemskab:* Besparelse = brugerens månedspris minus Ærlig årspris for det billigste Center inden for brugerens maks. afstand (Præferencer). Der gives kun besked igen, når et Tilbud er billigere end det, der sidst gav besked (`notifiedHonestYearlyPrice`).
-- Alarmen udløses, når Besparelsen er mindst tærsklen. Uden tærskel er det enhver Besparelse på mindst 1 kr/md, så ørebeløb fra afrunding ikke tæller.
+- Alarmen udløses, når Besparelsen er mindst tærsklen. Uden tærskel er det enhver Besparelse over 0 kr/md. Besparelsen afrundes først til hele øre, så støj fra regning med kommatal ikke tæller som et fald.
 - Efter en besked gemmes den nye pris (`honestYearlyPrice` på Favoritten eller `notifiedHonestYearlyPrice`), så samme fald ikke giver besked to gange. Nat-jobbet skal gøre det samme efter en push.
 
 **Datastruktur til nat-jobbet.** Alt ligger under `Users/<uid>` og læses med firebase-admin:

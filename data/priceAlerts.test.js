@@ -159,7 +159,7 @@ describe('Prisalarm på en Favorit', () => {
     ).toEqual([]);
   });
 
-  test('uden tærskel udløses den ved ethvert fald, men ikke ved ørebeløb', () => {
+  test('uden tærskel udløses den ved ethvert fald, også under 1 kr', () => {
     const centers = [center('a', [offer({ standardPrice: 295 })])];
     const run = (savedPrice) =>
       favoriteAlertTriggers({
@@ -171,7 +171,24 @@ describe('Prisalarm på en Favorit', () => {
       });
 
     expect(run(300)).toHaveLength(1);
-    expect(run(295.5)).toEqual([]);
+    expect(run(295.5)).toHaveLength(1);
+    expect(run(295.01)).toHaveLength(1);
+    // Ingen ændring og en stigning er ikke et fald.
+    expect(run(295)).toEqual([]);
+    expect(run(294)).toEqual([]);
+  });
+
+  test('støj under et halvt øre fra regning med kommatal tæller ikke som fald', () => {
+    // 3 måneder à 0,1 + 9 måneder à 0,2 osv. giver kommatal-støj; 295 + 1e-9 er samme pris.
+    const centers = [center('a', [offer({ standardPrice: 295 })])];
+    const triggers = favoriteAlertTriggers({
+      favorites: { a: favoriteWithAlert(295 + 1e-9, null) },
+      centers,
+      chains: [CHAIN],
+      user: USER,
+      today: TODAY,
+    });
+    expect(triggers).toEqual([]);
   });
 
   test('en ny Kampagnepris tæller som fald', () => {
@@ -275,6 +292,15 @@ describe('Prisalarm på Nuværende medlemskab', () => {
     });
 
     expect(trigger.savingPerMonth).toBe(10);
+
+    const smallSaving = currentMembershipAlertTrigger({
+      alert: newCurrentMembershipAlert(),
+      centers: [center('a', [offer({ standardPrice: 348.5 })])],
+      chains: [CHAIN],
+      user: member,
+      today: TODAY,
+    });
+    expect(smallSaving.savingPerMonth).toBeCloseTo(0.5);
   });
 
   test('giver kun besked igen, når et Tilbud er billigere end det, der sidst gav besked', () => {
@@ -291,6 +317,29 @@ describe('Prisalarm på Nuværende medlemskab', () => {
 
     expect(run(notified)).toBeNull();
     expect(run(notified, [center('b', [offer({ standardPrice: 229 })])]).centerId).toBe('b');
+  });
+
+  test('Centre med ukendt Distance tæller ikke med, når brugeren har en maks. afstand', () => {
+    const run = (user, centers) =>
+      currentMembershipAlertTrigger({
+        alert: newCurrentMembershipAlert(),
+        centers,
+        chains: [CHAIN],
+        user,
+        today: TODAY,
+      });
+    const centers = [
+      center('naer', [offer({ standardPrice: 299 })]),
+      center('uden-koordinater', [offer({ standardPrice: 99 })], null),
+    ];
+
+    // Centret uden koordinater springes over; det nære Center giver stadig besked.
+    expect(run(member, centers).centerId).toBe('naer');
+    // Uden brugerens placering kan ingen Distance beregnes, så der gives ingen besked.
+    expect(run({ ...member, location: null }, centers)).toBeNull();
+    // Uden maks. afstand gælder alle Centre igen.
+    const anywhere = { ...member, location: null, preferences: {} };
+    expect(run(anywhere, centers).centerId).toBe('uden-koordinater');
   });
 
   test('uden alarm eller uden Nuværende medlemskab udløses intet', () => {
@@ -379,6 +428,16 @@ describe('fælles', () => {
     expect(membershipMessage.title).toBe('Spar 150 kr/md');
     expect(membershipMessage.body).toContain('PureGym Amager koster 199 kr/md');
     expect(membershipMessage.data).toEqual({ centerId: 'b', kind: 'currentMembership' });
+
+    const smallDrop = priceAlertMessage({
+      kind: 'favorite',
+      centerId: 'a',
+      centerName: 'SATS Nørrebro',
+      honestYearlyPrice: 299.5,
+      previousPrice: 300,
+      savingPerMonth: 0.5,
+    });
+    expect(smallDrop.body).toBe('Ærlig årspris er faldet 0,50 kr/md til 300 kr/md.');
   });
 
   test('læser Centrets id fra en notifikation', () => {
