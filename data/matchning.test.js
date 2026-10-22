@@ -129,6 +129,39 @@ describe('Ærlig årspris og Kvartalspris', () => {
   });
 });
 
+describe('Betalingsinterval', () => {
+  // Opkræves der pr. 30 dage, betales der 365 / 30 ≈ 12,17 gange om året.
+  test('betaling pr. 30 dage giver ca. 12,17 betalinger i Ærlig årspris', () => {
+    // År: (199 + 299 * 365 / 30) / 12 = (199 + 3637,83) / 12 = 319,74
+    // Kvartal: (199 + 299 * 91,25 / 30) / 3 = (199 + 909,46) / 3 = 369,49
+    const best = priceSingleOffer({
+      standardPrice: 289,
+      adminFee: 10,
+      signupFee: 199,
+      billingIntervalDays: 30,
+    });
+    expect(best.honestYearlyPrice).toBeCloseTo(319.736, 2);
+    expect(best.quarterlyPrice).toBeCloseTo(369.486, 2);
+    expect(best.paymentsPerYear).toBeCloseTo(12.167, 2);
+    expect(best.monthlyBreakdown).toHaveLength(13);
+  });
+
+  test('kampagne regnes i betalingsperioder', () => {
+    // 3 perioder à 100, resten 299: (3 * 100 + 9,1667 * 299) / 12 = (300 + 2740,83) / 12 = 253,40
+    const best = priceSingleOffer({
+      standardPrice: 299,
+      campaignPrice: 100,
+      campaignMonths: 3,
+      billingIntervalDays: 30,
+    });
+    expect(best.honestYearlyPrice).toBeCloseTo(253.403, 2);
+  });
+
+  test('uden betalingsinterval betales der pr. måned', () => {
+    expect(priceSingleOffer({ standardPrice: 300 }).paymentsPerYear).toBe(12);
+  });
+});
+
 describe('Kampagne og Rabatter lægges aldrig sammen', () => {
   test('den billigste mulighed vælges uafhængigt for 12 og 3 måneder', () => {
     // Uden rabat: år (3 * 100 + 9 * 300) / 12 = 250, kvartal 100
@@ -198,6 +231,35 @@ describe('Kampagne og Rabatter lægges aldrig sammen', () => {
       },
     );
     expect(best.honestYearlyPrice).toBeCloseTo(399);
+  });
+
+  test('Rabat kan have forskellig sats pr. Tilbud (fx Core 15 %, Unlimited 25 %)', () => {
+    const pureGym = chain({
+      discounts: [
+        { discountGroup: 'aeldreSagen', percentOff: 15, offerNames: ['Core'], signupFee: 0 },
+        { discountGroup: 'aeldreSagen', percentOff: 25, offerNames: ['Unlimited'], signupFee: 0 },
+      ],
+    });
+    const result = run({
+      centers: [
+        center({
+          offers: [
+            offer({ id: 'core', name: 'Core', standardPrice: 300, signupFee: 99 }),
+            offer({ id: 'unlimited', name: 'Unlimited', standardPrice: 400, signupFee: 99 }),
+            offer({ id: 'plus', name: 'Plus', standardPrice: 350, signupFee: 99 }),
+          ],
+        }),
+      ],
+      chains: [pureGym],
+      user: user({ discountProfile: ['aeldreSagen'] }),
+    });
+    const byOffer = Object.fromEntries(result.centers[0].offers.map((o) => [o.offer.id, o]));
+    // Core: 300 * 0,85 = 255, Unlimited: 400 * 0,75 = 300, begge uden Oprettelsesgebyr
+    expect(byOffer.core.honestYearlyPrice).toBeCloseTo(255);
+    expect(byOffer.core.signupFee).toBe(0);
+    expect(byOffer.unlimited.honestYearlyPrice).toBeCloseTo(300);
+    // Plus er ikke omfattet: (99 + 12 * 350) / 12 = 358,25
+    expect(byOffer.plus.honestYearlyPrice).toBeCloseTo(358.25);
   });
 
   test('Rabat kan give gratis Oprettelsesgebyr', () => {
