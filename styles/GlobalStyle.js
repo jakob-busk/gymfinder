@@ -49,6 +49,11 @@ const GlobalStyle = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
+  noticeText: {
+    color: colors.muted,
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
   emptyText: {
     color: colors.muted,
     fontStyle: 'italic',

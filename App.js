@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
@@ -7,12 +7,17 @@ import DashboardScreen from './screens/DashboardScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AboutScreen from './screens/AboutScreen';
 import { DEFAULT_USER } from './data/const';
+import { startAnonymousSession } from './services/Auth';
 import { colors } from './styles/GlobalStyle';
 
 const Tab = createBottomTabNavigator();
 // App komponenten som håndterer navigationen mellem de tre sider: Dashboard, Profil og Om os
 export default function App() {
   const [user, setUser] = useState(DEFAULT_USER);
+  // Firebase-brugeren (anonym ved første opstart). null, hvis Firebase ikke er sat op.
+  const [authUser, setAuthUser] = useState(null);
+
+  useEffect(() => startAnonymousSession(setAuthUser), []);
 
   return (
     <NavigationContainer>
@@ -31,7 +36,7 @@ export default function App() {
             tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} />,
           }}
         >
-          {() => <ProfileScreen user={user} setUser={setUser} />}
+          {() => <ProfileScreen user={user} setUser={setUser} authUser={authUser} />}
         </Tab.Screen>
         <Tab.Screen
           name="Om os"
