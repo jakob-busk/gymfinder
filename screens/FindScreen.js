@@ -1,34 +1,85 @@
 // Ansvarlig: Christian
 import { useContext, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import CenterCard from '../components/CenterCard';
+import CenterMap from '../components/CenterMap';
+import CenterPinInfo from '../components/CenterPinInfo';
 import RonnieMascot from '../components/RonnieMascot';
-import { DISCOUNT_GROUPS, SORT_OPTIONS, matchCenters } from '../data/matchning';
+import { SORT_OPTIONS, matchCenters } from '../data/matchning';
+import { loosenFilterSuggestions } from '../data/findView';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 
-// Find: viser Centre for brugeren via Matchning. Kæder, Centre og Tilbud hentes fra
-// Realtime Database (eller eksempeldata, hvis databasen ikke er sat op). Brugerens Præferencer
-// bruges som Filtre, og Anbefalet er altid lavest Ærlig årspris blandt sikre match.
+// Find: kort med brugerens placering og en pin pr. Center, og en liste over de samme Centre
+// nedenunder. Begge viser præcis resultatet fra Matchning, så Filtre (brugerens Præferencer,
+// inkl. maks. afstand) og sortering slår ens igennem. Anbefalet er lavest Ærlig årspris blandt
+// sikre match og fremhæves både på kortet og i listen.
 export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [sortBy, setSortBy] = useState('honestYearlyPrice');
+  const [selectedId, setSelectedId] = useState(null);
   const centerData = useCenterData();
 
+  const filters = user.preferences;
   const { centers, recommendedId } = matchCenters({
     centers: centerData.centers,
     chains: centerData.chains,
     user,
-    filters: user.preferences,
+    filters,
     sortBy,
     location: user.location,
     today: new Date(),
   });
-  const discountLabels = user.discountProfile.map((group) => DISCOUNT_GROUPS[group].label);
+  // Forsvinder det valgte Center pga. nye Filtre, lukkes pin-boksen af sig selv.
+  const selected = centers.find((match) => match.center.id === selectedId);
+
+  const showDetails = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
+
+  const renderList = () => {
+    if (centerData.loading) return <ActivityIndicator />;
+
+    if (centers.length === 0) {
+      const suggestions = loosenFilterSuggestions(filters);
+      return (
+        <ScrollView contentContainerStyle={GlobalStyle.emptyState}>
+          <RonnieMascot size="small" />
+          <Text style={GlobalStyle.centeredText}>
+            Ronnie kunne ikke finde nogen Centre, der matcher dine Filtre. Prøv at løsne dem:
+          </Text>
+          {suggestions.map((suggestion) => (
+            <Text key={suggestion} style={GlobalStyle.suggestionText}>
+              • {suggestion}
+            </Text>
+          ))}
+          <View style={GlobalStyle.paragraph}>
+            <ButtonComponent
+              title="Ret Filtre"
+              type="primary"
+              onPress={() => navigation.navigate('Filtre')}
+            />
+          </View>
+        </ScrollView>
+      );
+    }
+
+    return (
+      <FlatList
+        data={centers}
+        keyExtractor={(match) => match.center.id}
+        renderItem={({ item }) => (
+          <CenterCard
+            match={item}
+            isRecommended={item.center.id === recommendedId}
+            onShowDetails={() => showDetails(item.center.id)}
+          />
+        )}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
@@ -37,17 +88,10 @@ export default function FindScreen({ navigation }) {
         <ButtonComponent title="Filtre" onPress={() => navigation.navigate('Filtre')} />
       </View>
 
-      <View style={GlobalStyle.infoBox}>
-        <Text style={GlobalStyle.infoTitle}>Dine oplysninger</Text>
-        <Text>Adresse: {user.address}</Text>
-        <Text>Rabatprofil: {discountLabels.length > 0 ? discountLabels.join(', ') : 'Ingen'}</Text>
-      </View>
-
       {centerData.source === 'sample' && !centerData.loading && (
         <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
       )}
 
-      <Text style={GlobalStyle.sectionLabel}>Sorter efter</Text>
       <View style={GlobalStyle.sortRow}>
         {SORT_OPTIONS.map((option) => (
           <ButtonComponent
@@ -59,30 +103,29 @@ export default function FindScreen({ navigation }) {
         ))}
       </View>
 
-      {centerData.loading ? (
-        <ActivityIndicator />
-      ) : centers.length === 0 ? (
-        <View style={GlobalStyle.centeredContent}>
-          <RonnieMascot size="small" />
-          <Text style={GlobalStyle.emptyText}>
-            Ingen Centre matcher dine Filtre lige nu. Prøv at løsne dem under Filtre eller Profil.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={centers}
-          keyExtractor={(match) => match.center.id}
-          renderItem={({ item }) => (
-            <CenterCard
-              match={item}
-              isRecommended={item.center.id === recommendedId}
-              onShowDetails={() =>
-                navigation.navigate('CenterDetaljer', { centerId: item.center.id })
-              }
-            />
-          )}
+      <View style={GlobalStyle.mapBox}>
+        <CenterMap
+          userLocation={user.location}
+          matches={centers}
+          recommendedId={recommendedId}
+          onSelect={setSelectedId}
         />
-      )}
+        {selected && (
+          <CenterPinInfo
+            match={selected}
+            isRecommended={selected.center.id === recommendedId}
+            onShowDetails={() => showDetails(selected.center.id)}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
+      </View>
+      <Text style={GlobalStyle.mapLegend}>
+        {centers.length} {centers.length === 1 ? 'Center' : 'Centre'}
+        {filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : ''}
+        {user.address ? ` fra ${user.address}` : ''} · Blå = dig · Orange = Anbefalet
+      </Text>
+
+      {renderList()}
     </SafeAreaView>
   );
 }

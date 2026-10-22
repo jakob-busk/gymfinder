@@ -10,6 +10,9 @@ const colors = {
   inputBackground: '#F2F2F2',
   backdrop: 'rgba(0, 0, 0, 0.4)',
   error: '#C62828',
+  // Pins på kortet på Find: Anbefalet og brugerens egen placering.
+  recommendedPin: '#EF6C00',
+  userPin: '#1565C0',
 };
 
 const GlobalStyle = StyleSheet.create({
@@ -270,6 +273,49 @@ const GlobalStyle = StyleSheet.create({
   buttonTextSecondary: {
     color: colors.text,
     fontWeight: '600',
+  },
+  // Find: kort med pins og en boks for det valgte Center oven på kortet.
+  mapBox: {
+    height: 260,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.border,
+    marginBottom: 6,
+  },
+  map: {
+    flex: 1,
+  },
+  pinInfo: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    bottom: 8,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pinInfoActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  mapLegend: {
+    color: colors.muted,
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  suggestionText: {
+    color: colors.text,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
   },
 });
 
