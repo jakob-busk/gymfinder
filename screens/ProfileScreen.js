@@ -1,44 +1,79 @@
+// Ansvarlig: Jakob
 import { View, Text, TextInput, ScrollView } from 'react-native';
+
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
-import { MACHINES, SUBSCRIPTION_TYPES } from '../data/const';
+import { MACHINES } from '../data/const';
+import { DISCOUNT_GROUPS } from '../data/matchning';
 
-export default function ProfileScreen({ user, setUser }) { // Profil siden. Brugeren kan ændre sine personlige oplysninger og præferencer. Ændringerne gemmes i state i App.js.
-  function updateField(field, value) {
+// Præferencer, der kan slås til og fra. De bruges som Filtre på Dashboard.
+const PREFERENCE_TOGGLES = [
+  { key: 'sauna', label: 'Sauna' },
+  { key: 'groupClasses', label: 'Holdtræning' },
+  { key: 'open24h', label: 'Døgnåbent' },
+  { key: 'multiCenterAccess', label: 'Adgang til flere centre' },
+  { key: 'noBinding', label: 'Ingen binding' },
+];
+
+// Profil siden. Brugeren kan ændre sine oplysninger, Rabatprofil og Præferencer.
+// Ændringerne gemmes i state i App.js.
+export default function ProfileScreen({ user, setUser }) {
+  const updateField = (field, value) => {
     setUser((current) => ({ ...current, [field]: value }));
-  }
+  };
 
-  function updatePreference(field, value) { // Opdaterer brugerens præferencer i state. Bruger spread operatoren for at bevare de eksisterende præferencer og kun ændre den specifikke præference, der er blevet opdateret.
+  // Spread bevarer de øvrige Præferencer og ændrer kun den ene.
+  const updatePreference = (field, value) => {
     setUser((current) => ({ ...current, preferences: { ...current.preferences, [field]: value } }));
-  }
+  };
 
-  function toggleMachine(machine) { // slår en maskine til eller fra i brugerens præferencer. Hvis maskinen allerede er valgt, fjernes den fra listen. Hvis den ikke er valgt, tilføjes den til listen.
-    const current = user.preferences.machines;
-    const next = current.includes(machine)
-      ? current.filter((item) => item !== machine)
-      : [...current, machine];
-    updatePreference('machines', next);
-  }
+  const toggleInList = (list, item) =>
+    list.includes(item) ? list.filter((entry) => entry !== item) : [...list, item];
 
-  return ( // Render funktionen returnerer en ScrollView, der indeholder alle profiloplysningerne og præferencerne. Brugeren kan ændre sine oplysninger og præferencer, og ændringerne gemmes i state i App.js.
+  const toggleDiscountGroup = (group) => {
+    updateField('discountProfile', toggleInList(user.discountProfile, group));
+  };
+
+  return (
     <ScrollView style={GlobalStyle.container}>
       <Text style={GlobalStyle.title}>Profil</Text>
 
       <Text style={GlobalStyle.sectionLabel}>Personoplysninger</Text>
       <Text>Navn</Text>
-      <TextInput style={GlobalStyle.input} value={user.name} onChangeText={(text) => updateField('name', text)} />
+      <TextInput
+        style={GlobalStyle.input}
+        value={user.name}
+        onChangeText={(text) => updateField('name', text)}
+      />
       <Text>Adresse</Text>
       <TextInput
         style={GlobalStyle.input}
         value={user.address}
         onChangeText={(text) => updateField('address', text)}
       />
-      <Text>Studerende: {user.isStudent ? 'JA' : 'NEJ'}</Text>
+      <Text>Fødselsdato (ÅÅÅÅ-MM-DD)</Text>
+      <TextInput
+        style={GlobalStyle.input}
+        value={user.birthDate}
+        onChangeText={(text) => updateField('birthDate', text)}
+      />
 
       <Text style={GlobalStyle.sectionLabel}>Kontooplysninger</Text>
       <Text>Brugernavn: {user.username}</Text>
       <Text>Email: {user.email}</Text>
       <Text>Adgangskode: ********</Text>
+
+      <Text style={GlobalStyle.sectionLabel}>Rabatprofil</Text>
+      <View style={GlobalStyle.sortRow}>
+        {Object.entries(DISCOUNT_GROUPS).map(([group, info]) => (
+          <ButtonComponent
+            key={group}
+            title={info.label}
+            type={user.discountProfile.includes(group) ? 'primary' : 'secondary'}
+            onPress={() => toggleDiscountGroup(group)}
+          />
+        ))}
+      </View>
 
       <Text style={GlobalStyle.sectionLabel}>Præferencer</Text>
       <Text>Maskiner</Text>
@@ -48,38 +83,33 @@ export default function ProfileScreen({ user, setUser }) { // Profil siden. Brug
             key={machine}
             title={machine}
             type={user.preferences.machines.includes(machine) ? 'primary' : 'secondary'}
-            onPress={() => toggleMachine(machine)}
+            onPress={() =>
+              updatePreference('machines', toggleInList(user.preferences.machines, machine))
+            }
           />
         ))}
       </View>
 
-      <Text>Sauna</Text>
+      <Text>Krav</Text>
       <View style={GlobalStyle.sortRow}>
-        <ButtonComponent
-          title="Ja"
-          type={user.preferences.sauna === true ? 'primary' : 'secondary'}
-          onPress={() => updatePreference('sauna', true)}
-        />
-        <ButtonComponent
-          title="Nej"
-          type={user.preferences.sauna === false ? 'primary' : 'secondary'}
-          onPress={() => updatePreference('sauna', false)}
-        />
-        <ButtonComponent
-          title="Ingen præference"
-          type={user.preferences.sauna === null ? 'primary' : 'secondary'}
-          onPress={() => updatePreference('sauna', null)}
-        />
+        {PREFERENCE_TOGGLES.map(({ key, label }) => (
+          <ButtonComponent
+            key={key}
+            title={label}
+            type={user.preferences[key] ? 'primary' : 'secondary'}
+            onPress={() => updatePreference(key, !user.preferences[key])}
+          />
+        ))}
       </View>
 
-      <Text>Abonnementstype</Text>
+      <Text>Maks. afstand</Text>
       <View style={GlobalStyle.sortRow}>
-        {SUBSCRIPTION_TYPES.map((type) => (
+        {[5, 15, 50].map((km) => (
           <ButtonComponent
-            key={type}
-            title={type}
-            type={user.preferences.subscriptionType === type ? 'primary' : 'secondary'}
-            onPress={() => updatePreference('subscriptionType', type)}
+            key={km}
+            title={`${km} km`}
+            type={user.preferences.maxDistanceKm === km ? 'primary' : 'secondary'}
+            onPress={() => updatePreference('maxDistanceKm', km)}
           />
         ))}
       </View>

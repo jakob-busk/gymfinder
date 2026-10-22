@@ -95,6 +95,16 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     marginBottom: 6,
   },
+  notStatedText: {
+    color: colors.muted,
+    fontStyle: 'italic',
+    marginBottom: 6,
+  },
+  savingText: {
+    color: colors.primary,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
   link: {
     color: colors.primary,
     fontWeight: '600',
