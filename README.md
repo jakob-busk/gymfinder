@@ -66,7 +66,7 @@ Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre,
 
 npm test
 
-Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest.
+Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil).
 
 ## Natlig scraper
 **Ansvarlig:** Jakob
@@ -114,7 +114,7 @@ Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, S
 - **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre
 - **Om os**: kort om GymFinder, åbnes fra Profil
 - **Centerdetalje**: det valgte Center (pladsholder)
-- **Filtre**: Filtre til Find (pladsholder; Find bruger indtil videre Præferencerne fra Profil)
+- **Filtre**: sortering (Ærlig årspris, Kvartalspris, pris høj→lav, afstand) og Filtre til Find: sauna, holdtræning, døgnåbent, adgang til flere centre, ingen Binding, maskiner og maks. afstand. Udgangspunktet er dine Præferencer. Centre, der med sikkerhed ikke opfylder et Filter, skjules; er det ukendt, vises Centret med "Ikke oplyst" (ⓘ) i listen og på pinnen. Filtre og sortering gemmes på telefonen og huskes efter genstart, og Nulstil går tilbage til Præferencerne
 
 Fagord som Ærlig årspris, Kvartalspris, Makkerpris, Træn med en makker, Admingebyr, Binding, Ikke oplyst og Spar mere-forslag har en ⓘ, der åbner en forklaring. Alle forklaringer står ét sted, i `data/explanations.js`, og vises af `components/InfoButton.js`. Ronnie-maskotten ligger i `assets/ronnie.png` med gennemsigtig baggrund.
 
