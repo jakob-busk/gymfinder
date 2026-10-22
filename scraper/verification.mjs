@@ -95,7 +95,15 @@ export function pickRandom(items, n, random = Math.random) {
 
 const show = (value) => (value == null ? '–' : String(value));
 
-export function formatVerification({ chainName, date, results }) {
+const SATS_DESCRIPTION = [
+  'Tre tilfældige Centre er hentet fra hjemmesiden. Kolonnen "Scraper" er det, scraperen læser',
+  '(sidernes data-props), og "Hjemmeside" er det, en besøgende ser: priserne på de synlige',
+  'priskort og adresselinjen øverst på centersiden. Genereres med',
+  '`npm run verify` i `scraper/`.',
+];
+
+// `description` er forklaringen under overskriften (linjer); hver Kæde har sine egne kilder.
+export function formatVerification({ chainName, date, results, description = SATS_DESCRIPTION }) {
   const allOk = results.every((result) => result.checks.every((check) => check.ok));
   const lines = [
     `# Stikprøve: ${chainName}`,
@@ -103,10 +111,7 @@ export function formatVerification({ chainName, date, results }) {
     `Dato: ${date}  `,
     `Resultat: **${allOk ? 'STEMMER' : 'AFVIGER'}**`,
     '',
-    'Tre tilfældige Centre er hentet fra hjemmesiden. Kolonnen "Scraper" er det, scraperen læser',
-    '(sidernes data-props), og "Hjemmeside" er det, en besøgende ser: priserne på de synlige',
-    'priskort og adresselinjen øverst på centersiden. Genereres med',
-    '`npm run verify` i `scraper/`.',
+    ...description,
     '',
   ];
 

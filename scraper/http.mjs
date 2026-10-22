@@ -1,6 +1,7 @@
 // HTTP-klient til scraperen. Høflig over for kædernes hjemmesider: ærlig User-Agent, ét kald
 // ad gangen og en pause mellem kaldene. Holder styr på cookies og følger redirects selv, fordi
-// fx SATS' tilpas-medlemskab først sætter en session-cookie i et 303-svar.
+// fx SATS' tilpas-medlemskab først sætter en session-cookie i et 303-svar. Formularer (POST)
+// får samme pause og cookies.
 
 export const USER_AGENT =
   'GymFinder-scraper/1.0 (prissammenligning; https://github.com/jakob-busk/gymfinder)';
@@ -72,14 +73,16 @@ export function createHttpClient({
   }
 
   // Sender en formular (application/x-www-form-urlencoded) og returnerer svaret som tekst, fx
-  // LOOPs admin-ajax, som kun læser POST. Samme høflighed og cookies som getText.
-  async function postForm(address, fields) {
+  // LOOPs admin-ajax, som kun læser POST, eller PureGyms Drupal-formular. Samme høflighed og
+  // cookies som getText. `extraHeaders` lægges oven i, fx X-Requested-With til Drupal ajax.
+  async function postForm(address, fields, extraHeaders = {}) {
     const url = new URL(address);
     await waitForTurn();
     const headers = {
       'User-Agent': userAgent,
       Accept: 'application/json,text/html',
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      ...extraHeaders,
     };
     const cookie = cookieHeaderFor(url);
     if (cookie) headers.Cookie = cookie;
