@@ -6,7 +6,7 @@ Gælder al kode i GymFinder (React Native, Expo SDK 57, JavaScript). Ved tvivl: 
 
 ```
 App.js              navigation og app-dækkende state
-screens/            én fil pr. skærm: DashboardScreen.js, ProfileScreen.js
+screens/            én fil pr. skærm: FindScreen.js, ProfileScreen.js
 screens/<Stack>/    skærme der kun lever i en stack (fx screens/CenterStack/)
 components/         genbrugelige UI-dele: ButtonComponent.js, CenterCard.js
 styles/GlobalStyle.js  fælles StyleSheet + farver

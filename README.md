@@ -63,9 +63,26 @@ Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre,
 npm test
 
 ## Skærme
-- **Dashboard**: liste over Centre via Matchning, sorteret efter Ærlig årspris, Kvartalspris, pris høj→lav eller afstand, med det Anbefalede fremhævet. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata
+Navigation: fire faner i bunden (Find, Spørg Ronnie, Favoritter og Profil). Centerdetalje og Filtre åbnes som stack oven på fanerne, og Om os åbnes fra Profil.
+
+- **Find**: liste over Centre via Matchning, sorteret efter Ærlig årspris, Kvartalspris, pris høj→lav eller afstand, med det Anbefalede fremhævet. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata. "Se mere" åbner Centerdetalje
+- **Spørg Ronnie**: chat med Ronnie (pladsholder med Ronnie indtil videre)
+- **Favoritter**: gemte Centre og Prisalarmer (pladsholder)
 - **Profil**: brugerens oplysninger, Rabatprofil og redigerbare Præferencer (maskiner, faciliteter, binding, maks. afstand)
-- **Om os**: kort om GymFinder
+- **Om os**: kort om GymFinder, åbnes fra Profil
+- **Centerdetalje**: det valgte Center (pladsholder)
+- **Filtre**: Filtre til Find (pladsholder; Find bruger indtil videre Præferencerne fra Profil)
+
+Fagord som Ærlig årspris, Kvartalspris, Makkerpris, Træn med en makker, Admingebyr, Binding, Ikke oplyst og Spar mere-forslag har en ⓘ, der åbner en forklaring. Alle forklaringer står ét sted, i `data/explanations.js`, og vises af `components/InfoButton.js`. Ronnie-maskotten ligger i `assets/ronnie.png` med gennemsigtig baggrund.
+
+## Hvem har lavet hvad
+Hver skærmfil har en `// Ansvarlig: <navn>`-kommentar øverst.
+
+| Ansvarlig | Skærme og dele |
+|---|---|
+| Jakob | Onboarding, Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), scraper og nat-job |
+| Christian | Find (`screens/FindScreen.js`), Filtre (`screens/FiltersScreen.js`), Centerdetalje (`screens/CenterDetailScreen.js`) |
+| Bastian | Spørg Ronnie (`screens/AskRonnieScreen.js`), Favoritter/Alarmer (`screens/FavoritesScreen.js`) |
 
 ## Teknologi
 Som nævnt i rapport, har jeg brugt Matt Pocock's **/grill-with-docs** skill i samarbejde med Claude Code til at planlægge app'ens opsætning (https://github.com/mattpocock/skills/blob/main/docs/engineering/grill-with-docs.md). Brugen og det endelige beslutningstræ er dokumenteret i rapporten.
