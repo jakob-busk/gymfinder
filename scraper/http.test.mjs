@@ -81,4 +81,41 @@ describe('HTTP-klient', () => {
 
     await assert.rejects(http.getText('https://www.sats.dk/a'), /For mange redirects/);
   });
+
+  test('postForm sender en formular med User-Agent og holder samme pause', async () => {
+    const calls = [];
+    const waits = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, ...options });
+      return new Response('{"success":true}');
+    };
+    const http = createHttpClient({
+      fetchImpl,
+      delayMs: 2500,
+      sleepImpl: async (ms) => waits.push(ms),
+    });
+
+    await http.getText('https://loopfitness.dk/centre/');
+    const text = await http.postForm('https://loopfitness.dk/wp-admin/admin-ajax.php', {
+      action: 'loop_get_subscription',
+      subscription: 'kampagne: 100 kr. resten af året',
+    });
+
+    assert.equal(text, '{"success":true}');
+    assert.equal(calls[1].method, 'POST');
+    assert.equal(calls[1].headers['User-Agent'], USER_AGENT);
+    assert.match(calls[1].headers['Content-Type'], /application\/x-www-form-urlencoded/);
+    assert.equal(
+      calls[1].body,
+      'action=loop_get_subscription&subscription=kampagne%3A+100+kr.+resten+af+%C3%A5ret',
+    );
+    assert.equal(waits.length, 1);
+  });
+
+  test('postForm giver en fejl ved fejlsvar', async () => {
+    const fetchImpl = async () => new Response('nede', { status: 500 });
+    const http = createHttpClient({ fetchImpl, delayMs: 0 });
+
+    await assert.rejects(http.postForm('https://loopfitness.dk/a', { a: '1' }), /HTTP 500/);
+  });
 });

@@ -71,5 +71,30 @@ export function createHttpClient({
     throw new Error(`For mange redirects: ${address}`);
   }
 
-  return { getText };
+  // Sender en formular (application/x-www-form-urlencoded) og returnerer svaret som tekst, fx
+  // LOOPs admin-ajax, som kun læser POST. Samme høflighed og cookies som getText.
+  async function postForm(address, fields) {
+    const url = new URL(address);
+    await waitForTurn();
+    const headers = {
+      'User-Agent': userAgent,
+      Accept: 'application/json,text/html',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    };
+    const cookie = cookieHeaderFor(url);
+    if (cookie) headers.Cookie = cookie;
+
+    const body = new URLSearchParams(fields).toString();
+    const response = await fetchImpl(url.href, {
+      method: 'POST',
+      headers,
+      body,
+      redirect: 'manual',
+    });
+    storeCookies(url, response);
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${url.href}`);
+    return response.text();
+  }
+
+  return { getText, postForm };
 }
