@@ -317,6 +317,10 @@ const GlobalStyle = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 4,
   },
+  // Filtre: luft under knapperne nederst, så de ikke ligger helt nede ved kanten.
+  filtersContent: {
+    paddingBottom: 32,
+  },
 });
 
 export { colors };
