@@ -8,14 +8,71 @@ const colors = {
   border: '#1A1A1A',
   background: '#FFFFFF',
   inputBackground: '#F2F2F2',
+  backdrop: 'rgba(0, 0, 0, 0.4)',
 };
 
 const GlobalStyle = StyleSheet.create({
+  // Yderste lag på tab-skærme (SafeAreaView), så indhold ikke ligger under statuslinjen.
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 16,
-    paddingTop: 87,
+    paddingTop: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  inlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  centeredContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  centeredText: {
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  ronnieLarge: {
+    width: 240,
+    height: 172,
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  ronnieSmall: {
+    width: 120,
+    height: 86,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: colors.backdrop,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    padding: 18,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  modalText: {
+    color: colors.text,
+    lineHeight: 21,
   },
   title: {
     fontSize: 26,
@@ -92,15 +149,18 @@ const GlobalStyle = StyleSheet.create({
     fontSize: 12,
   },
   priceText: {
+    flexShrink: 1,
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
   },
   distanceText: {
+    flexShrink: 1,
     color: colors.muted,
     marginBottom: 6,
   },
   notStatedText: {
+    flexShrink: 1,
     color: colors.muted,
     fontStyle: 'italic',
     marginBottom: 6,

@@ -1,17 +1,21 @@
-// Ansvarlig: Jakob
-import { useState } from 'react';
+// Ansvarlig: Christian
+import { useContext, useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import CenterCard from '../components/CenterCard';
+import RonnieMascot from '../components/RonnieMascot';
 import { DISCOUNT_GROUPS, SORT_OPTIONS, matchCenters } from '../data/matchning';
+import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 
-// Dashboard: viser Centre for brugeren via Matchning. Kæder, Centre og Tilbud hentes fra
+// Find: viser Centre for brugeren via Matchning. Kæder, Centre og Tilbud hentes fra
 // Realtime Database (eller eksempeldata, hvis databasen ikke er sat op). Brugerens Præferencer
 // bruges som Filtre, og Anbefalet er altid lavest Ærlig årspris blandt sikre match.
-export default function DashboardScreen({ user }) {
+export default function FindScreen({ navigation }) {
+  const { user } = useContext(UserContext);
   const [sortBy, setSortBy] = useState('honestYearlyPrice');
   const centerData = useCenterData();
 
@@ -27,8 +31,11 @@ export default function DashboardScreen({ user }) {
   const discountLabels = user.discountProfile.map((group) => DISCOUNT_GROUPS[group].label);
 
   return (
-    <View style={GlobalStyle.container}>
-      <Text style={GlobalStyle.title}>Dashboard</Text>
+    <SafeAreaView style={GlobalStyle.container} edges={['top']}>
+      <View style={GlobalStyle.titleRow}>
+        <Text style={GlobalStyle.title}>Find</Text>
+        <ButtonComponent title="Filtre" onPress={() => navigation.navigate('Filtre')} />
+      </View>
 
       <View style={GlobalStyle.infoBox}>
         <Text style={GlobalStyle.infoTitle}>Dine oplysninger</Text>
@@ -55,18 +62,27 @@ export default function DashboardScreen({ user }) {
       {centerData.loading ? (
         <ActivityIndicator />
       ) : centers.length === 0 ? (
-        <Text style={GlobalStyle.emptyText}>
-          Ingen Centre matcher dine Filtre lige nu. Prøv at løsne dem på Profil-siden.
-        </Text>
+        <View style={GlobalStyle.centeredContent}>
+          <RonnieMascot size="small" />
+          <Text style={GlobalStyle.emptyText}>
+            Ingen Centre matcher dine Filtre lige nu. Prøv at løsne dem under Filtre eller Profil.
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={centers}
           keyExtractor={(match) => match.center.id}
           renderItem={({ item }) => (
-            <CenterCard match={item} isRecommended={item.center.id === recommendedId} />
+            <CenterCard
+              match={item}
+              isRecommended={item.center.id === recommendedId}
+              onShowDetails={() =>
+                navigation.navigate('CenterDetaljer', { centerId: item.center.id })
+              }
+            />
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
