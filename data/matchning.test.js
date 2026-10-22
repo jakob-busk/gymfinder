@@ -615,3 +615,39 @@ describe('Tom-tilstand', () => {
     expect(run({ centers: [center({ offers: [] })] }).centers).toEqual([]);
   });
 });
+
+describe('Eksempeldata', () => {
+  test('alle eksempel-Centre kan prissættes for standardbrugeren', () => {
+    const { CENTERS, CHAINS, DEFAULT_USER } = require('./const');
+    const result = matchCenters({
+      centers: CENTERS,
+      chains: CHAINS,
+      user: DEFAULT_USER,
+      filters: {},
+      sortBy: 'honestYearlyPrice',
+      location: DEFAULT_USER.location,
+      today: TODAY,
+    });
+    expect(result.centers).toHaveLength(CENTERS.length);
+    for (const entry of result.centers) {
+      expect(Number.isFinite(entry.honestYearlyPrice)).toBe(true);
+      expect(Number.isFinite(entry.quarterlyPrice)).toBe(true);
+    }
+    expect(result.recommendedId).not.toBeNull();
+  });
+
+  test('standardbrugerens Præferencer som Filtre giver både synlige Centre og et Anbefalet', () => {
+    const { CENTERS, CHAINS, DEFAULT_USER } = require('./const');
+    const result = matchCenters({
+      centers: CENTERS,
+      chains: CHAINS,
+      user: DEFAULT_USER,
+      filters: DEFAULT_USER.preferences,
+      sortBy: 'distance',
+      location: DEFAULT_USER.location,
+      today: TODAY,
+    });
+    expect(result.centers.length).toBeGreaterThan(0);
+    expect(result.recommendedId).not.toBeNull();
+  });
+});
