@@ -1,9 +1,11 @@
-# Natlig scraper: henter rigtige Centre og Tilbud fra kædernes hjemmesider og skriver dem til
-# Realtime Database. Kører gratis på GitHub Actions uden AI eller betalte tjenester.
+# Natlig scraper: henter rigtige Centre og Tilbud fra kædernes hjemmesider, skriver dem til
+# Realtime Database og sender push for opfyldte Prisalarmer via Expo Push Service. Kører gratis
+# på GitHub Actions uden AI eller betalte tjenester (Expo Push Service er gratis).
 #
 # Secrets (Settings → Secrets and variables → Actions → New repository secret):
 #   FIREBASE_SERVICE_ACCOUNT  hele service account-JSON'en på én linje
 #   FIREBASE_DATABASE_URL     https://<projekt-id>-default-rtdb.europe-west1.firebasedatabase.app
+#   EXPO_ACCESS_TOKEN         valgfri: kun hvis "push security" er slået til i Expo-projektet
 name: Natlig scraper
 
 on:
@@ -15,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Tør kørsel (læs og lav rapport, men skriv ikke)'
+        description: 'Tør kørsel (læs og lav rapport, men skriv ikke og send ingen push)'
         type: boolean
         default: false
 
@@ -55,8 +57,10 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
 
-      - name: Tør kørsel (intet skrives)
+      # Tør kørsel sender aldrig push og får derfor ingen Expo-nøgle.
+      - name: Tør kørsel (intet skrives, ingen push)
         if: ${{ inputs.dry_run }}
         run: npm run scrape:dry-run -- --report report.md
         env:

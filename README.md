@@ -109,14 +109,16 @@ En Prisalarm kan slås til på hver Favorit og på Nuværende medlemskab (Favori
 Users/<uid>/
   profile/currentMembership     { monthlyPrice, chainId? }   Nuværende medlemskab (uden = ingen)
   profile/discountProfile, birthDate, location, preferences/maxDistanceKm
-  favorites/<centerId>          { addedAt, honestYearlyPrice?, priceAlert?: { thresholdPerMonth? } }
-                                priceAlert udeladt = ingen alarm; thresholdPerMonth udeladt = ethvert fald
+  favorites/<centerId>          { addedAt, honestYearlyPrice?, priceAlert?: { thresholdPerMonth } }
+                                priceAlert udeladt = ingen alarm; thresholdPerMonth 0 = ethvert fald
   currentMembershipAlert        { enabledAt, thresholdPerMonth?, notifiedHonestYearlyPrice? }
                                 udeladt = ingen alarm på Nuværende medlemskab
   pushToken                     { expoPushToken: "ExponentPushToken[...]", platform, updatedAt }
 ```
 
-Databasen gemmer ikke `null`, så et udeladt felt betyder `null`. Brug `fromStoredFavorites` og `fromStoredCurrentMembershipAlert` til at læse, `favoriteAlertTriggers` og `currentMembershipAlertTrigger` til at finde opfyldte alarmer, og `priceAlertMessage` til beskeden. Push-beskeden skal have `data: { centerId }` (gerne også `kind`), så et tryk åbner Centerdetalje. Svarer Expo Push Service med `DeviceNotRegistered`, slettes `Users/<uid>/pushToken`. Log ud fjerner også telefonens token fra kontoen.
+Databasen gemmer ikke `null` eller tomme objekter, så et udeladt felt betyder `null`, og en Prisalarm uden tærskel gemmes som tærskel 0 (`toStoredFavorite`). Brug `fromStoredFavorites` og `fromStoredCurrentMembershipAlert` til at læse, `favoriteAlertTriggers` og `currentMembershipAlertTrigger` til at finde opfyldte alarmer, og `priceAlertMessage` til beskeden. Push-beskeden skal have `data: { centerId }` (gerne også `kind`), så et tryk åbner Centerdetalje. Svarer Expo Push Service med `DeviceNotRegistered`, slettes `Users/<uid>/pushToken`. Log ud fjerner også telefonens token fra kontoen.
+
+**Push fra nat-jobbet** (`scraper/priceAlertPush.mjs`). Efter scraping regner nat-jobbet alle brugeres Prisalarmer på nattens nye priser med funktionerne ovenfor og sender en push pr. opfyldt alarm via Expo Push Service (gratis, højst 100 beskeder pr. kald, `scraper/expoPush.mjs`). Kun Centre fra Kæder, der blev opdateret i nat, kan udløse en alarm; en Kæde, der er sprunget over, eller som kun har håndindtastede data, giver ingen. Når Expo har taget imod en push, gemmes den nye pris, så samme fald ikke sendes igen. Det skrives i samme opdatering som nattens centerdata. Fejler afsendelsen, gemmes intet, og alarmen prøves igen næste nat. Svarer Expo `DeviceNotRegistered` med det samme, slettes tokenet straks. Kommer svaret først i kvitteringen, slettes det ved næste kørsel (ticket-id'erne gemmes under `PushTickets`, som kun service-accounten kan læse). Brugere uden token får ingen push, men ser alarmen via sikkerhedsnettet. En tør kørsel sender aldrig push, men rapporten viser, hvad der ville være sendt. Rapporten indeholder hverken uid'er eller tokens.
 
 **Sikkerhedsnet i appen.** Når appen åbnes eller kommer i forgrunden, tjekkes alarmerne mod de aktuelle priser, og en opfyldt alarm vises som lokal notifikation (`usePriceAlertCheck` i `services/Notifications.js`). Tryk på en notifikation, lokal eller push, åbner Centerdetalje, også når appen startes af trykket.
 
@@ -134,6 +136,7 @@ Databasen gemmer ikke `null`, så et udeladt felt betyder `null`. Brug `fromStor
 **Secrets** (Settings → Secrets and variables → Actions):
 - `FIREBASE_SERVICE_ACCOUNT`: hele service account-JSON'en på én linje
 - `FIREBASE_DATABASE_URL`: database-URL'en
+- `EXPO_ACCESS_TOKEN` (valgfri): kun hvis "push security" er slået til i Expo-projektet. Push via Expo Push Service er gratis.
 
 **Høflighed.** Ærlig User-Agent, ét kald ad gangen og 2,5 sekunders pause mellem kaldene. SATS koster ca. 32 kald pr. nat: centerlisten, én side pr. Center og tre checkout-sider til gebyr og kampagne. Fitness X koster ca. 35 kald: centerlisten, prislisten og én side pr. Center. PureGym koster ca. 386 kald og ca. 20 minutter: centerlisten, prislisten og tre kald pr. Center (tilmeldingsformularen og én POST for hver Aldersgruppe). Derfor har workflowet 60 minutters timeout.
 
@@ -159,11 +162,15 @@ npm run verify:loop                       # LOOP: live-tjek og stikprøve (ca. 1
 npm run verify:puregym                    # PureGym: stikprøve (14 kald)
 npm run scrape:dry-run -- --chain puregym --limit 3   # kun én Kæde
 npm run verify:fitnessx                   # Fitness X: stikprøve og hele Kæden (ca. 9 kald)
-npm run scrape                            # skriver til databasen
+npm run scrape                            # skriver til databasen og sender push
+npm run demo:prisfald -- --center sats-412 --dry-run   # demo: vis hvilke push et prisfald giver
+npm run demo:prisfald -- --center sats-412             # demo: sænk priserne og send rigtige push
 ```
 
+**Demo af push.** `npm run demo:prisfald` sænker alle Tilbud i ét Center med 100 kr/md (`--kr` for et andet beløb, højst 30 % pr. pris) og sender push for de Prisalarmer, det udløser, præcis som nat-jobbet gør. Sådan vises en push på en iPhone med Expo Go: slå en Prisalarm til på Centret som Favorit (gerne uden tærskel), så telefonen gemmer sit push-token. Kør derefter scriptet med Centrets id. Tryk på beskeden åbner Centerdetalje. Næste nats scraping sætter de rigtige priser tilbage (prishistorikken røres ikke). Favoritten husker dog den sænkede pris, så slå alarmen fra og til igen efter demoen for at måle fra den rigtige pris.
+
 **Tre testlag.** En Kæde er først "færdig", når alle tre er grønne:
-1. `npm test`: SATS-parseren mod gemte, trimmede svar fra sats.dk (`scraper/fixtures/sats/`) med præcist forventede Centre og Tilbud, sanity-reglerne og nat-jobbet end-to-end med en falsk database (normal kørsel, sanity-fejl, kæde-fejl, forsvundet 1/2/3 nætter). LOOP-parseren testes på samme måde mod `scraper/fixtures/loop/`, inkl. den urørte centerliste med alle 137 Centre. PureGym-parseren testes mod `scraper/fixtures/puregym/` (alle 128 Centre, Drupal-formularen og ajax-svarene for under 30 og 30+ med intropris).
+1. `npm test`: Prisalarmer og push gennem nat-jobbet med falsk database og falsk push-afsender (fald over/under/lig tærsklen, uden tærskel, kampagne og lavere Standardpris, Nuværende medlemskab, `DeviceNotRegistered` i ticket og kvittering, ugyldigt og manglende token, sprunget-over Kæde, bundter på 100 og tør kørsel). SATS-parseren mod gemte, trimmede svar fra sats.dk (`scraper/fixtures/sats/`) med præcist forventede Centre og Tilbud, sanity-reglerne og nat-jobbet end-to-end med en falsk database (normal kørsel, sanity-fejl, kæde-fejl, forsvundet 1/2/3 nætter). LOOP-parseren testes på samme måde mod `scraper/fixtures/loop/`, inkl. den urørte centerliste med alle 137 Centre. PureGym-parseren testes mod `scraper/fixtures/puregym/` (alle 128 Centre, Drupal-formularen og ajax-svarene for under 30 og 30+ med intropris).
 2. Live-kørsel uden skrivning, der laver en rapport.
 3. Stikprøve-bevis i `docs/verifikation-sats.md`: tre tilfældige Centre, hvor scraperens tal sammenlignes med de priser og den adresse, en besøgende ser på siden. Køres igen, hver gang parseren ændres. For LOOP laver `npm run verify:loop` både live-kørslen og stikprøven i `docs/verifikation-loop.md` (adresse og åbningstid på centersiden, priskortenes tekster og Ældre Sagens egen side). For PureGym laver `npm run verify:puregym` stikprøven i `docs/verifikation-puregym.md` (de synlige priskort og centersidens adresse, navn og koordinater), og `npm run scrape:dry-run -- --chain puregym --limit 3` er live-kørslen.
 
@@ -190,7 +197,7 @@ Hver skærmfil har en `// Ansvarlig: <navn>`-kommentar øverst.
 
 | Ansvarlig | Skærme og dele |
 |---|---|
-| Jakob | Onboarding (`screens/Onboarding/`), Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), Log ind (`screens/LoginScreen.js`), scraper og nat-job |
+| Jakob | Onboarding (`screens/Onboarding/`), Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), Log ind (`screens/LoginScreen.js`), scraper og nat-job, afsendelse af push (`scraper/priceAlertPush.mjs`, `scraper/expoPush.mjs`) og demo-scriptet (`scraper/demoPriceDrop.mjs`) |
 | Christian | Find (`screens/FindScreen.js`), Filtre (`screens/FiltersScreen.js`), Centerdetalje (`screens/CenterDetailScreen.js`) |
 | Bastian | Spørg Ronnie (`screens/AskRonnieScreen.js`), Favoritter/Alarmer (`screens/FavoritesScreen.js`), Prisalarmer og push-registrering (`data/priceAlerts.js`, `services/PriceAlerts.js`, `services/Notifications.js`) |
 
