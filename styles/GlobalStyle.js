@@ -9,6 +9,7 @@ const colors = {
   background: '#FFFFFF',
   inputBackground: '#F2F2F2',
   backdrop: 'rgba(0, 0, 0, 0.4)',
+  error: '#C62828',
 };
 
 const GlobalStyle = StyleSheet.create({
@@ -185,6 +186,58 @@ const GlobalStyle = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 6,
   },
+  // Onboarding: et trin med titel og indhold, og knapperne nederst.
+  stepContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  stepCounter: {
+    color: colors.muted,
+    marginBottom: 4,
+  },
+  stepIntro: {
+    color: colors.text,
+    lineHeight: 21,
+    marginBottom: 16,
+  },
+  stepFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.inputBackground,
+  },
+  choiceList: {
+    gap: 10,
+    marginBottom: 12,
+  },
+  choiceDescription: {
+    color: colors.muted,
+    marginTop: 2,
+    marginLeft: 4,
+  },
+  fieldLabel: {
+    color: colors.text,
+    marginBottom: 4,
+  },
+  errorText: {
+    color: colors.error,
+    marginBottom: 10,
+  },
+  confirmedText: {
+    color: colors.primary,
+    marginBottom: 10,
+  },
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -206,6 +259,9 @@ const GlobalStyle = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 14,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   buttonTextPrimary: {
     color: '#FFFFFF',

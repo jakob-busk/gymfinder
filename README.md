@@ -36,6 +36,9 @@ Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorag
 | `Centers/<centerId>` | Center: Kæde, adresse, placering, faciliteter (ja/nej/ukendt), maskiner, tilmeldingslink |
 | `Offers/<centerId>/<offerId>` | Tilbud i Centret med priser, gebyrer og Binding |
 | `Users/<uid>` | Brugerens egne data |
+| `Users/<uid>/profile` | Profil: adresse og placering, fødselsdato, Rabatprofil, Nuværende medlemskab, Præferencer og hvornår onboarding blev gennemført |
+
+**Profil uden Firebase.** Profilen gemmes altid også i AsyncStorage. Uden Firebase-nøgler (eller uden forbindelse) bruges den lokale kopi, så appen husker brugeren efter genstart alligevel. Om onboarding er gennemført, caches i AsyncStorage, så den ikke vises igen på telefonen. Oversættelsen af profilen til og fra databasen ligger i `data/userProfile.js`.
 
 Oversættelsen mellem databasen og Matchning ligger i `data/centerData.js`. Databasen gemmer hverken `null` eller tomme lister, så manglende felter læses som "ukendt" (fx Binding og faciliteter).
 
@@ -58,17 +61,19 @@ npm run seed           # skriver til databasen
 ```
 
 ## Test
-Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre, Anbefalet og sortering), oversættelsen af centerdata til og fra databasen (`data/centerData.js`), Firebase-konfigurationen og sikkerhedsreglerne testes med Jest via jest-expo. Testene bruger ikke netværk:
+Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre, Anbefalet og sortering), oversættelsen af centerdata til og fra databasen (`data/centerData.js`), brugerprofilen (`data/userProfile.js` og `services/UserProfile.js`: fødselsdato, månedspris, gem/hent med lokal kopi og hvornår onboarding vises), Firebase-konfigurationen og sikkerhedsreglerne testes med Jest via jest-expo. Testene bruger ikke netværk:
 
 npm test
 
 ## Skærme
-Navigation: fire faner i bunden (Find, Spørg Ronnie, Favoritter og Profil). Centerdetalje og Filtre åbnes som stack oven på fanerne, og Om os åbnes fra Profil.
+Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, Spørg Ronnie, Favoritter og Profil). Centerdetalje og Filtre åbnes som stack oven på fanerne, og Om os åbnes fra Profil.
+
+- **Onboarding** (`screens/Onboarding/`, kun første gang): velkomst med Ronnie → adresse (geokodes) eller "Brug min placering" → fødselsdato → Rabatprofil → Nuværende medlemskab (egen månedspris og evt. Kæde, eller "Ingen") → Præferencer → fortsæt anonymt. Adresse og fødselsdato er krævet; resten kan springes over. Afslås adgang til placering, skriver man bare adressen
 
 - **Find**: liste over Centre via Matchning, sorteret efter Ærlig årspris, Kvartalspris, pris høj→lav eller afstand, med det Anbefalede fremhævet. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata. "Se mere" åbner Centerdetalje
 - **Spørg Ronnie**: chat med Ronnie (pladsholder med Ronnie indtil videre)
 - **Favoritter**: gemte Centre og Prisalarmer (pladsholder)
-- **Profil**: brugerens oplysninger, Rabatprofil og redigerbare Præferencer (maskiner, faciliteter, binding, maks. afstand)
+- **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre
 - **Om os**: kort om GymFinder, åbnes fra Profil
 - **Centerdetalje**: det valgte Center (pladsholder)
 - **Filtre**: Filtre til Find (pladsholder; Find bruger indtil videre Præferencerne fra Profil)
@@ -80,7 +85,7 @@ Hver skærmfil har en `// Ansvarlig: <navn>`-kommentar øverst.
 
 | Ansvarlig | Skærme og dele |
 |---|---|
-| Jakob | Onboarding, Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), scraper og nat-job |
+| Jakob | Onboarding (`screens/Onboarding/`), Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), scraper og nat-job |
 | Christian | Find (`screens/FindScreen.js`), Filtre (`screens/FiltersScreen.js`), Centerdetalje (`screens/CenterDetailScreen.js`) |
 | Bastian | Spørg Ronnie (`screens/AskRonnieScreen.js`), Favoritter/Alarmer (`screens/FavoritesScreen.js`) |
 
