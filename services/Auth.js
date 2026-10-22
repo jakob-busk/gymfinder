@@ -13,6 +13,7 @@ import {
 import { auth } from '../database/firebase';
 import { describeAccount } from '../data/account';
 import { clearLocalFavorites } from './Favorites';
+import { clearLocalPriceAlerts } from './PriceAlerts';
 import { clearLocalUserData } from './UserProfile';
 
 // Konto kræver Firebase. Uden .env gemmes brugerdata kun på telefonen.
@@ -69,13 +70,14 @@ export async function logIn({ email, password }) {
   return user;
 }
 
-// Log ud: den lokale kopi af brugerens data (profil og Favoritter) slettes først, så den næste, der bruger telefonen,
+// Log ud: den lokale kopi af brugerens data (profil, Favoritter og Prisalarm) slettes først, så den næste, der bruger telefonen,
 // starter forfra med onboarding. Data på kontoen bliver liggende i databasen.
 // Bagefter oprettes automatisk en ny anonym bruger (startAnonymousSession).
 export async function logOut(uid) {
   const firebaseAuth = requireAuth();
   await clearLocalUserData(uid);
   await clearLocalFavorites(uid);
+  await clearLocalPriceAlerts(uid);
   await signOut(firebaseAuth);
 }
 

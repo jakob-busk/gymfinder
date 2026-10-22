@@ -26,7 +26,8 @@
         {
           "locationWhenInUsePermission": "GymFinder bruger din placering til at vise afstanden til fitnesscentre nær dig."
         }
-      ]
+      ],
+      "expo-notifications"
     ]
   }
 }
