@@ -39,7 +39,8 @@ scraper/            Node-scraper (ikke en del af app-bundlen)
 
 ## 4. Navigation
 
-- `NavigationContainer` → `Tab.Navigator` i `App.js`; flow med under-skærme lægges som `Stack.Navigator` og bruges som `component` på en tab.
+- `NavigationContainer` → rod-`Stack.Navigator` i `App.js`. Fanerne (`Tab.Navigator`) ligger som én skærm i rod-stacken, og detaljeskærme, der skal kunne åbnes fra flere faner (fx Centerdetalje og Filtre), ligger ved siden af fanerne i rod-stacken, så de vises oven på fanerne.
+- Flow med under-skærme, der kun hører til én fane (fx Profil → Om os), lægges som en `Stack.Navigator` og bruges som `component` på fanen.
 - Ikoner: `Ionicons` fra `@expo/vector-icons`, sat via `options.tabBarIcon`.
 - Send data mellem skærme som params, og læs dem defensivt:
 
@@ -71,7 +72,7 @@ export const auth = initializeAuth(firebaseApp, {
 ## 6. Lokation, notifikationer og AI
 
 - Lokation: kald `Location.requestForegroundPermissionsAsync()`; ved `status !== 'granted'` returnér tidligt og fald tilbage til brugerens adresse.
-- Notifikationer: sæt `Notifications.setNotificationHandler` øverst i `App.js`; tilladelse og planlægning ligger i `services/Notifications.js` og returnerer `true`/`null`.
+- Notifikationer: sæt `Notifications.setNotificationHandler` øverst i `App.js`; tilladelse og planlægning ligger i `services/Notifications.js`. Simple tjek returnerer `true`/`false`/`null`; funktioner med flere mulige udfald (fx push-registrering) må returnere en kort status-streng (`'registered'`, `'denied'`, `'unsupported'` …) eller et objekt med en `reason`, så skærmen kan vise den rigtige besked.
 - AI (Ronnie): ét kald pr. funktion i `services/`, der returnerer `{ role: 'assistant', content }`. Systemprompten ligger i sin egen fil.
 - Netværkskald følger samme form:
 
@@ -95,7 +96,7 @@ export async function fetchOffers() {
 - Brugerrettede fejl: `Alert.alert('Kunne ikke gemme', error.message)` – titel på dansk.
 - Baggrundsfejl uden brugerhandling: `console.error('Hent tilbud fejlede:', error)`.
 - Validér input først og returnér tidligt: `if (!address.trim()) return Alert.alert('Udfyld adresse.');`.
-- Bekræft destruktive handlinger med `Alert.alert` og knapper `Annuller`/`Slet` (`style: 'destructive'`).
+- Bekræft destruktive handlinger med `Alert.alert` og knapperne `Annuller` og et verbum, der passer til handlingen (`style: 'destructive'`), fx `Slet` for data, der forsvinder helt, og `Fjern` for at tage noget ud af en liste (fx en Favorit).
 
 ## 9. Domænesprog (CONTEXT.md)
 
@@ -115,7 +116,7 @@ export async function fetchOffers() {
 - Øverst i hver skærm: `// Ansvarlig: <navn>` på første linje.
 - Skriv kommentarer og al UI-tekst på dansk; identifiers på engelsk.
 - Placér kommentaren på linjen over koden, kort og om *hvorfor* – ikke i forlængelse af funktionssignaturen.
-- Ingen udkommenteret kode eller `console.log` i commits.
+- Ingen udkommenteret kode eller `console.log` i commits. Undtagelse: CLI-scripts i `scraper/` (fx `index.mjs`, `seed.mjs`, `verify*.mjs`) må skrive deres resultat og rapporter til stdout med `console.log`; fejl skrives stadig med `console.error`.
 
 ## 11. Formatering
 
