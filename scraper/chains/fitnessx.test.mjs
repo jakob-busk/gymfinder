@@ -49,9 +49,12 @@ function offersFrom(html, center = { id: 'fitnessx-test', signupUrl: 'https://fi
 const byName = (offers, name) => offers.find((offer) => offer.name === name);
 
 const partnerText = (under30, over30, centers) =>
-  `I deler ét medlemskab med Træningsven og betaler samlet ${under30} kr/md (under 30) eller ` +
-  `${over30} kr/md (30+). Det koster 100 kr én gang at tilføje Træningsvennen. ` +
-  `Medlemskabet giver jer begge adgang til ${centers}.`;
+  `I melder jer ind sammen og betaler samlet ${under30} kr/md (under 30) eller ` +
+  `${over30} kr/md (30+). Det koster 100 kr én gang at tilføje makkeren. ` +
+  `I får begge adgang til ${centers}.`;
+
+// Oprettelsesgebyr pr. person med en makker: (60 + 100) / 2.
+const PARTNER_SIGNUP_FEE = 80;
 
 // Knytter de rigtige åbningstilbud til Centret. På siderne står de med skrald i acf.centre
 // ("abc", "efg", []), så de vises ikke i dag; her simuleres, at Fitness X slår dem til igen.
@@ -145,7 +148,8 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
         subscriptionType: 'Landsdækkende',
         standardPrice: { under30: 360, over30: 400 },
         ...common,
-        partnerPrice: 300,
+        partnerPrice: { under30: 280, over30: 300 },
+        partnerSignupFee: PARTNER_SIGNUP_FEE,
         partnerRequirement: partnerText(560, 600, '31 Centre'),
       },
       {
@@ -154,7 +158,8 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
         subscriptionType: 'Landsdækkende',
         standardPrice: { under30: 400, over30: 450 },
         ...common,
-        partnerPrice: 325,
+        partnerPrice: { under30: 300, over30: 325 },
+        partnerSignupFee: PARTNER_SIGNUP_FEE,
         partnerRequirement: partnerText(600, 650, '33 Centre'),
       },
     ]);
@@ -164,7 +169,7 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
     for (const { file } of Object.values(FIXTURE_CENTERS)) {
       const kategori1 = byName(offersFrom(fitnessxFixture(file)).offers, 'Kategori 1');
       assert.deepEqual(kategori1.standardPrice, { under30: 400, over30: 450 }, file);
-      assert.equal(kategori1.partnerPrice, 325, file);
+      assert.deepEqual(kategori1.partnerPrice, { under30: 300, over30: 325 }, file);
     }
   });
 
@@ -178,10 +183,10 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
     assert.deepEqual(
       offers.map((offer) => [offer.name, offer.standardPrice, offer.partnerPrice]),
       [
-        ['Kategori 2', { under30: 360, over30: 400 }, 275],
-        ['Kategori 2 + Reformer', { under30: 510, over30: 600 }, 475],
-        ['Kategori 1', { under30: 400, over30: 450 }, 325],
-        ['Kategori 1 + Reformer', { under30: 550, over30: 650 }, 525],
+        ['Kategori 2', { under30: 360, over30: 400 }, { under30: 250, over30: 275 }],
+        ['Kategori 2 + Reformer', { under30: 510, over30: 600 }, { under30: 400, over30: 475 }],
+        ['Kategori 1', { under30: 400, over30: 450 }, { under30: 300, over30: 325 }],
+        ['Kategori 1 + Reformer', { under30: 550, over30: 650 }, { under30: 450, over30: 525 }],
       ],
     );
     // Særprisen i Aarhus (500/550 for to) giver kun adgang til 9 Centre; det står i kravet.
@@ -201,9 +206,9 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
     assert.deepEqual(
       offers.map((offer) => [offer.name, offer.standardPrice, offer.partnerPrice]),
       [
-        ['Kategori 3', { under30: 330, over30: 360 }, 280],
-        ['Kategori 2', { under30: 360, over30: 400 }, 300],
-        ['Kategori 1', { under30: 400, over30: 450 }, 325],
+        ['Kategori 3', { under30: 330, over30: 360 }, { under30: 265, over30: 280 }],
+        ['Kategori 2', { under30: 360, over30: 400 }, { under30: 280, over30: 300 }],
+        ['Kategori 1', { under30: 400, over30: 450 }, { under30: 300, over30: 325 }],
       ],
     );
   });
@@ -266,10 +271,26 @@ describe('Fitness X centerside: Tilbud pr. Aldersgruppe', () => {
 });
 
 describe('Fitness X Træningsven = Træn med en makker (Makkerpris)', () => {
-  test('Makkerpris er 30+-prisen pr. person, så den aldrig bliver for lav', () => {
+  test('Makkerpris gemmes pr. person for begge Aldersgrupper', () => {
     const viborg = offersFrom(fitnessxFixture('center-viborg.html')).offers;
     // Kategori 2 med Træningsven: 560 (under 30) / 600 (30+) for to = 280 / 300 pr. person.
-    assert.equal(byName(viborg, 'Kategori 2').partnerPrice, 300);
+    assert.deepEqual(byName(viborg, 'Kategori 2').partnerPrice, { under30: 280, over30: 300 });
+  });
+
+  test('engangsbeløbet på 100 kr for makkeren indgår i Oprettelsesgebyret pr. person', () => {
+    const viborg = offersFrom(fitnessxFixture('center-viborg.html')).offers;
+    // (Opstartsgebyr 60 + 100 for at tilføje makkeren) / 2 personer = 80 kr pr. person.
+    assert.equal(byName(viborg, 'Kategori 2').partnerSignupFee, 80);
+    assert.equal(byName(viborg, 'Kategori 2').signupFee, 60);
+  });
+
+  test('kravet for Makkerpris bruger GymFinders ord, ikke kædens produktnavn', () => {
+    for (const { file } of Object.values(FIXTURE_CENTERS)) {
+      for (const offer of offersFrom(fitnessxFixture(file)).offers) {
+        if (!offer.partnerRequirement) continue;
+        assert.doesNotMatch(offer.partnerRequirement, /træningsven|medlemskab/i, offer.name);
+      }
+    }
   });
 
   test('Hjørring har kun Kategori 5 med Træningsven; den bliver et selvstændigt Tilbud', () => {
@@ -292,7 +313,8 @@ describe('Fitness X Træningsven = Træn med en makker (Makkerpris)', () => {
       signupFee: 60,
       adminFee: 15,
       bindingMonths: 0,
-      partnerPrice: 175,
+      partnerPrice: { under30: 150, over30: 175 },
+      partnerSignupFee: PARTNER_SIGNUP_FEE,
       partnerRequirement: partnerText(300, 350, 'ét Center'),
       signupUrl: FITNESSX_SIGNUP_URL,
     });
@@ -327,6 +349,38 @@ describe('Fitness X kampagner i fri tekst', () => {
     });
     // De almindelige Tilbud er urørte.
     assert.equal(byName(offers, 'Kategori 2').campaignPrice, null);
+  });
+
+  test('format A med forskellig Kampagnepris pr. Aldersgruppe gemmer begge', () => {
+    const html = withAjaxObject(fitnessxFixture('center-kbh-lindgreens-alle.html'), (object) => {
+      for (const membership of membershipsTitled(object, /Drop 3.*Lindgreens/)) {
+        membership.acf.centre = [GUIDS.lindgreens];
+        if (membership.acf.over_under_tredive === true) {
+          membership.acf.beskrivelse =
+            'Træn for kun 209 kr./md. frem til 31. december 2026. Herefter 400 kr./md.';
+        }
+      }
+    });
+    const { offers, warnings } = offersFrom(html);
+    assert.deepEqual(warnings, []);
+    const drop3 = byName(offers, 'Åbningstilbud – Drop 3');
+    assert.deepEqual(drop3.campaignPrice, { under30: 189, over30: 209 });
+    assert.deepEqual(offerProblems(drop3), []);
+  });
+
+  test('en kampagne for kun den ene Aldersgruppe regnes ikke med', () => {
+    const html = withAjaxObject(fitnessxFixture('center-kbh-lindgreens-alle.html'), (object) => {
+      for (const membership of membershipsTitled(object, /Drop 3.*Lindgreens/)) {
+        membership.acf.centre = [GUIDS.lindgreens];
+        if (membership.acf.over_under_tredive === true) membership.acf.beskrivelse = '';
+      }
+    });
+    const { offers, warnings } = offersFrom(html);
+    const drop3 = byName(offers, 'Åbningstilbud – Drop 3');
+    assert.equal(drop3.campaignPrice, null);
+    assert.deepEqual(warnings, [
+      'Åbningstilbud – Drop 3: kampagnen gælder kun den ene Aldersgruppe og regnes ikke med',
+    ]);
   });
 
   test('format B: acf.pris er Kampagneprisen, Standardprisen står i teksten', () => {
@@ -538,7 +592,7 @@ describe('hele Fitness X-kørslen (falsk HTTP med gemte svar)', () => {
     const hjoerring = result.centers[1];
     assert.equal(hjoerring.signupUrl, FITNESSX_SIGNUP_URL);
     assert.equal(hjoerring.offers[0].name, 'Kategori 5 + Træningsven');
-    assert.equal(hjoerring.offers[0].partnerPrice, 175);
+    assert.deepEqual(hjoerring.offers[0].partnerPrice, { under30: 150, over30: 175 });
   });
 
   test('er høflig: centerliste, prisliste og én side pr. Center med link (7 kald)', async () => {

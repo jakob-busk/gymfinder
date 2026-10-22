@@ -163,7 +163,6 @@ export const PUREGYM_VERIFICATION_DESCRIPTION = [
   'én POST pr. Aldersgruppe) plus centersiden. Kolonnen "Scraper" er det, scraperen skriver',
   '(priser fra formularens data og det med småt, adresse fra /find-center), og "Hjemmeside" er',
   'det, en besøgende ser: de synlige priskort (normalpris og intropris) og centersidens',
-  'adresse, navn og koordinater (JSON-LD). Kampagneprisen er den højeste af de to',
-  'Aldersgruppers intropris, fordi et Tilbud kun har én Kampagnepris. Genereres med',
-  '`npm run verify:puregym` i `scraper/`.',
+  'adresse, navn og koordinater (JSON-LD). Kampagneprisen sammenlignes pr. Aldersgruppe.',
+  'Genereres med `npm run verify:puregym` i `scraper/`.',
 ];
