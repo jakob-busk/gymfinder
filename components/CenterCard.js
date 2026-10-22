@@ -3,6 +3,7 @@ import { View, Text, Pressable, Linking } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import InfoButton from './InfoButton';
 import { NOT_STATED_LABELS } from '../data/matchning';
 
 const kr = (amount) => `${Math.round(amount)} kr`;
@@ -21,9 +22,6 @@ function priceLines(pricedOffer) {
       `Starter på ${kr(first.total)}/${perPeriod}, derefter ${kr(last.total)}/${perPeriod}.`,
     );
   }
-  if (pricedOffer.adminFee > 0) {
-    lines.push(`Heraf ${kr(pricedOffer.adminFee)} i admingebyr pr. betaling.`);
-  }
   if (pricedOffer.signupFee > 0) {
     lines.push(`Oprettelsesgebyr på ${kr(pricedOffer.signupFee)} er fordelt over året.`);
   }
@@ -31,13 +29,14 @@ function priceLines(pricedOffer) {
     lines.push(`Du fylder 30, så prisen stiger fra måned ${pricedOffer.turns30InMonth}.`);
   }
   if (pricedOffer.partnerRequirement && pricedOffer.yearlyOption.kind === 'partner') {
-    lines.push(`Makkerpris pr. person. Krav: ${pricedOffer.partnerRequirement}`);
+    lines.push(`Krav for Makkerpris: ${pricedOffer.partnerRequirement}`);
   }
   return lines;
 }
 
 // Kort for ét Center i listen. Viser Ærlig årspris for det billigste Tilbud for brugeren.
-export default function CenterCard({ match, isRecommended }) {
+// onShowDetails kaldes ved tryk på "Se mere" (åbner Centerdetalje).
+export default function CenterCard({ match, isRecommended, onShowDetails }) {
   const [expanded, setExpanded] = useState(false);
   const { center, chain, bestOffer } = match;
   const binding = bestOffer.bindingMonths;
@@ -53,15 +52,24 @@ export default function CenterCard({ match, isRecommended }) {
         )}
       </View>
 
-      <Text style={GlobalStyle.priceText}>{kr(match.honestYearlyPrice)}/md (ærlig årspris)</Text>
-      <Text style={GlobalStyle.distanceText}>
-        Kvartalspris {kr(match.quarterlyPrice)}/md
-        {match.distanceKm != null ? ` · ${match.distanceKm.toFixed(1)} km fra dig` : ''}
-      </Text>
-      {match.notStated.length > 0 && (
-        <Text style={GlobalStyle.notStatedText}>
-          Ikke oplyst: {match.notStated.map((key) => NOT_STATED_LABELS[key]).join(', ')}
+      <View style={GlobalStyle.inlineRow}>
+        <Text style={GlobalStyle.priceText}>{kr(match.honestYearlyPrice)}/md (ærlig årspris)</Text>
+        <InfoButton term="honestYearlyPrice" />
+      </View>
+      <View style={GlobalStyle.inlineRow}>
+        <Text style={GlobalStyle.distanceText}>
+          Kvartalspris {kr(match.quarterlyPrice)}/md
+          {match.distanceKm != null ? ` · ${match.distanceKm.toFixed(1)} km fra dig` : ''}
         </Text>
+        <InfoButton term="quarterlyPrice" />
+      </View>
+      {match.notStated.length > 0 && (
+        <View style={GlobalStyle.inlineRow}>
+          <Text style={GlobalStyle.notStatedText}>
+            Ikke oplyst: {match.notStated.map((key) => NOT_STATED_LABELS[key]).join(', ')}
+          </Text>
+          <InfoButton term="notStated" />
+        </View>
       )}
       {match.savingPerMonth != null && match.savingPerMonth > 0 && (
         <Text style={GlobalStyle.savingText}>
@@ -79,13 +87,32 @@ export default function CenterCard({ match, isRecommended }) {
             {chain?.name} · {bestOffer.offer.name} ({bestOffer.offer.subscriptionType})
           </Text>
           <Text>{priceLines(bestOffer).join(' ')}</Text>
-          <Text>
-            Binding: {binding == null ? 'Ikke oplyst' : binding === 0 ? 'Ingen' : `${binding} mdr.`}
-          </Text>
+          {bestOffer.adminFee > 0 && (
+            <View style={GlobalStyle.inlineRow}>
+              <Text>Heraf admingebyr: {kr(bestOffer.adminFee)} pr. betaling</Text>
+              <InfoButton term="adminFee" />
+            </View>
+          )}
+          {bestOffer.yearlyOption.kind === 'partner' && (
+            <View style={GlobalStyle.inlineRow}>
+              <Text>Prisen er Makkerpris pr. person</Text>
+              <InfoButton term="partnerPrice" />
+            </View>
+          )}
+          <View style={GlobalStyle.inlineRow}>
+            <Text>
+              Binding:{' '}
+              {binding == null ? 'Ikke oplyst' : binding === 0 ? 'Ingen' : `${binding} mdr.`}
+            </Text>
+            <InfoButton term="binding" />
+          </View>
 
           {match.savingSuggestions.map((suggestion) => (
             <View key={suggestion.discountGroup}>
-              <Text style={GlobalStyle.detailsHeading}>Spar mere</Text>
+              <View style={GlobalStyle.inlineRow}>
+                <Text style={GlobalStyle.detailsHeading}>Spar mere</Text>
+                <InfoButton term="savingSuggestion" />
+              </View>
               <Text>
                 Bliv {suggestion.label} for {suggestion.membershipPricePerYear} kr/år og spar{' '}
                 {kr(suggestion.savingPerYear)}/år her.
@@ -93,6 +120,12 @@ export default function CenterCard({ match, isRecommended }) {
             </View>
           ))}
         </View>
+      )}
+
+      {onShowDetails && (
+        <Pressable onPress={onShowDetails}>
+          <Text style={GlobalStyle.link}>Se mere →</Text>
+        </Pressable>
       )}
 
       <ButtonComponent
