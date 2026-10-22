@@ -205,20 +205,188 @@ function priceOffer(offer, chain, groups, ageGroups) {
   };
 }
 
+// ---------- Distance ----------
+
+const EARTH_RADIUS_KM = 6371;
+
+// Luftlinje mellem to punkter (haversine).
+export function distanceKm(from, to) {
+  if (!from || !to) return null;
+  const rad = (degrees) => (degrees * Math.PI) / 180;
+  const dLat = rad(to.latitude - from.latitude);
+  const dLon = rad(to.longitude - from.longitude);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(from.latitude)) * Math.cos(rad(to.latitude)) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
+}
+
+// ---------- Filtre ----------
+//
+// Filtre: { maxDistanceKm, sauna, groupClasses, open24h, machines: [], noBinding, multiCenterAccess }
+// Et Filter er kun aktivt, når det er sat (true / ikke-tom liste / et tal).
+// Hvert tjek giver 'fail' (med sikkerhed ikke opfyldt, skjules), 'unknown' ("Ikke oplyst") eller 'ok'.
+
+export const FACILITY_FILTERS = ['sauna', 'groupClasses', 'open24h'];
+
+// Navne til "Ikke oplyst"-mærker i UI.
+export const NOT_STATED_LABELS = {
+  sauna: 'Sauna',
+  groupClasses: 'Holdtræning',
+  open24h: 'Døgnåbent',
+  machines: 'Maskiner',
+  binding: 'Binding',
+  subscriptionType: 'Abonnementstype',
+};
+
+function checkCenter(center, filters) {
+  const notStated = [];
+  for (const facility of FACILITY_FILTERS) {
+    if (filters[facility] !== true) continue;
+    const value = center.facilities?.[facility];
+    if (value === false) return { fail: true };
+    if (value == null) notStated.push(facility);
+  }
+
+  const wantedMachines = filters.machines ?? [];
+  if (wantedMachines.length > 0) {
+    if (center.machines == null) notStated.push('machines');
+    else if (!wantedMachines.every((machine) => center.machines.includes(machine))) return { fail: true };
+  }
+
+  return { fail: false, notStated };
+}
+
+function checkOffer(offer, filters) {
+  const notStated = [];
+  if (filters.noBinding === true) {
+    if (offer.bindingMonths == null) notStated.push('binding');
+    else if (offer.bindingMonths > 0) return { fail: true };
+  }
+  if (filters.multiCenterAccess === true) {
+    if (offer.subscriptionType == null) notStated.push('subscriptionType');
+    else if (offer.subscriptionType !== 'Landsdækkende') return { fail: true };
+  }
+  return { fail: false, notStated };
+}
+
+// ---------- Spar mere-forslag ----------
+
+// Rabatgrupper brugeren kan melde sig ind i, hvor Besparelsen i dette Center er større
+// end medlemsprisen (fx Ældre Sagen 310 kr/år).
+function savingsSuggestionsFor(offers, chain, user, groups, ageGroups, today, currentBest) {
+  const age = user?.birthDate ? ageOn(toDate(user.birthDate), today) : null;
+
+  return Object.entries(DISCOUNT_GROUPS)
+    .filter(([group, info]) => info.membershipPricePerYear != null && !groups.includes(group))
+    .filter(([, info]) => info.minAge == null || age == null || age >= info.minAge)
+    .map(([group, info]) => {
+      const withGroup = offers.map((offer) => priceOffer(offer, chain, [...groups, group], ageGroups));
+      const best = cheapest(withGroup, 'honestYearlyPrice');
+      return {
+        group,
+        label: info.label,
+        membershipPricePerYear: info.membershipPricePerYear,
+        offerId: best.offer.id,
+        honestYearlyPrice: best.honestYearlyPrice,
+        savingsPerYear: (currentBest - best.honestYearlyPrice) * MONTHS_IN_YEAR,
+      };
+    })
+    .filter((suggestion) => suggestion.savingsPerYear > suggestion.membershipPricePerYear);
+}
+
+// ---------- Sortering ----------
+
+const COMPARATORS = {
+  honestYearlyPrice: (a, b) => a.honestYearlyPrice - b.honestYearlyPrice,
+  quarterlyPrice: (a, b) => a.quarterlyPrice - b.quarterlyPrice,
+  priceDesc: (a, b) => b.honestYearlyPrice - a.honestYearlyPrice,
+  distance: (a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity),
+};
+
+function sortCenters(results, sortBy) {
+  const compare = COMPARATORS[sortBy] ?? COMPARATORS.honestYearlyPrice;
+  return [...results].sort(
+    (a, b) =>
+      compare(a, b) ||
+      a.honestYearlyPrice - b.honestYearlyPrice ||
+      String(a.center.id).localeCompare(String(b.center.id)),
+  );
+}
+
 // ---------- Matchning ----------
 
-export function matchCenters({ centers, chains, user, today }) {
+// Input:  { centers, chains, user, filters, sortBy, location, today }
+// Output: { centers: [CenterMatch], recommendedId, recommendedOfferId }
+//
+// CenterMatch: { center, chain, distanceKm, offers: [PrisetTilbud], bestOffer, honestYearlyPrice,
+//                quarterlyPrice, notStated, isSureMatch, bestSureOffer, savingsSuggestions,
+//                savingsPerMonth }
+//   notStated = aktive Filtre, der er "Ikke oplyst" for Centret / det billigste Tilbud.
+//   savingsPerMonth = Besparelse i forhold til Nuværende medlemskab (null hvis intet).
+// PrisetTilbud: { offer, honestYearlyPrice, quarterlyPrice, yearlyOption, quarterlyOption,
+//                 monthlyBreakdown, signupFee, adminFee, bindingMonths, turns30InMonth,
+//                 partnerRequirement, notStated }
+//
+// bestOffer er Tilbuddet med lavest Ærlig årspris. quarterlyPrice på Centret er den laveste
+// Kvartalspris blandt Centrets Tilbud. Priser er ikke afrundede; afrund først ved visning.
+export function matchCenters({ centers, chains, user, filters, sortBy, location, today }) {
+  const activeFilters = filters ?? {};
   const todayDate = toDate(today ?? new Date());
   const groups = user?.discountGroups ?? [];
   const ageGroups = ageGroupsForWindow(user?.birthDate, todayDate);
   const chainsById = Object.fromEntries((chains ?? []).map((chain) => [chain.id, chain]));
+  const currentPrice = user?.currentMembership?.monthlyPrice ?? null;
 
-  const results = (centers ?? []).map((center) => {
+  const results = [];
+  for (const center of centers ?? []) {
+    const distance = distanceKm(location, center.location);
+    const maxDistance = activeFilters.maxDistanceKm;
+    if (maxDistance != null && distance != null && distance > maxDistance) continue;
+
+    const centerCheck = checkCenter(center, activeFilters);
+    if (centerCheck.fail) continue;
+
     const chain = chainsById[center.chainId] ?? null;
-    const offers = (center.offers ?? []).map((offer) => priceOffer(offer, chain, groups, ageGroups));
-    const bestOffer = cheapest(offers, 'honestYearlyPrice');
-    return { center, chain, offers, bestOffer, honestYearlyPrice: bestOffer.honestYearlyPrice };
-  });
+    const eligibleOffers = (center.offers ?? []).filter((offer) => !checkOffer(offer, activeFilters).fail);
+    if (eligibleOffers.length === 0) continue;
 
-  return { centers: results };
+    const offers = eligibleOffers
+      .map((offer) => ({
+        ...priceOffer(offer, chain, groups, ageGroups),
+        notStated: checkOffer(offer, activeFilters).notStated,
+      }))
+      .sort((a, b) => a.honestYearlyPrice - b.honestYearlyPrice);
+    const bestOffer = offers[0];
+    const sureOffers = centerCheck.notStated.length === 0 ? offers.filter((o) => o.notStated.length === 0) : [];
+
+    results.push({
+      center,
+      chain,
+      distanceKm: distance,
+      offers,
+      bestOffer,
+      honestYearlyPrice: bestOffer.honestYearlyPrice,
+      quarterlyPrice: cheapest(offers, 'quarterlyPrice').quarterlyPrice,
+      notStated: [...centerCheck.notStated, ...bestOffer.notStated],
+      isSureMatch: sureOffers.length > 0,
+      bestSureOffer: sureOffers[0] ?? null,
+      savingsSuggestions: savingsSuggestionsFor(
+        eligibleOffers, chain, user, groups, ageGroups, todayDate, bestOffer.honestYearlyPrice,
+      ),
+      savingsPerMonth: currentPrice == null ? null : currentPrice - bestOffer.honestYearlyPrice,
+    });
+  }
+
+  // Anbefalet: lavest Ærlig årspris blandt sikre match, uafhængig af sorteringen.
+  const sure = results.filter((result) => result.isSureMatch);
+  const recommended = sure.length > 0
+    ? sure.reduce((best, r) => (r.bestSureOffer.honestYearlyPrice < best.bestSureOffer.honestYearlyPrice ? r : best))
+    : null;
+
+  return {
+    centers: sortCenters(results, sortBy),
+    recommendedId: recommended?.center.id ?? null,
+    recommendedOfferId: recommended?.bestSureOffer.offer.id ?? null,
+  };
 }

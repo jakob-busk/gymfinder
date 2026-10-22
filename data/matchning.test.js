@@ -255,3 +255,245 @@ describe('Træn med en makker', () => {
     expect(best.honestYearlyPrice).toBeCloseTo(261.5);
   });
 });
+
+describe('Distance', () => {
+  test('er luftlinje (haversine) fra brugerens placering', () => {
+    const result = run({ centers: [center({ location: { latitude: HOME.latitude + 1, longitude: HOME.longitude } })] });
+    expect(result.centers[0].distanceKm).toBeCloseTo(111.19, 1);
+  });
+
+  test('er null, når brugerens placering ikke kendes', () => {
+    const result = run({ location: null });
+    expect(result.centers[0].distanceKm).toBeNull();
+  });
+});
+
+describe('Filtre', () => {
+  const ids = (result) => result.centers.map((entry) => entry.center.id);
+  const byId = (result, id) => result.centers.find((entry) => entry.center.id === id);
+
+  test('maks. afstand er altid hård', () => {
+    const result = run({
+      centers: [center({ id: 'naer', location: north(2) }), center({ id: 'fjern', location: north(10) })],
+      filters: { maxDistanceKm: 5 },
+    });
+    expect(ids(result)).toEqual(['naer']);
+  });
+
+  test('kendt manglende facilitet skjuler Centret; ukendt giver "Ikke oplyst"', () => {
+    const result = run({
+      centers: [
+        center({ id: 'ja', facilities: { sauna: true } }),
+        center({ id: 'nej', facilities: { sauna: false } }),
+        center({ id: 'ukendt', facilities: { sauna: null } }),
+      ],
+      filters: { sauna: true },
+    });
+    expect(ids(result).sort()).toEqual(['ja', 'ukendt']);
+    expect(byId(result, 'ja')).toMatchObject({ notStated: [], isSureMatch: true });
+    expect(byId(result, 'ukendt')).toMatchObject({ notStated: ['sauna'], isSureMatch: false });
+  });
+
+  test('holdtræning og døgnåbent filtreres på samme måde', () => {
+    const result = run({
+      centers: [
+        center({ id: 'alt', facilities: { groupClasses: true, open24h: true } }),
+        center({ id: 'ikke-doegn', facilities: { groupClasses: true, open24h: false } }),
+        center({ id: 'ukendt-hold', facilities: { open24h: true } }),
+      ],
+      filters: { groupClasses: true, open24h: true },
+    });
+    expect(ids(result).sort()).toEqual(['alt', 'ukendt-hold']);
+    expect(byId(result, 'ukendt-hold').notStated).toEqual(['groupClasses']);
+  });
+
+  test('maskiner: kendt manglende maskine skjuler, ukendt maskinliste giver "Ikke oplyst"', () => {
+    const result = run({
+      centers: [
+        center({ id: 'har', machines: ['Bænkpres', 'Squat rack'] }),
+        center({ id: 'mangler', machines: ['Bænkpres'] }),
+        center({ id: 'ukendt', machines: null }),
+      ],
+      filters: { machines: ['Bænkpres', 'Squat rack'] },
+    });
+    expect(ids(result).sort()).toEqual(['har', 'ukendt']);
+    expect(byId(result, 'ukendt').notStated).toEqual(['machines']);
+  });
+
+  test('ingen Binding: Tilbud med Binding tæller ikke med, ukendt Binding giver "Ikke oplyst"', () => {
+    const result = run({
+      centers: [
+        center({
+          id: 'blandet',
+          offers: [
+            offer({ id: 'billig-bundet', standardPrice: 149, bindingMonths: 12 }),
+            offer({ id: 'fri', standardPrice: 249, bindingMonths: 0 }),
+          ],
+        }),
+        center({ id: 'kun-bundet', offers: [offer({ bindingMonths: 6 })] }),
+        center({ id: 'ukendt', offers: [offer({ bindingMonths: null })] }),
+      ],
+      filters: { noBinding: true },
+    });
+    expect(ids(result).sort()).toEqual(['blandet', 'ukendt']);
+    expect(byId(result, 'blandet').bestOffer.offer.id).toBe('fri');
+    expect(byId(result, 'blandet').honestYearlyPrice).toBeCloseTo(249);
+    expect(byId(result, 'ukendt').notStated).toEqual(['binding']);
+  });
+
+  test('adgang til flere centre kræver Abonnementstypen Landsdækkende', () => {
+    const result = run({
+      centers: [
+        center({
+          id: 'begge',
+          offers: [
+            offer({ id: 'lokal', subscriptionType: 'Lokal center', standardPrice: 199 }),
+            offer({ id: 'land', subscriptionType: 'Landsdækkende', standardPrice: 299 }),
+          ],
+        }),
+        center({ id: 'kun-lokal', offers: [offer({ subscriptionType: 'Lokal center' })] }),
+      ],
+      filters: { multiCenterAccess: true },
+    });
+    expect(ids(result)).toEqual(['begge']);
+    expect(result.centers[0].bestOffer.offer.id).toBe('land');
+  });
+
+  test('uden aktive Filtre er alle Centre sikre match', () => {
+    const result = run({ centers: [center({ facilities: { sauna: null }, machines: null })] });
+    expect(result.centers[0]).toMatchObject({ notStated: [], isSureMatch: true });
+  });
+});
+
+describe('Anbefalet', () => {
+  const centers = [
+    center({ id: 'sikker-dyr', location: north(1), offers: [offer({ standardPrice: 299 })] }),
+    center({ id: 'sikker-billig', location: north(3), offers: [offer({ standardPrice: 249 })] }),
+    center({ id: 'ukendt-billigst', location: north(2), facilities: { sauna: null }, offers: [offer({ standardPrice: 149 })] }),
+  ];
+
+  test('er lavest Ærlig årspris blandt sikre match', () => {
+    const result = run({ centers, filters: { sauna: true } });
+    expect(result.recommendedId).toBe('sikker-billig');
+    expect(result.recommendedOfferId).toBe('tilbud');
+  });
+
+  test('er uafhængig af sorteringen', () => {
+    for (const sortBy of ['honestYearlyPrice', 'quarterlyPrice', 'priceDesc', 'distance']) {
+      expect(run({ centers, filters: { sauna: true }, sortBy }).recommendedId).toBe('sikker-billig');
+    }
+  });
+
+  test('vælger kun blandt Tilbud, der med sikkerhed matcher', () => {
+    // Det billigste Tilbud i 'a' har ukendt Binding, så Anbefalet bygger på de sikre Tilbud.
+    const result = run({
+      centers: [
+        center({
+          id: 'a',
+          offers: [
+            offer({ id: 'ukendt-binding', standardPrice: 99, bindingMonths: null }),
+            offer({ id: 'fri', standardPrice: 279, bindingMonths: 0 }),
+          ],
+        }),
+        center({ id: 'b', offers: [offer({ id: 'b-fri', standardPrice: 259, bindingMonths: 0 })] }),
+      ],
+      filters: { noBinding: true },
+    });
+    expect(result.recommendedId).toBe('b');
+    expect(result.recommendedOfferId).toBe('b-fri');
+  });
+
+  test('er null, når ingen Centre med sikkerhed matcher', () => {
+    const result = run({ centers: [center({ facilities: { sauna: null } })], filters: { sauna: true } });
+    expect(result.centers).toHaveLength(1);
+    expect(result.recommendedId).toBeNull();
+  });
+});
+
+describe('Sortering', () => {
+  // X: år (3 * 100 + 9 * 300) / 12 = 250, kvartal 100, 3 km
+  // Y: år 200, kvartal 200, 1 km
+  // Z: år 300, kvartal 300, 2 km
+  const centers = [
+    center({ id: 'X', location: north(3), offers: [offer({ standardPrice: 300, campaignPrice: 100, campaignMonths: 3 })] }),
+    center({ id: 'Y', location: north(1), offers: [offer({ standardPrice: 200 })] }),
+    center({ id: 'Z', location: north(2), offers: [offer({ standardPrice: 300 })] }),
+  ];
+  const order = (sortBy) => run({ centers, sortBy }).centers.map((entry) => entry.center.id);
+
+  test('Ærlig årspris lav→høj', () => expect(order('honestYearlyPrice')).toEqual(['Y', 'X', 'Z']));
+  test('Kvartalspris lav→høj', () => expect(order('quarterlyPrice')).toEqual(['X', 'Y', 'Z']));
+  test('Pris høj→lav', () => expect(order('priceDesc')).toEqual(['Z', 'X', 'Y']));
+  test('Afstand', () => expect(order('distance')).toEqual(['Y', 'Z', 'X']));
+});
+
+describe('Spar mere-forslag', () => {
+  const aeldreSagenChain = (price) => chain({ discounts: [{ group: 'aeldreSagen', price }] });
+  const suggestionsFor = (overrides) => run(overrides).centers[0].savingsSuggestions;
+
+  test('foreslår Ældre Sagen, når Besparelsen er større end medlemsprisen', () => {
+    // (300 - 249) * 12 = 612 kr/år > 310 kr/år
+    expect(suggestionsFor({ chains: [aeldreSagenChain(249)] })).toEqual([
+      expect.objectContaining({
+        group: 'aeldreSagen',
+        label: 'Ældre Sagen-medlem',
+        membershipPricePerYear: 310,
+        honestYearlyPrice: 249,
+        savingsPerYear: 612,
+      }),
+    ]);
+  });
+
+  test('intet forslag, når Besparelsen ikke dækker medlemsprisen', () => {
+    // (300 - 279) * 12 = 252 kr/år < 310 kr/år
+    expect(suggestionsFor({ chains: [aeldreSagenChain(279)] })).toEqual([]);
+  });
+
+  test('intet forslag, når brugeren allerede er medlem', () => {
+    const member = user({ discountGroups: ['aeldreSagen'] });
+    expect(suggestionsFor({ chains: [aeldreSagenChain(149)], user: member })).toEqual([]);
+  });
+
+  test('intet forslag for Rabatgrupper man ikke kan melde sig ind i', () => {
+    expect(suggestionsFor({ chains: [chain({ discounts: [{ group: 'student', price: 99 }] })] })).toEqual([]);
+  });
+
+  test('intet forslag til brugere under 18', () => {
+    const young = user({ birthDate: '2010-01-01' });
+    expect(suggestionsFor({ chains: [aeldreSagenChain(149)], user: young })).toEqual([]);
+  });
+});
+
+describe('Nuværende medlemskab', () => {
+  test('Besparelse pr. måned i forhold til Nuværende medlemskab', () => {
+    const result = run({ user: user({ currentMembership: { monthlyPrice: 349 } }) });
+    expect(result.centers[0].savingsPerMonth).toBeCloseTo(49);
+  });
+
+  test('ingen Besparelse uden Nuværende medlemskab', () => {
+    expect(run().centers[0].savingsPerMonth).toBeNull();
+  });
+});
+
+describe('Uafhængighed', () => {
+  test('modulet importerer intet fra React Native eller Expo, så nat-jobbet kan bruge det', () => {
+    const source = require('fs').readFileSync(require('path').join(__dirname, 'matchning.js'), 'utf8');
+    expect(source).not.toMatch(/from ['"](react-native|expo)/);
+    expect(source).not.toMatch(/require\(['"](react-native|expo)/);
+  });
+});
+
+describe('Tom-tilstand', () => {
+  test('ingen Centre giver tom liste og intet Anbefalet', () => {
+    expect(run({ centers: [] })).toEqual({ centers: [], recommendedId: null, recommendedOfferId: null });
+  });
+
+  test('når Filtrene skjuler alt, er listen tom og intet Anbefalet', () => {
+    const result = run({ centers: [center({ facilities: { sauna: false } })], filters: { sauna: true } });
+    expect(result).toEqual({ centers: [], recommendedId: null, recommendedOfferId: null });
+  });
+
+  test('et Center uden Tilbud vises ikke', () => {
+    expect(run({ centers: [center({ offers: [] })] }).centers).toEqual([]);
+  });
+});
