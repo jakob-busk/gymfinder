@@ -2,6 +2,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -125,17 +126,17 @@ export default function AskRonnieScreen({ navigation, route }) {
     );
   }
 
-  const renderMessage = (message) => {
+  const renderMessage = ({ item: message }) => {
     if (message.role === 'user') {
       return (
-        <View key={message.id} style={[GlobalStyle.bubble, GlobalStyle.bubbleUser]}>
+        <View style={[GlobalStyle.bubble, GlobalStyle.bubbleUser]}>
           <Text style={GlobalStyle.bubbleUserText}>{message.content}</Text>
         </View>
       );
     }
 
     return (
-      <View key={message.id}>
+      <View>
         <View style={GlobalStyle.bubbleRow}>
           <RonnieMascot size="avatar" />
           <View style={[GlobalStyle.bubble, GlobalStyle.bubbleRonnie]}>
@@ -163,54 +164,61 @@ export default function AskRonnieScreen({ navigation, route }) {
         style={GlobalStyle.screen}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
+        <FlatList
           ref={scrollRef}
+          data={messages}
+          keyExtractor={(message) => String(message.id)}
+          renderItem={renderMessage}
           contentContainerStyle={GlobalStyle.chatContent}
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-        >
-          <Text style={GlobalStyle.title}>Spørg Ronnie</Text>
-
-          {messages.length === 0 && (
+          ListHeaderComponent={
             <>
-              <RonnieMascot size="small" />
-              <Text style={GlobalStyle.centeredText}>
-                Hej, jeg er Ronnie! Skriv, hvad du leder efter, fx &quot;billigt med sauna uden
-                binding&quot;. Jeg sammenligner Centrene tæt på dig på din Ærlige årspris, og jeg kan
-                også slå Centre op andre steder i landet, fx ved dit sommerhus.
-              </Text>
-              <View style={GlobalStyle.choiceList}>
-                {RONNIE_SUGGESTIONS.map((suggestion) => (
-                  <ButtonComponent
-                    key={suggestion}
-                    title={suggestion}
-                    onPress={() => handleSend(suggestion)}
-                    disabled={sending || loading}
-                  />
-                ))}
-              </View>
+              <Text style={GlobalStyle.title}>Spørg Ronnie</Text>
+
+              {messages.length === 0 && (
+                <>
+                  <RonnieMascot size="small" />
+                  <Text style={GlobalStyle.centeredText}>
+                    Hej, jeg er Ronnie! Skriv, hvad du leder efter, fx &quot;billigt med sauna uden
+                    binding&quot;. Jeg sammenligner Centrene tæt på dig på din Ærlige årspris, og
+                    jeg kan også slå Centre op andre steder i landet, fx ved dit sommerhus.
+                  </Text>
+                  <View style={GlobalStyle.choiceList}>
+                    {RONNIE_SUGGESTIONS.map((suggestion) => (
+                      <ButtonComponent
+                        key={suggestion}
+                        title={suggestion}
+                        onPress={() => handleSend(suggestion)}
+                        disabled={sending || loading}
+                      />
+                    ))}
+                  </View>
+                </>
+              )}
             </>
-          )}
+          }
+          ListFooterComponent={
+            <>
+              {sending && (
+                <View style={GlobalStyle.bubbleRow}>
+                  <RonnieMascot size="avatar" />
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              )}
 
-          {messages.map(renderMessage)}
-
-          {sending && (
-            <View style={GlobalStyle.bubbleRow}>
-              <RonnieMascot size="avatar" />
-              <ActivityIndicator color={colors.primary} />
-            </View>
-          )}
-
-          {error && (
-            <View style={[GlobalStyle.warningBox, GlobalStyle.paragraph]}>
-              <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
-              <Text>{error}</Text>
-              <View style={GlobalStyle.paragraph}>
-                <ButtonComponent title="Prøv igen" onPress={handleRetry} disabled={sending} />
-              </View>
-            </View>
-          )}
-        </ScrollView>
+              {error && (
+                <View style={[GlobalStyle.warningBox, GlobalStyle.paragraph]}>
+                  <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
+                  <Text>{error}</Text>
+                  <View style={GlobalStyle.paragraph}>
+                    <ButtonComponent title="Prøv igen" onPress={handleRetry} disabled={sending} />
+                  </View>
+                </View>
+              )}
+            </>
+          }
+        />
 
         <View style={GlobalStyle.chatInputRow}>
           <TextInput
