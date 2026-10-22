@@ -69,7 +69,21 @@ function clean(value) {
   return value;
 }
 
-const sameJson = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+// Sammenligner værdier uden at se på nøglernes rækkefølge. Databasen sorterer nøglerne
+// (over30 før under30), mens kædernes parsere skriver dem i en anden rækkefølge.
+const sortedKeys = (value) => {
+  if (Array.isArray(value)) return value.map(sortedKeys);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, sortedKeys(value[key])]),
+    );
+  }
+  return value;
+};
+const sameJson = (a, b) =>
+  JSON.stringify(sortedKeys(a ?? null)) === JSON.stringify(sortedKeys(b ?? null));
 
 async function readNode(db, path) {
   const snapshot = await db.ref(path).get();

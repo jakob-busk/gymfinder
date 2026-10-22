@@ -173,6 +173,18 @@ describe('normal kørsel', () => {
     assert.deepEqual(Object.keys(data.PriceHistory['sats-412'][BASIC_412]), [NIGHT_1, NIGHT_2]);
   });
 
+  test('samme priser med nøglerne i en anden rækkefølge er ingen prisændring', async () => {
+    // Den rigtige database sorterer nøglerne (over30 før under30), parseren skriver under30 først.
+    const db = createFakeDatabase();
+    await runNight(db, NIGHT_1);
+    const stored = db.snapshot().Offers['sats-412'][BASIC_412].standardPrice;
+    const reversed = Object.fromEntries(Object.entries(stored).reverse());
+    await db.ref(`Offers/sats-412/${BASIC_412}`).update({ standardPrice: reversed });
+
+    const { report } = await runNight(db, NIGHT_2);
+    assert.deepEqual(report.chains[0].priceChanges, []);
+  });
+
   test('en prisændring inden for ±50 % skrives og står i rapporten', async () => {
     const db = createFakeDatabase();
     await runNight(db, NIGHT_1);
