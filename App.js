@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -13,10 +14,17 @@ import ProfileScreen from './screens/ProfileScreen';
 import AboutScreen from './screens/AboutScreen';
 import CenterDetailScreen from './screens/CenterDetailScreen';
 import FiltersScreen from './screens/FiltersScreen';
-import { DEFAULT_USER } from './data/const';
+import WelcomeScreen from './screens/Onboarding/WelcomeScreen';
+import AddressScreen from './screens/Onboarding/AddressScreen';
+import BirthDateScreen from './screens/Onboarding/BirthDateScreen';
+import DiscountProfileScreen from './screens/Onboarding/DiscountProfileScreen';
+import CurrentMembershipScreen from './screens/Onboarding/CurrentMembershipScreen';
+import PreferencesScreen from './screens/Onboarding/PreferencesScreen';
+import FinishScreen from './screens/Onboarding/FinishScreen';
 import { UserContext } from './data/UserContext';
 import { startAnonymousSession } from './services/Auth';
-import { colors } from './styles/GlobalStyle';
+import { useUserProfile } from './services/UserProfile';
+import GlobalStyle, { colors } from './styles/GlobalStyle';
 
 const RootStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
@@ -65,29 +73,83 @@ function Tabs() {
   );
 }
 
-// Appens navigation: fanerne nederst, og Centerdetalje og Filtre som stack oven på fanerne.
-// Brugerdata deles med alle skærme via UserContext.
+// Onboarding første gang: velkomst med Ronnie → adresse → fødselsdato → Rabatprofil →
+// Nuværende medlemskab → Præferencer → afslut som anonym.
+function onboardingScreens() {
+  return (
+    <>
+      <RootStack.Screen name="Velkomst" component={WelcomeScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="Adresse" component={AddressScreen} />
+      <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
+      <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
+      <RootStack.Screen
+        name="Medlemskab"
+        component={CurrentMembershipScreen}
+        options={{ title: 'Nuværende medlemskab' }}
+      />
+      <RootStack.Screen name="Præferencer" component={PreferencesScreen} />
+      <RootStack.Screen name="Klar" component={FinishScreen} />
+    </>
+  );
+}
+
+// Fanerne nederst, og Centerdetalje og Filtre som stack oven på fanerne.
+function appScreens() {
+  return (
+    <>
+      <RootStack.Screen name="Faner" component={Tabs} options={{ headerShown: false }} />
+      <RootStack.Screen
+        name="CenterDetaljer"
+        component={CenterDetailScreen}
+        options={{ title: 'Center' }}
+      />
+      <RootStack.Screen name="Filtre" component={FiltersScreen} />
+    </>
+  );
+}
+
+// Appens navigation. Onboarding vises, indtil den er gennemført; derefter fanerne.
+// Brugerens profil deles med alle skærme via UserContext og gemmes automatisk.
 export default function App() {
-  const [user, setUser] = useState(DEFAULT_USER);
   // Firebase-brugeren (anonym ved første opstart). null, hvis Firebase ikke er sat op.
   const [authUser, setAuthUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
 
-  useEffect(() => startAnonymousSession(setAuthUser), []);
+  useEffect(
+    () =>
+      startAnonymousSession((firebaseUser) => {
+        setAuthUser(firebaseUser);
+        setAuthReady(true);
+      }),
+    [],
+  );
 
-  const userContext = useMemo(() => ({ user, setUser, authUser }), [user, authUser]);
+  const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile({
+    authReady,
+    uid: authUser?.uid ?? null,
+  });
+
+  const userContext = useMemo(
+    () => ({ user, setUser, authUser, completeOnboarding }),
+    [user, setUser, authUser, completeOnboarding],
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaProvider>
+        <View style={GlobalStyle.loadingScreen}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
       <UserContext.Provider value={userContext}>
         <NavigationContainer>
           <RootStack.Navigator screenOptions={stackHeader}>
-            <RootStack.Screen name="Faner" component={Tabs} options={{ headerShown: false }} />
-            <RootStack.Screen
-              name="CenterDetaljer"
-              component={CenterDetailScreen}
-              options={{ title: 'Center' }}
-            />
-            <RootStack.Screen name="Filtre" component={FiltersScreen} />
+            {showOnboarding ? onboardingScreens() : appScreens()}
           </RootStack.Navigator>
         </NavigationContainer>
         <StatusBar style="auto" />
