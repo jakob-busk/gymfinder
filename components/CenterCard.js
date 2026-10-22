@@ -3,6 +3,7 @@ import { View, Text, Pressable, Alert } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import { NOT_STATED_LABELS } from '../data/matchning';
 import { openSignupPage } from '../services/Signup';
@@ -35,7 +36,8 @@ function priceLines(pricedOffer) {
   return lines;
 }
 
-// Kort for ét Center i listen. Viser Ærlig årspris for det billigste Tilbud for brugeren.
+// Kort for ét Center i listen. Viser Ærlig årspris for det billigste Tilbud for brugeren, og ♥
+// gør Centret til Favorit.
 // onShowDetails kaldes ved tryk på "Se mere" (åbner Centerdetalje).
 export default function CenterCard({ match, isRecommended, onShowDetails }) {
   const [expanded, setExpanded] = useState(false);
@@ -53,12 +55,15 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
   return (
     <View style={GlobalStyle.card}>
       <View style={GlobalStyle.cardHeader}>
-        <Text style={GlobalStyle.cardTitle}>{center.name}</Text>
-        {isRecommended && (
-          <View style={GlobalStyle.badge}>
-            <Text style={GlobalStyle.badgeText}>ANBEFALET</Text>
-          </View>
-        )}
+        <Text style={[GlobalStyle.cardTitle, GlobalStyle.shrinkText]}>{center.name}</Text>
+        <View style={GlobalStyle.inlineRow}>
+          {isRecommended && (
+            <View style={GlobalStyle.badge}>
+              <Text style={GlobalStyle.badgeText}>ANBEFALET</Text>
+            </View>
+          )}
+          <FavoriteButton center={center} chain={chain} />
+        </View>
       </View>
 
       <View style={GlobalStyle.inlineRow}>
