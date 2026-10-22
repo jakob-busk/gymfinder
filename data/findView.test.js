@@ -76,6 +76,14 @@ describe('loosenFilterSuggestions', () => {
     ]);
   });
 
+  test('uden brugerens placering foreslås en adresse i stedet for større afstand', () => {
+    const filters = { maxDistanceKm: 15, sauna: true };
+    expect(loosenFilterSuggestions(filters, { hasLocation: false })).toEqual([
+      'Angiv din adresse på Profil, så afstanden til Centrene kan beregnes',
+      'Slå Sauna fra',
+    ]);
+  });
+
   test('giver ingen forslag uden Filtre', () => {
     expect(loosenFilterSuggestions(undefined)).toEqual([]);
     expect(loosenFilterSuggestions({ machines: [], sauna: false })).toEqual([]);

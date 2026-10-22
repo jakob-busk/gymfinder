@@ -21,7 +21,8 @@
 // priser. Den bruges kun af stikprøven (puregymVerification.mjs), så natten ikke koster et
 // ekstra kald pr. Center.
 
-import { parseDanishNumber, wholeMonthsUntil } from './sats.mjs';
+import { parseAmount } from './amount.mjs';
+import { wholeMonthsUntil } from './sats.mjs';
 
 export const PUREGYM_BASE_URL = 'https://www.puregym.dk';
 export const PUREGYM_CENTER_LIST_URL = `${PUREGYM_BASE_URL}/find-center`;
@@ -152,8 +153,8 @@ export function parseCenterList(html) {
       centerName,
       pageUrl: pagePath ? new URL(pagePath, PUREGYM_BASE_URL).href : undefined,
       teaserPrices: {
-        from: parseDanishNumber(body.match(/class="map__teaser__price"[^>]*>([^<]*)</)?.[1]),
-        standardFrom: parseDanishNumber(
+        from: parseAmount(body.match(/class="map__teaser__price"[^>]*>([^<]*)</)?.[1]),
+        standardFrom: parseAmount(
           body.match(/class="map__teaser__price__note">([^<]*)</)?.[1],
         ),
       },
@@ -177,7 +178,7 @@ export function parseCenterList(html) {
 // kortbetaling; GymFinder regner med kort, så brugeren får den billigste mulighed.
 export function parsePriceList(html) {
   const rows = [...html.matchAll(/<tr[^>]*>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>/g)].map(
-    ([, label, value]) => ({ label: textOf(label), value: parseDanishNumber(textOf(value)) }),
+    ([, label, value]) => ({ label: textOf(label), value: parseAmount(textOf(value)) }),
   );
   if (rows.length === 0) throw new Error('Prislisten har ingen rækker');
 
@@ -250,7 +251,7 @@ export function parseLegalText(html) {
   const end = text.match(/frem til (\d{2})-(\d{2})-(\d{4})/);
   const headline = html.match(/<strong>([\s\S]*?)<\/strong>/)?.[1];
   const legal = {};
-  if (normal) legal.normalPrice = parseDanishNumber(normal[1]);
+  if (normal) legal.normalPrice = parseAmount(normal[1]);
   if (end) legal.campaignEndDate = `${end[3]}-${end[2]}-${end[1]}`;
   if (headline) legal.campaignText = textOf(headline);
   // Ingen Binding: opsigelse med løbende måned + 1 måned.
@@ -320,10 +321,10 @@ function campaignOf(membership) {
 // Slår de to Aldersgruppers medlemskaber sammen til Tilbud for ét Center.
 // fees = { signupFee, adminFee } fra prislisten. Resultat: { offers, warnings }.
 //
-// Kampagneprisen er forskellig for under 30 og 30+ (fx 25 % af hver sin Standardpris), men et
-// Tilbud har kun én Kampagnepris. Den højeste af de to bruges, så Ærlig årspris hellere bliver
-// lidt for høj end for lav. Kampagnen tages kun med, hvis begge Aldersgrupper har den med samme
-// slutdato; ellers ville den ene Aldersgruppe få en pris, PureGym ikke tilbyder den.
+// Kampagneprisen er forskellig for under 30 og 30+ (fx 25 % af hver sin Standardpris), så den
+// gemmes pr. Aldersgruppe ({ under30, over30 }); er de ens, gemmes ét tal. Kampagnen tages kun
+// med, hvis begge Aldersgrupper har den med samme slutdato; ellers ville den ene Aldersgruppe få
+// en pris, PureGym ikke tilbyder den.
 export function buildOffers({ center, byAgeGroup, fees, today }) {
   const warnings = [];
   const byName = new Map();
@@ -367,7 +368,10 @@ export function buildOffers({ center, byAgeGroup, fees, today }) {
         const months = wholeMonthsUntil(today, young.endDate);
         if (months > 0) {
           campaign = {
-            price: Math.max(young.price, old.price),
+            price:
+              young.price === old.price
+                ? young.price
+                : { under30: young.price, over30: old.price },
             months,
             endDate: young.endDate,
             text: old.text ?? young.text,

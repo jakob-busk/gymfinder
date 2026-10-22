@@ -49,7 +49,9 @@ export default function FindScreen({ navigation }) {
     if (loading) return <ActivityIndicator />;
 
     if (centers.length === 0) {
-      const suggestions = loosenFilterSuggestions(filters);
+      const suggestions = loosenFilterSuggestions(filters, {
+        hasLocation: Boolean(user.location),
+      });
       return (
         <ScrollView contentContainerStyle={GlobalStyle.emptyState}>
           <RonnieMascot size="small" />

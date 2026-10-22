@@ -40,6 +40,8 @@ export function centerQuestion(centerName) {
 // De Centre, Ronnie kender i samtalen: de RONNIE_CENTER_LIMIT nærmeste, der matcher brugerens
 // Filtre, med personlig Ærlig årspris fra Matchning. Centre i includeCenterIds (fx det Center,
 // brugeren spørger om fra Centerdetalje) kommer altid med, også hvis Filtrene ellers skjuler dem.
+// Maks. afstand er hård: uden brugerens placering kender Ronnie kun includeCenterIds og må slå
+// et stednavn op for at finde Centre.
 export function ronnieMatches({ centers, chains, user, filters, today, includeCenterIds = [] }) {
   const location = user?.location ?? null;
   const nearest = matchCenters({

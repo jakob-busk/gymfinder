@@ -9,7 +9,7 @@
 
 import { distanceKm } from '../data/matchning.js';
 import { AGE_GROUPS, decodeEntities, offerNameFrom } from './chains/puregym.mjs';
-import { parseDanishNumber } from './chains/sats.mjs';
+import { parseAmount } from './chains/amount.mjs';
 
 const AGE_LABELS = { under30: 'under 30', over30: '30+' };
 
@@ -29,10 +29,10 @@ export function parseVisibleCards(ajaxText) {
     const name = card.match(/class="card__title-prefix">\s*([^<]*?)\s*</)?.[1];
     const prefix = card.match(/class="card__price__prefix">([^<]*)</)?.[1];
     const title = card.match(/class="card__price__title">([^<]*)</)?.[1];
-    const currentPrice = parseDanishNumber(title);
+    const currentPrice = parseAmount(title);
     return {
       name: offerNameFrom(name ? decodeEntities(name) : undefined),
-      standardPrice: prefix ? parseDanishNumber(prefix) : currentPrice,
+      standardPrice: prefix ? parseAmount(prefix) : currentPrice,
       currentPrice,
     };
   });
@@ -106,19 +106,25 @@ export function compareCenter({ listed, center, responses, centerPageHtml }) {
       });
     });
 
-    // Scraperen gemmer den højeste af de to Aldersgruppers Kampagnepris (se buildOffers).
-    const campaignPrices = visible
-      .filter((card) => card && card.currentPrice < card.standardPrice)
-      .map((card) => card.currentPrice);
-    const websiteCampaign = campaignPrices.length === 2 ? Math.max(...campaignPrices) : null;
-    if (offer.campaignPrice != null || websiteCampaign != null) {
+    // Scraperen gemmer Kampagneprisen pr. Aldersgruppe (ét tal, hvis de er ens; se buildOffers).
+    const onCampaign = visible.map((card) =>
+      card && card.currentPrice < card.standardPrice ? card.currentPrice : null,
+    );
+    const hasCampaign = onCampaign.every((price) => price != null);
+    AGE_GROUPS.forEach((ageGroup, i) => {
+      const scraper =
+        offer.campaignPrice == null || typeof offer.campaignPrice === 'number'
+          ? offer.campaignPrice
+          : offer.campaignPrice[ageGroup];
+      const website = hasCampaign ? onCampaign[i] : null;
+      if (scraper == null && website == null) return;
       checks.push({
-        what: `${offer.name} Kampagnepris (højeste af de to)`,
-        scraper: offer.campaignPrice,
-        website: websiteCampaign,
-        ok: offer.campaignPrice === websiteCampaign,
+        what: `${offer.name} ${AGE_LABELS[ageGroup]} Kampagnepris (kr/md)`,
+        scraper,
+        website,
+        ok: scraper === website,
       });
-    }
+    });
   }
 
   // Et synligt priskort, som scraperen ikke har, er en fejl. Undtagelsen er et medlemskab, der
@@ -157,7 +163,6 @@ export const PUREGYM_VERIFICATION_DESCRIPTION = [
   'én POST pr. Aldersgruppe) plus centersiden. Kolonnen "Scraper" er det, scraperen skriver',
   '(priser fra formularens data og det med småt, adresse fra /find-center), og "Hjemmeside" er',
   'det, en besøgende ser: de synlige priskort (normalpris og intropris) og centersidens',
-  'adresse, navn og koordinater (JSON-LD). Kampagneprisen er den højeste af de to',
-  'Aldersgruppers intropris, fordi et Tilbud kun har én Kampagnepris. Genereres med',
-  '`npm run verify:puregym` i `scraper/`.',
+  'adresse, navn og koordinater (JSON-LD). Kampagneprisen sammenlignes pr. Aldersgruppe.',
+  'Genereres med `npm run verify:puregym` i `scraper/`.',
 ];

@@ -104,6 +104,19 @@ describe('Centre Ronnie kender', () => {
   });
 });
 
+describe('Centre Ronnie kender uden brugerens placering', () => {
+  test('med maks. afstand kender han kun Centret fra Centerdetalje, da Distance er ukendt', () => {
+    const centers = [center(1), center(2)];
+    const ids = matchesFor(centers, {
+      user: { ...USER, location: null },
+      filters: { maxDistanceKm: 15 },
+      includeCenterIds: ['kaede-2'],
+    }).map((m) => m.center.id);
+
+    expect(ids).toEqual(['kaede-2']);
+  });
+});
+
 describe('Forespørgsel til OpenAI', () => {
   const matches = matchesFor([center(1), center(2)]);
   const conversation = [

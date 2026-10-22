@@ -147,6 +147,8 @@ export const CENTERS = [
         bindingMonths: 0,
         partnerPrice: 224.5,
         partnerRequirement: 'Makkeren betaler 200 kr/md ekstra og 100 kr i engangsgebyr.',
+        // (Oprettelsesgebyr 60 + engangsgebyr 100 for makkeren) / 2 personer.
+        partnerSignupFee: 80,
       },
       {
         id: 'fitnessx-fisketorvet-alle',
@@ -184,6 +186,8 @@ export const CENTERS = [
         bindingMonths: 0,
         partnerPrice: 214.5,
         partnerRequirement: 'Makkeren betaler 200 kr/md ekstra og 100 kr i engangsgebyr.',
+        // (Oprettelsesgebyr 60 + engangsgebyr 100 for makkeren) / 2 personer.
+        partnerSignupFee: 80,
       },
     ],
   },

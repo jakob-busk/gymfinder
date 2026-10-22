@@ -10,7 +10,6 @@ import {
   parseCenterList,
   parseCenterPage,
   parseCheckout,
-  parseDanishNumber,
   scrapeSats,
   wholeMonthsUntil,
 } from './sats.mjs';
@@ -256,14 +255,15 @@ describe('SATS checkout: Oprettelsesgebyr, Binding og kampagne', () => {
   });
 });
 
-describe('danske tal', () => {
-  test('læser komma som decimal og punktum som tusindtalsseparator', () => {
-    assert.equal(parseDanishNumber('439,20'), 439.2);
-    assert.equal(parseDanishNumber('4.193,00 kr.'), 4193);
-    assert.equal(parseDanishNumber('649 kr./md.'), 649);
-    assert.equal(parseDanishNumber('549'), 549);
-    assert.equal(parseDanishNumber('Gratis'), null);
-    assert.equal(parseDanishNumber(undefined), null);
+describe('beløb over 1.000', () => {
+  test('"1050", "1.050" og "1050,00" læses som 1050, ikke 105', () => {
+    for (const amount of ['1050', '1.050', '1050,00']) {
+      const campaign = parseCampaign(
+        { headline: 'x', terms: `Pris frem til 01.12.26 er ${amount} kr.` },
+        TODAY,
+      );
+      assert.equal(campaign.price, 1050, amount);
+    }
   });
 });
 

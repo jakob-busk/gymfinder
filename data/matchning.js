@@ -9,7 +9,8 @@
 //   Rabatprofil = user.discountProfile, Ærlig årspris = honestYearlyPrice,
 //   Kvartalspris = quarterlyPrice, Standardpris = standardPrice, Kampagnepris = campaignPrice,
 //   Kampagneperiode = campaignMonths, Oprettelsesgebyr = signupFee, Admingebyr = adminFee,
-//   Binding = bindingMonths, Makkerpris = partnerPrice, Abonnementstype = subscriptionType,
+//   Binding = bindingMonths, Makkerpris = partnerPrice, Makkerprisens kampagne =
+//   partnerCampaignPrice / partnerCampaignMonths, Abonnementstype = subscriptionType,
 //   Nuværende medlemskab = user.currentMembership, Spar mere-forslag = savingSuggestions.
 //
 // Domænemodellen (input):
@@ -28,8 +29,14 @@
 //           kun false betyder nej. machines = liste eller null (ukendt).
 //   Tilbud: { id, name, subscriptionType, standardPrice, campaignPrice, campaignMonths,
 //             signupFee, adminFee, bindingMonths, partnerPrice, partnerRequirement,
+//             partnerCampaignPrice?, partnerCampaignMonths?, partnerSignupFee?,
 //             billingIntervalDays? }
-//           standardPrice er et tal eller { under30, over30 } (Aldersgruppe).
+//           standardPrice, campaignPrice, partnerPrice og partnerCampaignPrice er hver et tal
+//           (samme pris for alle) eller { under30, over30 } (pris pr. Aldersgruppe).
+//           partnerCampaignPrice gælder de første partnerCampaignMonths betalingsperioder for
+//           Træn med en makker; derefter gælder partnerPrice.
+//           partnerSignupFee = Oprettelsesgebyr pr. person for Træn med en makker (udeladt =
+//           Tilbuddets signupFee).
 //           billingIntervalDays = opkrævning pr. N dage (fx 30 hos LOOP); udeladt = pr. måned.
 //           Priser, Admingebyr og campaignMonths gælder pr. betalingsperiode.
 //           bindingMonths = null betyder ukendt.
@@ -108,9 +115,16 @@ function ageGroupsForWindow(offer, birthDate, today) {
 
 // ---------- Priser ----------
 
+// En pris er enten ét tal for alle eller { under30, over30 } pr. Aldersgruppe.
+function priceForAgeGroup(price, ageGroup) {
+  if (price == null || typeof price === 'number') return price;
+  return price[ageGroup];
+}
+
+const variesByAgeGroup = (price) => price != null && typeof price === 'object';
+
 function standardPriceFor(offer, ageGroup) {
-  if (typeof offer.standardPrice === 'number') return offer.standardPrice;
-  return offer.standardPrice[ageGroup];
+  return priceForAgeGroup(offer.standardPrice, ageGroup);
 }
 
 // En Rabat kan afgrænses til bestemte Abonnementstyper og/eller Tilbud (efter navn),
@@ -120,6 +134,25 @@ function discountAppliesTo(discount, offer) {
     !discount.subscriptionTypes || discount.subscriptionTypes.includes(offer.subscriptionType);
   const nameOk = !discount.offerNames || discount.offerNames.includes(offer.name);
   return typeOk && nameOk;
+}
+
+const hasPartnerCampaignFor = (offer) =>
+  offer.partnerCampaignPrice != null && (offer.partnerCampaignMonths ?? 0) > 0;
+
+// Makkerprisen for brugeren i første betalingsperiode, eller null uden Makkerpris.
+// { price, campaign: { price, months } | null, signupFee }. Bruges til visning.
+function partnerSummary(offer, ageGroup) {
+  if (offer.partnerPrice == null) return null;
+  return {
+    price: priceForAgeGroup(offer.partnerPrice, ageGroup),
+    campaign: hasPartnerCampaignFor(offer)
+      ? {
+          price: priceForAgeGroup(offer.partnerCampaignPrice, ageGroup),
+          months: offer.partnerCampaignMonths,
+        }
+      : null,
+    signupFee: offer.partnerSignupFee ?? offer.signupFee ?? 0,
+  };
 }
 
 // Alle de muligheder brugeren har ret til for et Tilbud. Hver mulighed er en pris pr.
@@ -139,7 +172,7 @@ function optionsFor(offer, chain, profile, ageGroups) {
       signupFee,
       month: (i) =>
         hasCampaign && i < offer.campaignMonths
-          ? { price: offer.campaignPrice, kind: 'campaign' }
+          ? { price: priceForAgeGroup(offer.campaignPrice, ageGroups[i]), kind: 'campaign' }
           : { price: standard(i), kind: 'standard' },
     },
   ];
@@ -164,14 +197,23 @@ function optionsFor(offer, chain, profile, ageGroups) {
     });
   }
 
+  // Træn med en makker: Makkerpris (evt. med sin egen kampagne de første perioder) og
+  // eventuelt et særligt Oprettelsesgebyr, fx Fitness X' engangsbeløb for at tilføje makkeren.
   if (offer.partnerPrice != null && profile.includes('partner')) {
+    const hasPartnerCampaign = hasPartnerCampaignFor(offer);
     options.push({
       id: 'partner',
       kind: 'partner',
       discountGroup: 'partner',
       label: DISCOUNT_GROUPS.partner.optionLabel,
-      signupFee,
-      month: () => ({ price: offer.partnerPrice, kind: 'partner' }),
+      signupFee: offer.partnerSignupFee ?? signupFee,
+      month: (i) =>
+        hasPartnerCampaign && i < offer.partnerCampaignMonths
+          ? {
+              price: priceForAgeGroup(offer.partnerCampaignPrice, ageGroups[i]),
+              kind: 'partnerCampaign',
+            }
+          : { price: priceForAgeGroup(offer.partnerPrice, ageGroups[i]), kind: 'partner' },
     });
   }
 
@@ -232,7 +274,12 @@ function priceOffer(offer, chain, profile, birthDate, today) {
   const turns30Index = ageGroups.findIndex(
     (group, i) => i > 0 && group === 'over30' && ageGroups[i - 1] === 'under30',
   );
-  const ageMatters = typeof offer.standardPrice !== 'number';
+  const ageMatters = [
+    offer.standardPrice,
+    offer.campaignPrice,
+    offer.partnerPrice,
+    offer.partnerCampaignPrice,
+  ].some(variesByAgeGroup);
 
   return {
     offer,
@@ -247,6 +294,7 @@ function priceOffer(offer, chain, profile, birthDate, today) {
     bindingMonths: offer.bindingMonths ?? null,
     turns30InMonth: ageMatters && turns30Index >= 0 ? turns30Index + 1 : null,
     partnerRequirement: offer.partnerRequirement ?? null,
+    partner: partnerSummary(offer, ageGroups[0]),
   };
 }
 
@@ -377,7 +425,9 @@ function sortCenters(results, sortBy) {
 //   savingPerMonth = Besparelse i forhold til Nuværende medlemskab (null hvis intet).
 // PrisetTilbud: { offer, honestYearlyPrice, quarterlyPrice, yearlyOption, quarterlyOption,
 //                 monthlyBreakdown, paymentsPerYear, signupFee, adminFee, bindingMonths, turns30InMonth,
-//                 partnerRequirement, notStated }
+//                 partnerRequirement, partner, notStated }
+//   partner = { price, campaign: { price, months } | null, signupFee } for brugerens
+//             Aldersgruppe i første periode, eller null, når Tilbuddet ikke har en Makkerpris.
 //
 // bestOffer er Tilbuddet med lavest Ærlig årspris. quarterlyPrice på Centret er den laveste
 // Kvartalspris blandt Centrets Tilbud. Priser er ikke afrundede; afrund først ved visning.
@@ -392,7 +442,9 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
   for (const center of centers ?? []) {
     const distance = distanceKm(location, center.location);
     const maxDistance = activeFilters.maxDistanceKm;
-    if (maxDistance != null && distance != null && distance > maxDistance) continue;
+    // Maks. afstand er altid hård: kan Distance ikke beregnes (Centret eller brugeren mangler
+    // koordinater), vides det ikke, om Centret ligger inden for, og det skjules.
+    if (maxDistance != null && (distance == null || distance > maxDistance)) continue;
 
     const centerCheck = checkCenter(center, activeFilters);
     if (centerCheck.fail) continue;

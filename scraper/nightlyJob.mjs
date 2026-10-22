@@ -285,12 +285,16 @@ export async function runNightlyJob({ db, scrapers, today, dryRun = false, pushC
 
 const show = (value) => (value == null ? '?' : String(value));
 
+// Ét tal eller "under 30 / 30+".
+const showPrice = (price) =>
+  price != null && typeof price === 'object'
+    ? `${show(price.under30)} / ${show(price.over30)}`
+    : show(price);
+
 function offerRow({ center, offer, standardPrice, campaignPrice, campaignMonths, ...rest }) {
-  const price =
-    typeof standardPrice === 'number'
-      ? `${standardPrice}`
-      : `${show(standardPrice?.under30)} / ${show(standardPrice?.over30)}`;
-  const campaign = campaignPrice == null ? '–' : `${campaignPrice} kr i ${campaignMonths} md.`;
+  const price = showPrice(standardPrice);
+  const campaign =
+    campaignPrice == null ? '–' : `${showPrice(campaignPrice)} kr i ${campaignMonths} md.`;
   const binding = rest.bindingMonths == null ? '?' : `${rest.bindingMonths} md.`;
   return `| ${center} | ${offer} | ${price} | ${campaign} | ${show(rest.signupFee)} | ${binding} |`;
 }

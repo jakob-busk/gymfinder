@@ -40,7 +40,7 @@ Et valgfrit fast gebyr pr. måned oven i månedsprisen. Indgår i beregningen af
 Det antal måneder brugeren mindst skal blive i et Tilbud. Påvirker ikke Ærlig årspris, men kan bruges som Filter.
 
 **Kampagnepris / Kampagneperiode**:
-En midlertidigt nedsat månedspris på et Tilbud, der gælder de første N måneder (Kampagneperioden) for alle brugere, hvorefter Standardpris gælder.
+En midlertidigt nedsat månedspris på et Tilbud, der gælder de første N måneder (Kampagneperioden) for alle brugere, hvorefter Standardpris gælder. Kan være forskellig pr. Aldersgruppe (fx 25 % af hver sin Standardpris).
 
 **Standardpris**:
 Den løbende månedspris på et Tilbud når hverken Kampagne- eller Rabatperiode er aktiv. Kan være forskellig pr. Aldersgruppe.
@@ -65,7 +65,7 @@ Rabatgruppen for brugere, der vil melde sig ind sammen med en anden person (fx F
 _Avoid_: Træningsven, træningsmakker, duo (kædernes egne produktnavne)
 
 **Makkerpris**:
-Prisen pr. person, når to (eller flere) melder sig ind sammen under Rabatgruppen Træn med en makker.
+Prisen pr. person, når to (eller flere) melder sig ind sammen under Rabatgruppen Træn med en makker. Kan være forskellig pr. Aldersgruppe, kan have sin egen kampagne (pris og periode, fx LOOPs familiekampagne) og sit eget Oprettelsesgebyr pr. person (fx Fitness X' engangsbeløb for at tilføje makkeren). Indgår i Ærlig årspris og Kvartalspris som en mulighed på lige fod med Rabatter.
 
 ### Bruger og matchning
 

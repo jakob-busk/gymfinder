@@ -144,11 +144,12 @@ describe('Fitness X i nat-jobbet: normal kørsel', () => {
       signupFee: 60,
       adminFee: 15,
       bindingMonths: 0,
-      partnerPrice: 300,
+      partnerPrice: { under30: 280, over30: 300 },
+      partnerSignupFee: 80,
       partnerRequirement:
-        'I deler ét medlemskab med Træningsven og betaler samlet 560 kr/md (under 30) eller ' +
-        '600 kr/md (30+). Det koster 100 kr én gang at tilføje Træningsvennen. Medlemskabet ' +
-        'giver jer begge adgang til 31 Centre.',
+        'I melder jer ind sammen og betaler samlet 560 kr/md (under 30) eller ' +
+        '600 kr/md (30+). Det koster 100 kr én gang at tilføje makkeren. ' +
+        'I får begge adgang til 31 Centre.',
       signupUrl: VIBORG_URL,
       lastSeen: NIGHT_1,
     });
@@ -157,9 +158,9 @@ describe('Fitness X i nat-jobbet: normal kørsel', () => {
     });
     // Hjørring uden link: skrevet med Kædens tilmeldingsside.
     assert.equal(data.Centers['fitnessx-hjoerring'].signupUrl, FITNESSX_SIGNUP_URL);
-    assert.equal(
+    assert.deepEqual(
       data.Offers['fitnessx-hjoerring']['fitnessx-hjoerring-kategori-5-traeningsven'].partnerPrice,
-      175,
+      { under30: 150, over30: 175 },
     );
 
     const markdown = formatReport(report);
@@ -186,15 +187,26 @@ describe('Fitness X i nat-jobbet: normal kørsel', () => {
     );
     assert.equal(round2(turns30.honestYearlyPrice), 416.67);
 
-    // Træn med en makker: Makkerpris 300 kr pr. person (Kategori 2, 30+-pris pr. person).
-    // (12 × (300 + 15) + 60) / 12 = 320.
+    // Træn med en makker, under 30: Makkerpris 280 kr pr. person (Kategori 2) og
+    // Oprettelsesgebyr (60 + 100 for makkeren) / 2 = 80 kr pr. person.
+    // (12 × (280 + 15) + 80) / 12 = 3620 / 12 = 301,67.
     const partner = honestYearlyPrices(
       db,
       { birthDate: '2000-01-01', discountProfile: ['partner'] },
       VIBORG,
     );
     assert.equal(partner.bestOffer.offer.name, 'Kategori 2');
-    assert.equal(round2(partner.honestYearlyPrice), 320);
+    assert.equal(partner.bestOffer.yearlyOption.kind, 'partner');
+    assert.equal(round2(partner.honestYearlyPrice), 301.67);
+    assert.equal(partner.bestOffer.signupFee, 80);
+
+    // 30+: Makkerpris 300 kr pr. person. (12 × (300 + 15) + 80) / 12 = 3860 / 12 = 321,67.
+    const olderPartner = honestYearlyPrices(
+      db,
+      { birthDate: '1980-01-01', discountProfile: ['partner'] },
+      VIBORG,
+    );
+    assert.equal(round2(olderPartner.honestYearlyPrice), 321.67);
   });
 
   test('en kampagne i fri tekst skrives og giver lavere Ærlig årspris', async () => {

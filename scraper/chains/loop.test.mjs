@@ -48,6 +48,11 @@ const adultOffer = (loopId) => ({
   billingIntervalDays: 30,
   // Familiemedlemskabet 589 + 10 kr for to personer: 299,50 kr pr. person inkl. Admingebyr.
   partnerPrice: 289.5,
+  // Familiens kampagne: 100 kr for husstanden fordelt på 2 perioder = 50 kr pr. periode;
+  // (50 + 10) / 2 − 10 = 20 kr pr. person uden Admingebyr.
+  partnerCampaignPrice: 20,
+  partnerCampaignMonths: 2,
+  partnerSignupFee: 0,
   partnerRequirement:
     'I skal bo i samme husstand og deler ét familiemedlemskab til 589 kr + 10 kr i ' +
     'Admingebyr pr. 30 dage.',
@@ -163,11 +168,20 @@ describe('LOOP centerliste', () => {
     assert.equal(allIn.standardPrice, 349);
     // (649 + 10) / 2 = 329,50 kr pr. person inkl. Admingebyr → 319,50 + 10.
     assert.equal(allIn.partnerPrice, 319.5);
+    // ALL IN FAMILY har ingen kampagne (kampagneprisen er lig prisen).
+    assert.equal('partnerCampaignPrice' in allIn, false);
     assert.match(allIn.partnerRequirement, /649 kr \+ 10 kr i Admingebyr pr\. 30 dage/);
 
     const destination = skagen.offers[2];
     assert.equal(destination.subscriptionType, 'Lokal center');
     assert.deepEqual([destination.campaignPrice, destination.campaignMonths], [269, 1]);
+  });
+
+  test('familiens kampagne udløber sammen med Voksen-kampagnen', () => {
+    const [voksen] = centerById(parseFixture(undefined, '2026-12-15'), 'loop-145').offers;
+    assert.equal(voksen.partnerPrice, 289.5);
+    assert.equal('partnerCampaignPrice' in voksen, false);
+    assert.equal(voksen.campaignPrice, null);
   });
 
   test('Viborg: "20 år 20 kr første 30 dage" er et ekstra Tilbud med kampagne i én periode', () => {

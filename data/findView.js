@@ -51,12 +51,18 @@ const FILTER_SUGGESTIONS = {
 };
 
 // Forslag til at løsne de aktive Filtre, når intet Center matcher (tom-tilstand med Ronnie).
-export function loosenFilterSuggestions(filters) {
+// Uden brugerens placering kan Distance ikke beregnes, og maks. afstand skjuler alle Centre;
+// så hjælper det ikke at øge afstanden, men at angive en adresse.
+export function loosenFilterSuggestions(filters, { hasLocation = true } = {}) {
   const active = filters ?? {};
   const suggestions = [];
 
   if (active.maxDistanceKm != null) {
-    suggestions.push(`Øg maks. afstand (nu ${active.maxDistanceKm} km)`);
+    suggestions.push(
+      hasLocation
+        ? `Øg maks. afstand (nu ${active.maxDistanceKm} km)`
+        : 'Angiv din adresse på Profil, så afstanden til Centrene kan beregnes',
+    );
   }
   for (const [key, text] of Object.entries(FILTER_SUGGESTIONS)) {
     if (active[key] === true) suggestions.push(text);

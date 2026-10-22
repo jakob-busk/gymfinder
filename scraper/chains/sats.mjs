@@ -13,6 +13,8 @@
 // checkout pr. medlemskab (Basic, Flexible, Premium) i det første Center, ikke én pr. Center.
 // Checkout uden fødselsdato viser altid 30+-prisen, så selve priserne tages fra centersiden.
 
+import { parseAmount } from './amount.mjs';
+
 export const SATS_BASE_URL = 'https://www.sats.dk';
 export const SATS_CENTER_LIST_URL = `${SATS_BASE_URL}/traeningscenter`;
 
@@ -57,15 +59,6 @@ export function extractProps(html) {
   const match = html.match(DATA_PROPS_PATTERN);
   if (!match) throw new Error('Siden har ingen data-props');
   return JSON.parse(match[1]);
-}
-
-// "439,20" → 439.2, "4.193,00 kr." → 4193, "649 kr./md." → 649. Andet end et tal → null.
-export function parseDanishNumber(text) {
-  if (text == null) return null;
-  const match = String(text).match(/-?\d{1,3}(?:\.\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?/);
-  if (!match) return null;
-  const value = Number(match[0].replace(/\./g, '').replace(',', '.'));
-  return Number.isFinite(value) ? value : null;
 }
 
 // Basic under 30 hedder "1CLUB_ALLDAY_NOBND_GX_U30" og over 30 "1CLUB_ALLDAY_NOBND_GX"; begge
@@ -160,7 +153,7 @@ export function parseCenterPage(html) {
         subscriptionType: subscriptionTypeFor(key),
         standardPrice: {},
       };
-      offer.standardPrice[ageGroup] = parseDanishNumber(membership.price);
+      offer.standardPrice[ageGroup] = parseAmount(membership.price);
       // Tilmeldingslinket for 30+ foretrækkes, fordi det er det SATS selv viser uden fødselsdato.
       if (ageGroup === 'over30' || !offer.signupUrl) offer.signupUrl = membership.link?.href;
       offersByKey.set(key, offer);
@@ -170,8 +163,8 @@ export function parseCenterPage(html) {
       const segment = segments.find((candidate) => candidate.id === MEMBER_TYPE[group]);
       for (const membership of segment?.memberships ?? []) {
         const full = adult?.memberships?.find((candidate) => candidate.id === membership.id);
-        const discounted = parseDanishNumber(membership.price);
-        const fullPrice = parseDanishNumber(full?.price);
+        const discounted = parseAmount(membership.price);
+        const fullPrice = parseAmount(full?.price);
         if (discounted != null && fullPrice) {
           discountPercents[group].push(percentOff(discounted, fullPrice));
         }
@@ -222,7 +215,7 @@ export function parseCampaign({ headline, terms }, today) {
     const [, day, month, rawYear, price] = fromTerms;
     const year = rawYear.length === 2 ? 2000 + Number(rawYear) : Number(rawYear);
     return {
-      price: parseDanishNumber(price),
+      price: parseAmount(price),
       endDate: toIsoDate(new Date(Date.UTC(year, Number(month) - 1, Number(day)))),
     };
   }
@@ -237,7 +230,7 @@ export function parseCampaign({ headline, terms }, today) {
     if (end < todayDate) {
       end = new Date(Date.UTC(todayDate.getUTCFullYear() + 1, monthIndex, Number(day)));
     }
-    return { price: parseDanishNumber(price), endDate: toIsoDate(end) };
+    return { price: parseAmount(price), endDate: toIsoDate(end) };
   }
 
   return null;
@@ -252,7 +245,7 @@ export function parseCheckout(html, today) {
 
   const warnings = [];
   const signupItem = summary.priceItems?.find((item) => /oprettelse/i.test(item.title ?? ''));
-  const signupFee = parseDanishNumber(signupItem?.value);
+  const signupFee = parseAmount(signupItem?.value);
 
   const selectedBinding = binding?.options?.options?.find((option) => option.isSelected);
   const paymentType = selectedBinding?.link?.match(/paymentTypeId=([A-Z]+)/)?.[1];
@@ -279,7 +272,7 @@ export function parseCheckout(html, today) {
     signupFee: signupFee ?? undefined,
     bindingMonths,
     campaign,
-    monthlyPrice: parseDanishNumber(summary.totalPrice?.value),
+    monthlyPrice: parseAmount(summary.totalPrice?.value),
     warnings,
   };
 }

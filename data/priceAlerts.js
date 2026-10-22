@@ -9,7 +9,8 @@
 //      dag. Besparelse = Nuværende medlemskabs månedspris - Tilbuddets Ærlig årspris.
 //
 // Begge har en valgfri tærskel i kr/md (thresholdPerMonth). Uden tærskel (null) udløses alarmen
-// ved enhver Besparelse på mindst MIN_SAVING_PER_MONTH, så ørebeløb fra afrunding ikke tæller.
+// ved enhver Besparelse over 0. Besparelsen afrundes først til hele øre, så støj fra regning med
+// kommatal (fx 0,0000001 kr) ikke tæller som et fald.
 //
 // I Realtime Database (ud over Favoritterne):
 //
@@ -30,8 +31,6 @@ import { matchCenters } from './matchning.js';
 
 // Forudfyldt tærskel, når en Prisalarm slås til.
 export const DEFAULT_THRESHOLD_PER_MONTH = 50;
-// Mindste Besparelse, der tæller som et fald, når der ikke er nogen tærskel.
-export const MIN_SAVING_PER_MONTH = 1;
 
 const MAX_THRESHOLD_PER_MONTH = 2000;
 
@@ -71,11 +70,16 @@ export function describePriceAlert(priceAlert, kind = 'favorite') {
   return amount ? `Besked, når prisen falder mindst ${amount}.` : 'Besked ved ethvert prisfald.';
 }
 
-// Er Besparelsen (kr/md) stor nok til at udløse alarmen?
+// Beløb afrundet til hele øre.
+const toOere = (amount) => Math.round(amount * 100) / 100;
+
+// Er Besparelsen (kr/md) stor nok til at udløse alarmen? Med tærskel skal den være mindst
+// tærsklen; uden tærskel er enhver Besparelse over 0 nok.
 export function savingReachesThreshold(savingPerMonth, thresholdPerMonth) {
   if (!Number.isFinite(savingPerMonth)) return false;
+  const saving = toOere(savingPerMonth);
   const threshold = normalizeThreshold(thresholdPerMonth);
-  return savingPerMonth >= Math.max(threshold ?? 0, MIN_SAVING_PER_MONTH);
+  return threshold == null ? saving > 0 : saving >= threshold;
 }
 
 // ---------- Prisalarm på en Favorit ----------
@@ -160,7 +164,10 @@ export function changeCurrentMembershipThreshold(alert, thresholdPerMonth) {
 
 // Det billigste Center inden for brugerens maks. afstand (Præferencer), hvis Besparelsen mod
 // Nuværende medlemskab når tærsklen, og det er billigere end det, brugeren sidst fik besked om.
-// Kun maks. afstand bruges som Filter: alarmen handler om pris, ikke faciliteter.
+// Kun maks. afstand bruges som Filter: alarmen handler om pris, ikke faciliteter. Maks. afstand
+// er hård, så Centre med ukendt Distance tæller ikke med; kendes brugerens placering ikke, og
+// har brugeren en maks. afstand, udløses alarmen derfor ikke (hellere ingen besked end en besked
+// om et Center i den anden ende af landet).
 // Returnerer { kind: 'currentMembership', centerId, centerName, honestYearlyPrice,
 // savingPerMonth } eller null.
 export function currentMembershipAlertTrigger({ alert, centers, chains, user, today }) {
@@ -184,7 +191,7 @@ export function currentMembershipAlertTrigger({ alert, centers, chains, user, to
   if (!savingReachesThreshold(savingPerMonth, alert.thresholdPerMonth)) return null;
 
   const notified = alert.notifiedHonestYearlyPrice;
-  if (isPrice(notified) && notified - best.honestYearlyPrice < MIN_SAVING_PER_MONTH) return null;
+  if (isPrice(notified) && !(toOere(notified - best.honestYearlyPrice) > 0)) return null;
 
   return {
     kind: 'currentMembership',
@@ -207,7 +214,8 @@ export function hasAnyPriceAlert({ favorites, currentMembershipAlert }) {
   return Object.values(favorites ?? {}).some((favorite) => Boolean(favorite?.priceAlert));
 }
 
-const kr = (amount) => formatKr(Math.round(amount));
+// Hele kroner i beskeden; en Besparelse under 1 kr vises i øre, så der ikke står "0 kr".
+const kr = (amount) => formatKr(Math.abs(amount) < 1 ? toOere(amount) : Math.round(amount));
 
 // Beskeden for en opfyldt alarm: { title, body, data: { centerId, kind } }.
 export function priceAlertMessage(trigger) {

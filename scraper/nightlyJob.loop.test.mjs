@@ -125,6 +125,9 @@ describe('LOOP i nat-jobbet', () => {
       bindingMonths: 0,
       billingIntervalDays: 30,
       partnerPrice: 289.5,
+      partnerCampaignPrice: 20,
+      partnerCampaignMonths: 2,
+      partnerSignupFee: 0,
       partnerRequirement:
         'I skal bo i samme husstand og deler ét familiemedlemskab til 589 kr + 10 kr i ' +
         'Admingebyr pr. 30 dage.',
@@ -230,11 +233,18 @@ describe('Ærlig årspris for LOOP med appens Matchning', () => {
     assert.equal(kr(student.honestYearlyPrice), 275.78);
   });
 
-  test('Makkerpris 299,50 kr pr. person: for to er familien ikke billigere', async () => {
+  test('familiekampagnen regnes med: Makkerpris er billigst for to i Aabenraa', async () => {
     const db = createFakeDatabase();
     await runNight(db, NIGHT_1);
     const aabenraa = matchFor(db, { centerId: 'loop-145', discountProfile: ['partner'] });
-    assert.notEqual(aabenraa.bestOffer.yearlyOption.kind, 'partner');
+    // Alene: 2 × (50 + 10) + 10,17 × 299 = 3159,83 → 263,32 kr/md.
+    // Med makker: familiens 100 kr for to perioder = 50 kr pr. periode for husstanden, dvs.
+    // (50 + 10) / 2 = 30 kr pr. person inkl. Admingebyr. 2 × 30 + 10,17 × 299,50 = 3104,92
+    // → 258,74 kr/md.
+    assert.equal(aabenraa.bestOffer.yearlyOption.kind, 'partner');
+    assert.equal(aabenraa.bestOffer.monthlyBreakdown[0].total, 30);
+    assert.equal(aabenraa.bestOffer.monthlyBreakdown[2].total, 299.5);
+    assert.equal(Math.round(aabenraa.bestOffer.honestYearlyPrice * 100) / 100, 258.74);
 
     // I Skagen er ALL IN FAMILY (649 + 10) / 2 = 329,50 kr pr. person mod 359 kr alene.
     const skagen = matchFor(db, { centerId: 'loop-114', discountProfile: ['partner'] });
@@ -302,7 +312,7 @@ describe('LOOP sanity- og kædefejl', () => {
       {
         centerId: 'loop-220',
         offerId: 'loop-220-voksen',
-        problems: ['Standardpris (single) ændret 104 % på én nat (289 → 589 kr/md)'],
+        problems: ['Standardpris ændret 104 % på én nat (289 → 589 kr/md)'],
       },
     ]);
     const data = db.snapshot();

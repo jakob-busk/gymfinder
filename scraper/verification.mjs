@@ -3,7 +3,8 @@
 // HTML'en (ikke fra data-props), og adressen fra den synlige adresselinje øverst på siden.
 // Rene funktioner, så sammenligningen kan testes mod gemte sider.
 
-import { parseCenterPage, parseDanishNumber } from './chains/sats.mjs';
+import { parseAmount } from './chains/amount.mjs';
+import { parseCenterPage } from './chains/sats.mjs';
 
 const decodeEntities = (text) =>
   text
@@ -24,7 +25,7 @@ export function parseVisiblePricingCards(html) {
     cards.push({
       membershipId: match[1],
       name: name ? decodeEntities(name.trim()) : undefined,
-      price: parseDanishNumber(price),
+      price: parseAmount(price),
     });
   });
   return cards;

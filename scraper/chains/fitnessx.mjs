@@ -13,13 +13,15 @@
 //
 // Hvert medlemskab findes i en under 30- og en 30+-udgave (acf.over_under_tredive) med samme
 // medlemskabs_typeid; de to bliver ét Tilbud med Standardpris pr. Aldersgruppe.
-// "Træningsven"-medlemskaber (to personer deler ét medlemskab) er Rabatgruppen Træn med en makker:
-// prisen pr. person bliver Makkerpris på Tilbuddet med samme Kategori og samme Reformer-adgang.
+// Kædens makker-produkt (på siden "Træningsven": to personer deler ét abonnement) er Rabatgruppen
+// Træn med en makker: prisen pr. person bliver Makkerpris pr. Aldersgruppe på Tilbuddet med samme
+// Kategori og samme Reformer-adgang.
 //
 // Kampagner står kun som fri tekst i acf.beskrivelse og læses defensivt (se parseCampaignText).
 // acf.centre er håndvedligeholdt og indeholder skrald ("abc", "efg", tomme lister); kun GUID'er
 // tæller, så skrald aldrig knytter et medlemskab til et Center.
 
+import { parseAmount } from './amount.mjs';
 import { wholeMonthsUntil } from './sats.mjs';
 
 export const FITNESSX_BASE_URL = 'https://fitnessx.dk';
@@ -40,9 +42,11 @@ export const FITNESSX_CHAIN = {
 // Ingen Binding: opsigelse med løbende måned + 1 måned (https://fitnessx.dk/medlemsbetingelser/).
 const BINDING_MONTHS = 0;
 
-// Engangsbeløb for at tilføje en Træningsven.
+// Engangsbeløb for at tilføje makkeren. Det deles af de to ligesom Oprettelsesgebyret, så
+// Oprettelsesgebyret pr. person med en makker er (Oprettelsesgebyr + PARTNER_FEE) / 2.
 // Kilde: https://fitnessx.dk/split-regningen-med-din-traeningsven/
 const PARTNER_FEE = 100;
+const PEOPLE_PER_PARTNER_OFFER = 2;
 
 const DANISH_MONTHS = [
   'januar', 'februar', 'marts', 'april', 'maj', 'juni',
@@ -60,16 +64,6 @@ const decodeEntities = (text) =>
     .replace(/&nbsp;/g, ' ')
     .replace(/&quot;/g, '"')
     .replace(/&amp;/g, '&');
-
-// Beløb i kroner: "1050" → 1050, "1.200 kr." → 1200, "189,50" → 189.5, "60" → 60.
-// Fitness X skriver beløb over 1.000 både med og uden punktum. Andet end et tal → null.
-export function parseAmount(text) {
-  if (text == null) return null;
-  const match = String(text).match(/\d{1,3}(?:\.\d{3})+(?:,\d+)?(?!\d)|\d+(?:,\d+)?/);
-  if (!match) return null;
-  const value = Number(match[0].replace(/\./g, '').replace(',', '.'));
-  return Number.isFinite(value) ? value : null;
-}
 
 // HTML → ren tekst på én linje.
 export const plainText = (html) =>
@@ -299,13 +293,14 @@ function groupByType(memberships, warnings) {
   return [...groups.values()];
 }
 
-// Læser én gruppe almindelige medlemskaber (ikke Træningsven) til et Tilbud. Kampagnetekst,
-// der ikke kan læses, gør Tilbuddet ugyldigt i stedet for at give en forkert pris.
+// Læser én gruppe almindelige medlemskaber (ikke makker-medlemskaber) til et Tilbud.
+// Kampagnetekst, der ikke kan læses, gør Tilbuddet ugyldigt i stedet for at give en forkert pris.
 function offerFromGroup(group, warnings) {
   const first = group.find((membership) => membership.acf.over_under_tredive === false) ?? group[0];
   const name = offerNameFromTitle(first.title);
   const standardPrice = {};
-  const campaignPrices = [];
+  // Kampagnepris pr. Aldersgruppe; format B dækker begge Aldersgrupper med én pris.
+  const campaignPrices = {};
   let campaign = null;
 
   for (const membership of group) {
@@ -317,7 +312,8 @@ function offerFromGroup(group, warnings) {
     if (parsed?.format === 'B') {
       // Ét medlemskab dækker begge Aldersgrupper; acf.pris er Kampagneprisen.
       Object.assign(standardPrice, parsed.after);
-      campaignPrices.push(listedPrice);
+      campaignPrices.under30 = listedPrice;
+      campaignPrices.over30 = listedPrice;
       campaign ??= { endDate: parsed.endDate, text: plainText(acf.beskrivelse) };
       continue;
     }
@@ -339,16 +335,21 @@ function offerFromGroup(group, warnings) {
             `men prisen er ${listedPrice} kr`,
         );
       }
-      campaignPrices.push(parsed.price);
+      campaignPrices[ageGroup] = parsed.price;
       campaign ??= { endDate: parsed.endDate, text: plainText(acf.beskrivelse) };
     }
   }
 
   if (campaign) {
-    // Matchning har én Kampagnepris pr. Tilbud; afviger de, bruges den højeste (aldrig for lav).
-    campaign.price = Math.max(...campaignPrices);
-    if (new Set(campaignPrices).size > 1) {
-      warnings.push(`${name}: forskellige kampagnepriser (${campaignPrices.join(', ')})`);
+    // Kampagneprisen gemmes pr. Aldersgruppe (ét tal, hvis de er ens). Har kun den ene
+    // Aldersgruppe en kampagne, regnes den ikke med, så den anden ikke får en pris, Fitness X
+    // ikke tilbyder den.
+    const { under30, over30 } = campaignPrices;
+    if (under30 == null || over30 == null) {
+      warnings.push(`${name}: kampagnen gælder kun den ene Aldersgruppe og regnes ikke med`);
+      campaign = null;
+    } else {
+      campaign.price = under30 === over30 ? under30 : { under30, over30 };
     }
   }
 
@@ -367,7 +368,7 @@ function offerFromGroup(group, warnings) {
   };
 }
 
-// Træningsven-gruppe → samlet pris for to og pris pr. person pr. Aldersgruppe.
+// Gruppe af makker-medlemskaber → samlet pris for to og pris pr. person pr. Aldersgruppe.
 function partnerFromGroup(group) {
   const first = group[0];
   const total = {};
@@ -391,7 +392,8 @@ function partnerFromGroup(group) {
   };
 }
 
-// Den billigste Træningsven-mulighed pr. person (30+, da Makkerpris er ét tal).
+// Den billigste makker-mulighed pr. person. Fitness X er aldrig billigere for 30+, så 30+-prisen
+// afgør rækkefølgen; den valgte mulighed gemmes med begge Aldersgruppers priser.
 const cheapestPartner = (partners) => {
   const price = (partner) => partner.perPerson.over30 ?? Infinity;
   return [...partners].sort((a, b) => price(a) - price(b))[0];
@@ -401,9 +403,9 @@ const cheapestPartner = (partners) => {
 // centerlisten). Resultat: { offers: [Tilbud-udkast], warnings }.
 // Et Tilbud-udkast: { key, name, category, reformer, special, centerCount, standardPrice,
 //   campaign: { price, endDate, text } | null, signupFee, adminFee, partner | null,
-//   partnerOnly? } (partnerOnly = findes kun med Træningsven).
-// Træningsven-medlemskaber uden et almindeligt Tilbud at høre til (fx Hjørrings Kategori 5, som
-// kun findes med Træningsven) bliver selvstændige Tilbud, hvor Standardprisen er prisen for to.
+//   partnerOnly? } (partnerOnly = findes kun som makker-medlemskab).
+// Makker-medlemskaber uden et almindeligt Tilbud at høre til (fx Hjørrings Kategori 5, som kun
+// sælges til to) bliver selvstændige Tilbud, hvor Standardprisen er prisen for to.
 export function offersForCenter(ajaxObject, guid) {
   const warnings = [];
   const memberships = membershipsForCenter(ajaxObject, guid);
@@ -555,15 +557,24 @@ const subscriptionTypeFor = (centerCount) => {
   return centerCount > 1 ? 'Landsdækkende' : 'Lokal center';
 };
 
+// Kravet for Makkerpris, som brugeren ser det i appen.
 function partnerRequirementFor(partner) {
   const { total, centerCount } = partner;
   const centers = centerCount === 1 ? 'ét Center' : `${centerCount} Centre`;
-  const access = centerCount ? ` Medlemskabet giver jer begge adgang til ${centers}.` : '';
+  const access = centerCount ? ` I får begge adgang til ${centers}.` : '';
   return (
-    `I deler ét medlemskab med Træningsven og betaler samlet ${total.under30} kr/md (under 30) ` +
+    `I melder jer ind sammen og betaler samlet ${total.under30} kr/md (under 30) ` +
     `eller ${total.over30} kr/md (30+). Det koster ${PARTNER_FEE} kr én gang at tilføje ` +
-    `Træningsvennen.${access}`
+    `makkeren.${access}`
   );
+}
+
+// Oprettelsesgebyr pr. person med en makker: Oprettelsesgebyret plus engangsbeløbet for at
+// tilføje makkeren, delt på to.
+function partnerSignupFeeFor(draft, fees) {
+  const signupFee = draft.partner.signupFee ?? draft.signupFee ?? fees.signupFee;
+  if (signupFee == null) return undefined;
+  return (signupFee + PARTNER_FEE) / PEOPLE_PER_PARTNER_OFFER;
 }
 
 export function buildOffer(center, draft, { today, fees = {} }) {
@@ -580,9 +591,12 @@ export function buildOffer(center, draft, { today, fees = {} }) {
     signupFee: draft.signupFee ?? fees.signupFee,
     adminFee: draft.adminFee ?? fees.adminFee,
     bindingMonths: BINDING_MONTHS,
-    // Makkerpris er ét tal i Matchning; 30+-prisen pr. person bruges, så den aldrig er for lav.
-    partnerPrice: draft.partner ? draft.partner.perPerson.over30 : null,
-    ...(draft.partner && { partnerRequirement: partnerRequirementFor(draft.partner) }),
+    // Makkerpris pr. person pr. Aldersgruppe.
+    partnerPrice: draft.partner ? { ...draft.partner.perPerson } : null,
+    ...(draft.partner && {
+      partnerSignupFee: partnerSignupFeeFor(draft, fees),
+      partnerRequirement: partnerRequirementFor(draft.partner),
+    }),
     signupUrl: center.signupUrl,
   };
 }
