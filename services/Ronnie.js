@@ -1,9 +1,11 @@
 import {
+  RONNIE_MAX_LOOKUP_ROUNDS,
   RonnieError,
   buildRonnieRequest,
   isOpenAiKeyConfigured,
   parseRonnieReply,
   ronnieErrorFromResponse,
+  runRonnieLookups,
 } from '../data/ronnie';
 
 // Kalder OpenAI (gpt-4o-mini) direkte fra appen. Nøglen ligger i .env som
@@ -18,11 +20,8 @@ const TIMEOUT_MS = 30000;
 // false, når .env mangler nøglen. Så viser Spørg Ronnie en besked i stedet for chatten.
 export const ronnieAvailable = isOpenAiKeyConfigured(OPENAI_API_KEY);
 
-// Sender hele samtalen og de Centre, Ronnie kender (CenterMatch fra Matchning), til OpenAI.
-// Returnerer { role: 'assistant', content, centerIds }. Kaster en RonnieError ved fejl.
-export async function askRonnie({ conversation, matches, user, apiKey = OPENAI_API_KEY }) {
-  if (!isOpenAiKeyConfigured(apiKey)) throw new RonnieError('missingKey');
-
+// Ét kald til OpenAI. Returnerer beskeden fra svaret (tekst eller værktøjskald).
+async function callOpenAi(request, apiKey) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let response;
@@ -33,7 +32,7 @@ export async function askRonnie({ conversation, matches, user, apiKey = OPENAI_A
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(buildRonnieRequest({ conversation, matches, user })),
+      body: JSON.stringify(request),
       signal: controller.signal,
     });
   } catch (error) {
@@ -49,6 +48,54 @@ export async function askRonnie({ conversation, matches, user, apiKey = OPENAI_A
     data = null;
   }
   if (!response.ok) throw ronnieErrorFromResponse(response.status, data);
+  return data?.choices?.[0]?.message ?? {};
+}
 
-  return parseRonnieReply(data?.choices?.[0]?.message?.content, matches);
+// Sender hele samtalen og de Centre, Ronnie kender (CenterMatch fra Matchning), til OpenAI.
+// Spørger brugeren om et andet sted, kalder Ronnie værktøjet "find centre nær stednavn"; så slås
+// stedet op med lookupInput ({ geocode, centers, chains, user, filters, today }), og svaret
+// sendes tilbage til Ronnie, der derefter svarer. Uden lookupInput kan Ronnie ikke slå op.
+// Returnerer { role: 'assistant', content, centerIds, lookup? }. Kaster en RonnieError ved fejl.
+export async function askRonnie({
+  conversation,
+  matches,
+  user,
+  lookupInput,
+  apiKey = OPENAI_API_KEY,
+}) {
+  if (!isOpenAiKeyConfigured(apiKey)) throw new RonnieError('missingKey');
+
+  const pendingToolMessages = [];
+  const pendingLookupMatches = [];
+  for (let round = 0; ; round += 1) {
+    const allowLookup = Boolean(lookupInput) && round < RONNIE_MAX_LOOKUP_ROUNDS;
+    const message = await callOpenAi(
+      buildRonnieRequest({
+        conversation,
+        matches,
+        user,
+        pendingToolMessages,
+        pendingLookupMatches,
+        allowLookup,
+      }),
+      apiKey,
+    );
+
+    if (allowLookup && message.tool_calls?.length > 0) {
+      const lookup = await runRonnieLookups(message, lookupInput);
+      pendingToolMessages.push(...lookup.toolMessages);
+      pendingLookupMatches.push(...lookup.matches);
+      continue;
+    }
+
+    const reply = parseRonnieReply(message.content, matches, {
+      conversation,
+      lookupMatches: pendingLookupMatches,
+    });
+    if (pendingToolMessages.length === 0) return reply;
+    return {
+      ...reply,
+      lookup: { toolMessages: pendingToolMessages, matches: pendingLookupMatches },
+    };
+  }
 }
