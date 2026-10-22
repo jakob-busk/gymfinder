@@ -29,6 +29,12 @@ const checkoutLink = (memberType, clubId, membershipId) =>
   'https://www.sats.dk/bliv-medlem-sats/tilpas-medlemskab?memberTypeId=' +
   `MEMBERSHIP_MEMBER_TYPE_${memberType}&clubId=${clubId}&membershipId=${membershipId}`;
 
+// Medlemskabets checkout-link pr. Aldersgruppe: under 30 har sit eget medlemskab (…_U30).
+const signupLinks = (clubId, membershipId) => ({
+  under30: checkoutLink('ADULT', clubId, `${membershipId}_U30`),
+  over30: checkoutLink('ADULT', clubId, membershipId),
+});
+
 describe('SATS centerliste', () => {
   const centers = parseCenterList(satsFixture('centerliste.html'));
 
@@ -83,21 +89,21 @@ describe('SATS centerside', () => {
         name: 'Basic',
         subscriptionType: 'Lokal center',
         standardPrice: { under30: 549, over30: 649 },
-        signupUrl: checkoutLink('ADULT', 412, '1CLUB_ALLDAY_NOBND_GX'),
+        signupUrl: signupLinks(412, '1CLUB_ALLDAY_NOBND_GX'),
       },
       {
         key: 'REGION_ALLDAY_NOBND_GX',
         name: 'Flexible',
         subscriptionType: 'Landsdækkende',
         standardPrice: { under30: 599, over30: 699 },
-        signupUrl: checkoutLink('ADULT', 412, 'REGION_ALLDAY_NOBND_GX'),
+        signupUrl: signupLinks(412, 'REGION_ALLDAY_NOBND_GX'),
       },
       {
         key: 'PREMIUM_NOBND',
         name: 'Premium',
         subscriptionType: 'Landsdækkende',
         standardPrice: { under30: 699, over30: 799 },
-        signupUrl: checkoutLink('ADULT', 412, 'PREMIUM_NOBND'),
+        signupUrl: signupLinks(412, 'PREMIUM_NOBND'),
       },
     ]);
   });
@@ -313,7 +319,7 @@ describe('hele SATS-kørslen (falsk HTTP med gemte svar)', () => {
           subscriptionType: 'Lokal center',
           standardPrice: { under30: 399, over30: 499 },
           ...campaign,
-          signupUrl: checkoutLink('ADULT', 434, '1CLUB_ALLDAY_NOBND_GX'),
+          signupUrl: signupLinks(434, '1CLUB_ALLDAY_NOBND_GX'),
         },
         {
           id: 'sats-434-region-allday-nobnd-gx',
@@ -321,7 +327,7 @@ describe('hele SATS-kørslen (falsk HTTP med gemte svar)', () => {
           subscriptionType: 'Landsdækkende',
           standardPrice: { under30: 599, over30: 699 },
           ...campaign,
-          signupUrl: checkoutLink('ADULT', 434, 'REGION_ALLDAY_NOBND_GX'),
+          signupUrl: signupLinks(434, 'REGION_ALLDAY_NOBND_GX'),
         },
         {
           id: 'sats-434-premium-nobnd',
@@ -329,7 +335,7 @@ describe('hele SATS-kørslen (falsk HTTP med gemte svar)', () => {
           subscriptionType: 'Landsdækkende',
           standardPrice: { under30: 699, over30: 799 },
           ...campaign,
-          signupUrl: checkoutLink('ADULT', 434, 'PREMIUM_NOBND'),
+          signupUrl: signupLinks(434, 'PREMIUM_NOBND'),
         },
       ],
     });

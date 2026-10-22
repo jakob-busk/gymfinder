@@ -279,6 +279,29 @@ describe('Tilbud', () => {
     assert.deepEqual(offerProblems(withPrice(599), withPrice({ under30: 399, over30: 499 })), []);
   });
 
+  test('tilmeldingslinket er en https-URL på en Kædes domæne, evt. pr. Aldersgruppe', () => {
+    const sats = 'https://www.sats.dk/bliv-medlem-sats/tilpas-medlemskab?clubId=412';
+    assert.deepEqual(offerProblems({ ...validOffer, signupUrl: sats }), []);
+    assert.deepEqual(
+      offerProblems({
+        ...validOffer,
+        signupUrl: { under30: `${sats}&u30`, over30: sats },
+        partnerSignupUrl: 'https://loopfitness.dk/medlemskab/bliv-medlem/?center=1',
+      }),
+      [],
+    );
+    assert.deepEqual(offerProblems({ ...validOffer, signupUrl: 'http://www.sats.dk/' }), [
+      'Tilmeldingslinket er ikke en https-URL på Kædens domæne',
+    ]);
+    assert.deepEqual(
+      offerProblems({ ...validOffer, signupUrl: { under30: 'https://evil-sats.dk/', over30: sats } }),
+      ['Tilmeldingslinket (under30) er ikke en https-URL på Kædens domæne'],
+    );
+    assert.deepEqual(offerProblems({ ...validOffer, partnerSignupUrl: '/tilmelding/' }), [
+      'Tilmeldingslinket til Makkerpris er ikke en https-URL på Kædens domæne',
+    ]);
+  });
+
   test('et nyt Tilbud uden forrige nat tjekkes ikke for ændring', () => {
     assert.deepEqual(offerProblems(validOffer, undefined), []);
   });

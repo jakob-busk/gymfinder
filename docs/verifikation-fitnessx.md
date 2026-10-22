@@ -6,26 +6,64 @@ Resultat: **STEMMER**
 Tre tilfældige Centre er hentet fra fitnessx.dk. Centersiderne viser ingen priser i selve
 HTML'en (de tegnes i browseren), så kolonnen "Hjemmeside" er det, en besøgende kan læse på
 Kædens prisliste (https://fitnessx.dk/oevrige-priser/) for Centrets Kategori, og adressen er
-adresselinjen øverst på centersiden. "Scraper" er det, scraperen læser i sidens
+adresselinjen øverst på centersiden. Sælger Centret et særmedlemskab i stedet for
+Kategoriens almindelige (fx Træningsven i Aarhus-centrene: "SÆRPRIS I AARHUS" med adgang til
+9 Centre), er "Hjemmeside" prislistens pris under Særmedlemskaber, og rækken siger
+særmedlemskab. "Scraper" er det, scraperen læser i sidens
 `sj_ajax_object`. Genereres med `npm run verify:fitnessx` i `scraper/` (centerliste,
 prisliste, tre centersider og siderne for de Centre, der ikke har GUID i centerlisten).
 
-## Fitness X Slagelse, Fabrikken (fitnessx-slagelse-fabrikken)
+## Fitness X Hasselager (fitnessx-hasselager)
 
-https://fitnessx.dk/fitness/fitness-slagelse/fitness-slagelse-nordre-ringgade/
+https://fitnessx.dk/fitness/fitness-aarhus/fitness-aarhus-hasselager-kolt-ostervej-25/
 
 | Felt | Scraper | Hjemmeside | Stemmer |
 |---|---|---|---|
-| Adresse | Ndr. Ringgade 59, 4200 Slagelse | Ndr. Ringgade 59, 4200 Slagelse | ja |
-| Centersidens GUID | fafcf44b-1828-43a9-baed-73f93db087cf | fafcf44b-1828-43a9-baed-73f93db087cf | ja |
+| Adresse | Kolt Østervej 25, 8361 Hasselager | Kolt Østervej 25, 8361 Hasselager | ja |
+| Centersidens GUID | 5d0c2f53-f49a-4307-9200-0b65e8798eb0 | 5d0c2f53-f49a-4307-9200-0b65e8798eb0 | ja |
 | Kategori 2, under 30 (kr/md) | 360 | 360 | ja |
 | Kategori 2, 30+ (kr/md) | 400 | 400 | ja |
-| Kategori 2 med Træningsven, under 30, for to (kr/md) | 560 | 560 | ja |
-| Kategori 2 med Træningsven, 30+, for to (kr/md) | 600 | 600 | ja |
+| Kategori 2 med Træningsven, særmedlemskab med 9 Centre, under 30, for to (kr/md) | 500 | 500 | ja |
+| Kategori 2 med Træningsven, særmedlemskab med 9 Centre, 30+, for to (kr/md) | 550 | 550 | ja |
+| Kategori 2 + Reformer, under 30 (kr/md) | 510 | 510 | ja |
+| Kategori 2 + Reformer, 30+ (kr/md) | 600 | 600 | ja |
+| Kategori 2 + Reformer med Træningsven, særmedlemskab med 9 Centre, under 30, for to (kr/md) | 800 | 800 | ja |
+| Kategori 2 + Reformer med Træningsven, særmedlemskab med 9 Centre, 30+, for to (kr/md) | 950 | 950 | ja |
 | Kategori 1, under 30 (kr/md) | 400 | 400 | ja |
 | Kategori 1, 30+ (kr/md) | 450 | 450 | ja |
 | Kategori 1 med Træningsven, under 30, for to (kr/md) | 600 | 600 | ja |
 | Kategori 1 med Træningsven, 30+, for to (kr/md) | 650 | 650 | ja |
+| Kategori 1 + Reformer, under 30 (kr/md) | 550 | 550 | ja |
+| Kategori 1 + Reformer, 30+ (kr/md) | 650 | 650 | ja |
+| Kategori 1 + Reformer med Træningsven, under 30, for to (kr/md) | 900 | 900 | ja |
+| Kategori 1 + Reformer med Træningsven, 30+, for to (kr/md) | 1050 | 1050 | ja |
+| Oprettelsesgebyr (kr) | 60 | 60 | ja |
+| Admingebyr (kr/md) | 15 | 15 | ja |
+
+## Fitness X Aarhus C, Frisko (fitnessx-aarhus-c-frisko)
+
+https://fitnessx.dk/fitness/fitness-aarhus/fitness-aarhus-c-frisko-daugbjergvej-26c/
+
+| Felt | Scraper | Hjemmeside | Stemmer |
+|---|---|---|---|
+| Adresse | Daugbjergvej 26C, 8000 Aarhus C | Daugbjergvej 26C, 8000 Aarhus C | ja |
+| Centersidens GUID | 28074649-7964-4948-954d-1383b699e3f9 | 28074649-7964-4948-954d-1383b699e3f9 | ja |
+| Kategori 2, under 30 (kr/md) | 360 | 360 | ja |
+| Kategori 2, 30+ (kr/md) | 400 | 400 | ja |
+| Kategori 2 med Træningsven, særmedlemskab med 9 Centre, under 30, for to (kr/md) | 500 | 500 | ja |
+| Kategori 2 med Træningsven, særmedlemskab med 9 Centre, 30+, for to (kr/md) | 550 | 550 | ja |
+| Kategori 2 + Reformer, under 30 (kr/md) | 510 | 510 | ja |
+| Kategori 2 + Reformer, 30+ (kr/md) | 600 | 600 | ja |
+| Kategori 2 + Reformer med Træningsven, særmedlemskab med 9 Centre, under 30, for to (kr/md) | 800 | 800 | ja |
+| Kategori 2 + Reformer med Træningsven, særmedlemskab med 9 Centre, 30+, for to (kr/md) | 950 | 950 | ja |
+| Kategori 1, under 30 (kr/md) | 400 | 400 | ja |
+| Kategori 1, 30+ (kr/md) | 450 | 450 | ja |
+| Kategori 1 med Træningsven, under 30, for to (kr/md) | 600 | 600 | ja |
+| Kategori 1 med Træningsven, 30+, for to (kr/md) | 650 | 650 | ja |
+| Kategori 1 + Reformer, under 30 (kr/md) | 550 | 550 | ja |
+| Kategori 1 + Reformer, 30+ (kr/md) | 650 | 650 | ja |
+| Kategori 1 + Reformer med Træningsven, under 30, for to (kr/md) | 900 | 900 | ja |
+| Kategori 1 + Reformer med Træningsven, 30+, for to (kr/md) | 1050 | 1050 | ja |
 | Oprettelsesgebyr (kr) | 60 | 60 | ja |
 | Admingebyr (kr/md) | 15 | 15 | ja |
 
@@ -53,33 +91,6 @@ https://fitnessx.dk/fitness/fitness-virum/fitness-virum-virumvej/
 | Kategori 1, 30+ (kr/md) | 450 | 450 | ja |
 | Kategori 1 med Træningsven, under 30, for to (kr/md) | 600 | 600 | ja |
 | Kategori 1 med Træningsven, 30+, for to (kr/md) | 650 | 650 | ja |
-| Oprettelsesgebyr (kr) | 60 | 60 | ja |
-| Admingebyr (kr/md) | 15 | 15 | ja |
-
-## Fitness X Hasselager (fitnessx-hasselager)
-
-https://fitnessx.dk/fitness/fitness-aarhus/fitness-aarhus-hasselager-kolt-ostervej-25/
-
-| Felt | Scraper | Hjemmeside | Stemmer |
-|---|---|---|---|
-| Adresse | Kolt Østervej 25, 8361 Hasselager | Kolt Østervej 25, 8361 Hasselager | ja |
-| Centersidens GUID | 5d0c2f53-f49a-4307-9200-0b65e8798eb0 | 5d0c2f53-f49a-4307-9200-0b65e8798eb0 | ja |
-| Kategori 2, under 30 (kr/md) | 360 | 360 | ja |
-| Kategori 2, 30+ (kr/md) | 400 | 400 | ja |
-| Kategori 2 med Træningsven, under 30, for to (kr/md) | 500 | 500 | ja |
-| Kategori 2 med Træningsven, 30+, for to (kr/md) | 550 | 550 | ja |
-| Kategori 2 + Reformer, under 30 (kr/md) | 510 | 510 | ja |
-| Kategori 2 + Reformer, 30+ (kr/md) | 600 | 600 | ja |
-| Kategori 2 + Reformer med Træningsven, under 30, for to (kr/md) | 800 | 800 | ja |
-| Kategori 2 + Reformer med Træningsven, 30+, for to (kr/md) | 950 | 950 | ja |
-| Kategori 1, under 30 (kr/md) | 400 | 400 | ja |
-| Kategori 1, 30+ (kr/md) | 450 | 450 | ja |
-| Kategori 1 med Træningsven, under 30, for to (kr/md) | 600 | 600 | ja |
-| Kategori 1 med Træningsven, 30+, for to (kr/md) | 650 | 650 | ja |
-| Kategori 1 + Reformer, under 30 (kr/md) | 550 | 550 | ja |
-| Kategori 1 + Reformer, 30+ (kr/md) | 650 | 650 | ja |
-| Kategori 1 + Reformer med Træningsven, under 30, for to (kr/md) | 900 | 900 | ja |
-| Kategori 1 + Reformer med Træningsven, 30+, for to (kr/md) | 1050 | 1050 | ja |
 | Oprettelsesgebyr (kr) | 60 | 60 | ja |
 | Admingebyr (kr/md) | 15 | 15 | ja |
 

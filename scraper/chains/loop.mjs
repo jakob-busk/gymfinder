@@ -1,12 +1,14 @@
 // Kæde-parser for LOOP Fitness (loopfitness.dk). Omdanner sidernes rå HTML til normaliserede
 // Centre og Tilbud i Matchnings form (se data/matchning.js).
 //
-// Kilder (to kald pr. nat i alt):
+// Kilder (tre kald pr. nat i alt):
 //   /centre/   centerlisten. Et inline <script> har `var locations = {…}` med alle Centre:
 //              adresse, koordinater, åbningstider, holdtræning og public_groups[] (abonnementer
 //              med pris, Admingebyr, Oprettelsesgebyr, kampagne og familiemedlemskab).
 //   /priser/   rabatkortene (statisk HTML): Studerende og Ældre Sagen 15 % og det normale
 //              Oprettelsesgebyr på 199 kr, som gælder, når man bruger en Rabat.
+//   /medlemskab/bliv-medlem/   tilmeldingssidens priskort. Deres navne bruges i Tilbuddets
+//              tilmeldingslink, så linket vælger netop det abonnement i netop det Center.
 //
 // LOOP opkræver pr. 30 dage, ikke pr. kalendermåned (ca. 12,17 betalinger om året). Det
 // gemmes som billingIntervalDays: 30, så Ærlig årspris regnes med det rigtige antal betalinger.
@@ -15,7 +17,8 @@
 export const LOOP_BASE_URL = 'https://loopfitness.dk';
 export const LOOP_CENTER_LIST_URL = `${LOOP_BASE_URL}/centre/`;
 export const LOOP_PRICES_URL = `${LOOP_BASE_URL}/priser/`;
-export const LOOP_SIGNUP_URL = `${LOOP_BASE_URL}/medlemskab/bliv-medlem`;
+// Med skråstreg til sidst, så siden ikke viderestiller (og evt. ændrer parametrene).
+export const LOOP_SIGNUP_URL = `${LOOP_BASE_URL}/medlemskab/bliv-medlem/`;
 
 export const LOOP_CHAIN = {
   id: 'loop',
@@ -113,12 +116,32 @@ export function extractInlineObject(html, marker) {
 }
 
 // Tilmeldingslinket, som LOOPs egne priskort bruger (price-card.js): Centrets id og
-// abonnementets navn som parametre.
+// abonnementets navn som parametre. Tilmeldingssiden (member-signup.js) vælger Centret og
+// derefter abonnementet, hvis `subscription` er præcis et priskorts data-subscription eller,
+// for abonnementer uden priskort, abonnementets navn. Ellers vælges kun Centret.
 export function signupUrlFor({ loopId, subscription }) {
   const url = new URL(LOOP_SIGNUP_URL);
   url.searchParams.set('center', String(loopId));
   if (subscription) url.searchParams.set('subscription', subscription);
   return url.href;
+}
+
+// Samme sammenligning som tilmeldingssiden: små bogstaver og ét mellemrum.
+const normalizeName = (value) => String(value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+// Priskortenes navne på tilmeldingssiden (data-subscription), fx "kampagne: 100 kr. resten af
+// året". "kids" er ikke et Tilbud og tages ikke med.
+export function parseSignupPage(html) {
+  return [...html.matchAll(/class="loop-price-card[^"]*"[^>]*data-subscription="([^"]*)"/g)]
+    .map(([, name]) => decodeEntities(name))
+    .filter((name) => name !== 'kids');
+}
+
+// Værdien til `subscription`: priskortets eget navn, hvis abonnementet har et kort (siden
+// kræver præcis kortets stavemåde, fx lille k i "kampagne"), ellers abonnementets navn.
+export function subscriptionParam(name, signupCards = []) {
+  const trimmed = name.trim();
+  return signupCards.find((card) => normalizeName(card) === normalizeName(trimmed)) ?? trimmed;
 }
 
 // ---------- Kampagne ----------
@@ -274,7 +297,7 @@ function partnerFieldsFor(familyGroup, { today, warnings, where }) {
   };
 }
 
-function buildOffer({ center, loopId, group, family, today, warnings }) {
+function buildOffer({ center, loopId, group, family, today, warnings, signupCards }) {
   const name = offerNameFor(group);
   const { campaign, warning } = parseCampaign(group, today);
   if (warning) warnings.push(`${center.name} / ${name}: kampagnen kunne ikke læses (${warning})`);
@@ -299,13 +322,21 @@ function buildOffer({ center, loopId, group, family, today, warnings }) {
     ...(family
       ? partnerFieldsFor(family, { today, warnings, where: `${center.name} / ${name}` })
       : { partnerPrice: null }),
-    signupUrl: signupUrlFor({ loopId, subscription: group.name.trim() }),
+    // Tilmelding til netop dette abonnement i netop dette Center; Makkerprisen har sit eget
+    // link til familiemedlemskabet.
+    signupUrl: signupUrlFor({ loopId, subscription: subscriptionParam(group.name, signupCards) }),
+    ...(family && toNumber(family.price) != null && {
+      partnerSignupUrl: signupUrlFor({
+        loopId,
+        subscription: subscriptionParam(family.name, signupCards),
+      }),
+    }),
   };
 }
 
 // Centrets Tilbud: hvert almindeligt abonnement bliver ét Tilbud, og et familiemedlemskab
 // lægges på det abonnement, det hører til, som Makkerpris.
-function offersFor(center, loopId, groups, today, warnings) {
+function offersFor(center, loopId, groups, { today, warnings, signupCards }) {
   const subscribable = groups.filter(isSubscribable);
   const families = subscribable.filter(isFamily);
   const singles = subscribable.filter((group) => !isFamily(group));
@@ -316,7 +347,7 @@ function offersFor(center, loopId, groups, today, warnings) {
     const key = familyPairingKey(group.name ?? '');
     const family = families.find((candidate) => familyPairingKey(candidate.name ?? '') === key);
     if (family) usedFamilies.add(family);
-    const offer = buildOffer({ center, loopId, group, family, today, warnings });
+    const offer = buildOffer({ center, loopId, group, family, today, warnings, signupCards });
     if (offers.some((existing) => existing.id === offer.id)) {
       warnings.push(`${center.name}: to abonnementer giver samme Tilbud "${offer.name}"`);
       continue;
@@ -334,8 +365,9 @@ function offersFor(center, loopId, groups, today, warnings) {
 }
 
 // Læser hele centerlisten: { centers, readErrors, warnings }. `limit` tager kun de første
-// Centre. Kaster, hvis siden ikke har `var locations`, så Kæden springes over.
-export function parseCenterList(html, today, { limit } = {}) {
+// Centre, og `signupCards` er tilmeldingssidens priskort (se parseSignupPage). Kaster, hvis siden
+// ikke har `var locations`, så Kæden springes over.
+export function parseCenterList(html, today, { limit, signupCards } = {}) {
   const locations = extractInlineObject(html, 'var locations = ');
   if (!locations || typeof locations !== 'object') {
     throw new Error('Centerlisten har ingen var locations');
@@ -360,7 +392,7 @@ export function parseCenterList(html, today, { limit } = {}) {
     };
 
     const groups = Array.isArray(location.public_groups) ? location.public_groups : [];
-    const offers = offersFor(center, loopId, groups, today, warnings);
+    const offers = offersFor(center, loopId, groups, { today, warnings, signupCards });
     if (offers.length === 0) {
       readErrors.push({ centerId: center.id, message: 'Centret har ingen abonnementer' });
       continue;
@@ -455,18 +487,29 @@ function buildChain(cards, centers, warnings) {
   return { ...LOOP_CHAIN, discounts };
 }
 
-// Henter og parser hele LOOP med to kald: centerlisten og prissiden. `http.getText(url)`
-// leverer rå HTML (se http.mjs). `limit` begrænser antallet af Centre (live-tjek); det sparer
-// ingen kald, men gør rapporten kort.
+// Henter og parser hele LOOP med tre kald: centerlisten, prissiden og tilmeldingssiden.
+// `http.getText(url)` leverer rå HTML (se http.mjs). `limit` begrænser antallet af Centre
+// (live-tjek); det sparer ingen kald, men gør rapporten kort.
 // Resultat: { chain, centers: [Center med offers], readErrors: [{ centerId, message }], warnings }.
-// Kaster, hvis centerlisten eller rabatkortene ikke kan hentes eller læses.
+// Kaster, hvis centerlisten eller rabatkortene ikke kan hentes eller læses. Fejler
+// tilmeldingssiden, bruges abonnementernes egne navne i linkene, og der gives en advarsel.
 export async function scrapeLoop({ http, today, limit } = {}) {
-  const { centers, readErrors, warnings } = parseCenterList(
-    await http.getText(LOOP_CENTER_LIST_URL),
-    today,
-    { limit },
-  );
-  const cards = parsePricesPage(await http.getText(LOOP_PRICES_URL));
+  const listHtml = await http.getText(LOOP_CENTER_LIST_URL);
+  const pricesHtml = await http.getText(LOOP_PRICES_URL);
+  const signupWarnings = [];
+  let signupCards = [];
+  try {
+    signupCards = parseSignupPage(await http.getText(LOOP_SIGNUP_URL));
+  } catch (error) {
+    signupWarnings.push(`Tilmeldingssiden kunne ikke hentes (${error.message})`);
+  }
+
+  const { centers, readErrors, warnings } = parseCenterList(listHtml, today, {
+    limit,
+    signupCards,
+  });
+  warnings.push(...signupWarnings);
+  const cards = parsePricesPage(pricesHtml);
   const chain = buildChain(cards, centers, warnings);
   return { chain, centers, readErrors, warnings };
 }

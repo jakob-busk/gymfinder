@@ -104,9 +104,15 @@ describe('normal kørsel', () => {
       signupFee: 0,
       adminFee: 0,
       bindingMonths: 0,
-      signupUrl:
-        'https://www.sats.dk/bliv-medlem-sats/tilpas-medlemskab?memberTypeId=' +
-        'MEMBERSHIP_MEMBER_TYPE_ADULT&clubId=412&membershipId=1CLUB_ALLDAY_NOBND_GX',
+      // Checkout til Basic i Adelgade; under 30 har sit eget medlemskab (…_U30).
+      signupUrl: {
+        under30:
+          'https://www.sats.dk/bliv-medlem-sats/tilpas-medlemskab?memberTypeId=' +
+          'MEMBERSHIP_MEMBER_TYPE_ADULT&clubId=412&membershipId=1CLUB_ALLDAY_NOBND_GX_U30',
+        over30:
+          'https://www.sats.dk/bliv-medlem-sats/tilpas-medlemskab?memberTypeId=' +
+          'MEMBERSHIP_MEMBER_TYPE_ADULT&clubId=412&membershipId=1CLUB_ALLDAY_NOBND_GX',
+      },
       lastSeen: NIGHT_1,
     });
     assert.deepEqual(data.PriceHistory['sats-437']['sats-437-1club-allday-nobnd-gx'], {

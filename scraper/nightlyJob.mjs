@@ -7,7 +7,11 @@
 //   skrives, dens gamle data beholdes, og jobbet ender som fejlet. Andre Kæder skrives stadig.
 // - Et Tilbud eller Center, der ikke længere findes på hjemmesiden, beholdes med sit "sidst set"
 //   (lastSeen) og tæller missingNights op. Efter 3 nætter i træk fjernes det.
-// - Hvert gyldigt Tilbud får et punkt i prishistorikken pr. dag.
+// - Hvert gyldigt Tilbud får et punkt i prishistorikken pr. dag (Standardpris, Kampagnepris,
+//   Makkerpris og Makkerprisens kampagne).
+// - Et Tilbud, som demo-scriptet har sænket (priceDropDemo.mjs), sammenlignes med de rigtige
+//   priser fra før demoen, så demoen aldrig får sanity-reglen om ±50 % til at afvise nattens
+//   rigtige pris. Nattens Tilbud overskriver demo-markeringen.
 // - Efter scraping sendes push for opfyldte Prisalarmer, regnet på nattens nye priser og kun for
 //   Kæder, der blev opdateret (se priceAlertPush.mjs). Brugernes nye priser og slettede tokens
 //   skrives i samme opdatering som centerdata.
@@ -29,6 +33,31 @@ export const todayInDenmark = (now = new Date()) =>
 export const REMOVE_AFTER_MISSING_NIGHTS = 3;
 
 const { chains: CHAINS, centers: CENTERS, offers: OFFERS } = CENTER_DATA_PATHS;
+
+// Priserne på et Tilbud, der følges i prishistorikken og nat-rapportens prisændringer.
+export const PRICE_FIELDS = [
+  'standardPrice',
+  'campaignPrice',
+  'partnerPrice',
+  'partnerCampaignPrice',
+];
+const PARTNER_PRICE_FIELDS = ['partnerPrice', 'partnerCampaignPrice'];
+
+// Feltet på et Tilbud, som demo-scriptet sætter: { date, realPrices }, hvor realPrices er
+// Tilbuddets rigtige priser fra før demoen.
+export const DEMO_PRICE_DROP_FIELD = 'demoPriceDrop';
+
+const pricesOf = (offer, fields = PRICE_FIELDS) =>
+  Object.fromEntries(fields.map((field) => [field, offer?.[field] ?? null]));
+
+// Tilbuddet fra sidste nat med de rigtige priser, hvis demo-scriptet har sænket dem.
+export function withRealPrices(offer) {
+  const realPrices = offer?.[DEMO_PRICE_DROP_FIELD]?.realPrices;
+  if (!realPrices) return offer;
+  const real = { ...offer, ...pricesOf(realPrices) };
+  delete real[DEMO_PRICE_DROP_FIELD];
+  return real;
+}
 
 // Fjerner undefined og null inde i et objekt. (null som værdi i selve opdateringen betyder
 // "slet", så det bruges kun bevidst på øverste niveau.)
@@ -106,7 +135,7 @@ function processChain({ chainId, result, previous, today, update }) {
     const previousOffers = previous.offers[center.id] ?? {};
     const okOffers = [];
     for (const offer of offers) {
-      const offerIssues = offerProblems(offer, previousOffers[offer.id]);
+      const offerIssues = offerProblems(offer, withRealPrices(previousOffers[offer.id]));
       if (offerIssues.length > 0) {
         failures.push({ centerId: center.id, offerId: offer.id, problems: offerIssues });
       } else {
@@ -157,27 +186,26 @@ function processChain({ chainId, result, previous, today, update }) {
         signupFee: offer.signupFee,
         bindingMonths: offer.bindingMonths ?? null,
       });
-      update[`${PRICE_HISTORY_PATH}/${center.id}/${offer.id}/${today}`] = clean({
-        standardPrice: offer.standardPrice,
-        campaignPrice: offer.campaignPrice,
-      });
+      update[`${PRICE_HISTORY_PATH}/${center.id}/${offer.id}/${today}`] = clean(pricesOf(offer));
 
-      const before = previousOffers[offer.id];
+      const before = withRealPrices(previousOffers[offer.id]);
       if (!before) {
         report.newOffers.push({ centerId: center.id, offerId: offer.id });
-      } else if (
-        !sameJson(before.standardPrice, offer.standardPrice) ||
-        !sameJson(before.campaignPrice, offer.campaignPrice)
-      ) {
-        report.priceChanges.push({
-          centerId: center.id,
-          offerId: offer.id,
-          before: {
-            standardPrice: before.standardPrice,
-            campaignPrice: before.campaignPrice ?? null,
-          },
-          after: { standardPrice: offer.standardPrice, campaignPrice: offer.campaignPrice ?? null },
-        });
+      } else {
+        // Makkerpriserne står kun i rapporten for Tilbud, der har (eller havde) en Makkerpris.
+        const hasPartnerPrice = [before, offer].some((o) =>
+          PARTNER_PRICE_FIELDS.some((field) => o[field] != null),
+        );
+        const fields = hasPartnerPrice ? PRICE_FIELDS : ['standardPrice', 'campaignPrice'];
+        const [beforePrices, afterPrices] = [pricesOf(before, fields), pricesOf(offer, fields)];
+        if (!sameJson(beforePrices, afterPrices)) {
+          report.priceChanges.push({
+            centerId: center.id,
+            offerId: offer.id,
+            before: beforePrices,
+            after: afterPrices,
+          });
+        }
       }
     }
 

@@ -15,7 +15,7 @@ En fysisk lokation med adresse, placering og faciliteter (fx sauna, holdtræning
 _Avoid_: Gym, lokation, studie, fitnesscenter (alene)
 
 **Tilbud**:
-Et konkret abonnement, der kan købes i ét bestemt Center, med sin egen prisstruktur (Kampagnepris/Standardpris) og en Abonnementstype. Samme abonnementsnavn kan koste forskelligt i to Centre fra samme Kæde.
+Et konkret abonnement, der kan købes i ét bestemt Center, med sin egen prisstruktur (Kampagnepris/Standardpris) og en Abonnementstype. Samme abonnementsnavn kan koste forskelligt i to Centre fra samme Kæde. Kan have sit eget tilmeldingslink direkte til abonnementet i Centret (evt. pr. Aldersgruppe og et til Makkerpris).
 _Avoid_: Plan, medlemskab, deal
 
 **Abonnementstype**:

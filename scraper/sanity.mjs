@@ -126,6 +126,36 @@ function notLowerProblems(label, value, baseLabel, base) {
   return problems;
 }
 
+// Kædernes egne domæner. Et tilmeldingslink skal pege på et af dem (eller et underdomæne), så
+// en fejllæsning aldrig sender brugeren til en fremmed side.
+export const CHAIN_DOMAINS = ['sats.dk', 'loopfitness.dk', 'fitnessx.dk', 'puregym.dk'];
+
+function isChainHttpsUrl(value) {
+  if (!isNonEmptyString(value)) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      CHAIN_DOMAINS.some((domain) => url.hostname === domain || url.hostname.endsWith(`.${domain}`))
+    );
+  } catch {
+    return false;
+  }
+}
+
+// Tilbuddets tilmeldingslink (valgfrit): én https-URL på en Kædes domæne eller
+// { under30, over30 } med én til hver Aldersgruppe.
+function signupUrlProblems(label, value) {
+  if (value == null) return [];
+  if (typeof value === 'string') {
+    return isChainHttpsUrl(value) ? [] : [`${label} er ikke en https-URL på Kædens domæne`];
+  }
+  if (typeof value !== 'object') return [`${label} er ikke en https-URL på Kædens domæne`];
+  return AGE_GROUPS.filter((ageGroup) => !isChainHttpsUrl(value[ageGroup])).map(
+    (ageGroup) => `${label} (${ageGroup}) er ikke en https-URL på Kædens domæne`,
+  );
+}
+
 export function centerProblems(center) {
   const problems = [];
   for (const field of ['id', 'chainId', 'name', 'address', 'signupUrl']) {
@@ -213,6 +243,11 @@ export function offerProblems(offer, previous) {
   if (partnerSignupFee != null && (!isNumber(partnerSignupFee) || partnerSignupFee < 0)) {
     problems.push('Oprettelsesgebyr for Træn med en makker er ikke et gyldigt tal');
   }
+
+  problems.push(
+    ...signupUrlProblems('Tilmeldingslinket', offer?.signupUrl),
+    ...signupUrlProblems('Tilmeldingslinket til Makkerpris', offer?.partnerSignupUrl),
+  );
 
   if (previous) {
     problems.push(

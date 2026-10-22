@@ -5,6 +5,7 @@
 // én pr. Center uden GUID i centerlisten (i dag 9 kald i alt).
 //
 //   npm run verify:fitnessx
+//   npm run verify:fitnessx -- --center fitnessx-hasselager   et bestemt Center + 2 tilfældige
 //
 // Exit-kode 1, hvis noget afviger.
 import { writeFile } from 'node:fs/promises';
@@ -37,7 +38,17 @@ try {
   const withPage = listed.filter((center) => center.signupUrl);
   const pages = [];
   const results = [];
-  for (const center of pickRandom(withPage, SAMPLE_SIZE)) {
+  // Centre valgt med --center kommer med; resten af stikprøven er tilfældig.
+  const chosenIds = process.argv.flatMap((arg, i) =>
+    process.argv[i - 1] === '--center' ? [arg] : [],
+  );
+  const chosen = withPage.filter((center) => chosenIds.includes(center.id));
+  if (chosen.length < chosenIds.length) {
+    throw new Error(`Ukendt Center eller Center uden centerside: ${chosenIds.join(', ')}`);
+  }
+  const others = withPage.filter((center) => !chosen.includes(center));
+  const sample = [...chosen, ...pickRandom(others, Math.max(SAMPLE_SIZE - chosen.length, 0))];
+  for (const center of sample) {
     const html = await http.getText(center.signupUrl);
     pages.push({ listed: center, html });
     results.push(compareFitnessxCenter(center, html, priceList));

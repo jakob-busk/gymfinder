@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
+import ButtonComponent from './ButtonComponent';
 import InfoButton from './InfoButton';
 import { feeSummary, formatKr, partnerInfo, priceBreakdown } from '../data/centerDetail';
 
@@ -21,8 +22,9 @@ function FeeRow({ label, value, term, style }) {
 // Ét Tilbud på Centerdetalje med brugerens Ærlig årspris og Kvartalspris, den billigste
 // mulighed, gebyrer, Makkerpris og prisudregningen måned for måned.
 // pricedOffer er et prissat Tilbud fra Matchning; isCheapest fremhæver Centrets billigste Tilbud,
-// hvis udregning også er foldet ud fra start.
-export default function OfferPriceCard({ pricedOffer, user, isCheapest }) {
+// hvis udregning også er foldet ud fra start. onSignup (valgfri) viser en knap, der åbner
+// tilmeldingen til netop dette Tilbud.
+export default function OfferPriceCard({ pricedOffer, user, isCheapest, onSignup }) {
   const [expanded, setExpanded] = useState(isCheapest);
   const { offer, yearlyOption, quarterlyOption } = pricedOffer;
   const fees = feeSummary(pricedOffer);
@@ -132,6 +134,8 @@ export default function OfferPriceCard({ pricedOffer, user, isCheapest }) {
           )}
         </View>
       )}
+
+      {onSignup && <ButtonComponent title={`Tilmeld dig ${offer.name}`} onPress={onSignup} />}
     </View>
   );
 }

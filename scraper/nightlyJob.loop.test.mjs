@@ -131,14 +131,23 @@ describe('LOOP i nat-jobbet', () => {
       partnerRequirement:
         'I skal bo i samme husstand og deler ét familiemedlemskab til 589 kr + 10 kr i ' +
         'Admingebyr pr. 30 dage.',
+      // Priskortenes stavemåde, så tilmeldingssiden vælger abonnementet i Aabenraa.
       signupUrl:
-        'https://loopfitness.dk/medlemskab/bliv-medlem?center=145' +
-        '&subscription=Kampagne%3A+100+kr.+resten+af+%C3%A5ret',
+        'https://loopfitness.dk/medlemskab/bliv-medlem/?center=145' +
+        '&subscription=kampagne%3A+100+kr.+resten+af+%C3%A5ret',
+      partnerSignupUrl:
+        'https://loopfitness.dk/medlemskab/bliv-medlem/?center=145' +
+        '&subscription=kampagne%3A+100+kr+resten+af+%C3%A5ret+-+familie',
       lastSeen: NIGHT_1,
     });
     assert.equal(data.Offers['loop-143']['loop-143-holdtraening'].partnerPrice, undefined);
     assert.deepEqual(data.PriceHistory['loop-145'][VOKSEN_145], {
-      [NIGHT_1]: { standardPrice: 289, campaignPrice: 50 },
+      [NIGHT_1]: {
+        standardPrice: 289,
+        campaignPrice: 50,
+        partnerPrice: 289.5,
+        partnerCampaignPrice: 20,
+      },
     });
 
     const [loop] = report.chains;
@@ -265,16 +274,32 @@ describe('LOOP over flere nætter', () => {
     assert.deepEqual(change, {
       centerId: 'loop-145',
       offerId: VOKSEN_145,
-      before: { standardPrice: 289, campaignPrice: 50 },
-      after: { standardPrice: 289, campaignPrice: null },
+      // Familiens kampagne udløber samtidig: Makkerprisens kampagne står også i rapporten.
+      before: {
+        standardPrice: 289,
+        campaignPrice: 50,
+        partnerPrice: 289.5,
+        partnerCampaignPrice: 20,
+      },
+      after: {
+        standardPrice: 289,
+        campaignPrice: null,
+        partnerPrice: 289.5,
+        partnerCampaignPrice: null,
+      },
     });
     const data = db.snapshot();
     const offer = data.Offers['loop-145'][VOKSEN_145];
     assert.equal(offer.campaignPrice, undefined);
     assert.equal(offer.campaignMonths, 0);
     assert.deepEqual(data.PriceHistory['loop-145'][VOKSEN_145], {
-      [NIGHT_1]: { standardPrice: 289, campaignPrice: 50 },
-      '2026-12-05': { standardPrice: 289 },
+      [NIGHT_1]: {
+        standardPrice: 289,
+        campaignPrice: 50,
+        partnerPrice: 289.5,
+        partnerCampaignPrice: 20,
+      },
+      '2026-12-05': { standardPrice: 289, partnerPrice: 289.5 },
     });
   });
 

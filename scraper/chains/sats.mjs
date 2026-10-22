@@ -78,6 +78,13 @@ const slugify = (text) =>
 
 const centerIdFor = (clubId) => `sats-${clubId}`;
 
+// Tilmeldingslink pr. Aldersgruppe → ét link, hvis de er ens eller kun det ene findes, ellers
+// { under30, over30 } (samme form som Standardprisen).
+function linkPerAgeGroup({ under30, over30 }) {
+  if (under30 && over30 && under30 !== over30) return { under30, over30 };
+  return over30 ?? under30;
+}
+
 function subscriptionTypeFor(membershipId) {
   const match = SUBSCRIPTION_TYPE_BY_PREFIX.find(([prefix]) => membershipId.startsWith(prefix));
   return match ? match[1] : undefined;
@@ -152,10 +159,14 @@ export function parseCenterPage(html) {
         name: membership.name?.trim(),
         subscriptionType: subscriptionTypeFor(key),
         standardPrice: {},
+        signupUrls: {},
       };
       offer.standardPrice[ageGroup] = parseAmount(membership.price);
-      // Tilmeldingslinket for 30+ foretrækkes, fordi det er det SATS selv viser uden fødselsdato.
-      if (ageGroup === 'over30' || !offer.signupUrl) offer.signupUrl = membership.link?.href;
+      // Medlemskabets eget checkout-link i Centret (tilpas-medlemskab). Under 30 har sit eget
+      // medlemskab (…_U30), så linket gemmes pr. Aldersgruppe.
+      if (membership.link?.href) {
+        offer.signupUrls[ageGroup] = new URL(membership.link.href, SATS_BASE_URL).href;
+      }
       offersByKey.set(key, offer);
     }
 
@@ -175,7 +186,10 @@ export function parseCenterPage(html) {
   return {
     clubId: props.clubId != null ? String(props.clubId) : undefined,
     address: normalizePageAddress(props.pageHeader?.addressLink?.text),
-    offers: [...offersByKey.values()],
+    offers: [...offersByKey.values()].map(({ signupUrls, ...offer }) => ({
+      ...offer,
+      signupUrl: linkPerAgeGroup(signupUrls),
+    })),
     discountPercents,
   };
 }

@@ -17,7 +17,9 @@
 // Træn med en makker: prisen pr. person bliver Makkerpris pr. Aldersgruppe på Tilbuddet med samme
 // Kategori og samme Reformer-adgang.
 //
-// Kampagner står kun som fri tekst i acf.beskrivelse og læses defensivt (se parseCampaignText).
+// Kampagner står enten som fri tekst i acf.beskrivelse og læses defensivt (se parseCampaignText),
+// eller som "overwrite" fra et ekstra admin-ajax-kald, som centersiden selv laver i browseren
+// (fx "SPAR 50 % I 2 MÅNEDER", se parseOverwriteCampaign).
 // acf.centre er håndvedligeholdt og indeholder skrald ("abc", "efg", tomme lister); kun GUID'er
 // tæller, så skrald aldrig knytter et medlemskab til et Center.
 
@@ -29,6 +31,8 @@ export const FITNESSX_CENTER_LIST_URL = `${FITNESSX_BASE_URL}/find-center/`;
 export const FITNESSX_PRICE_LIST_URL = `${FITNESSX_BASE_URL}/oevrige-priser/`;
 // Kædens fælles tilmeldingsside; bruges som tilmeldingslink for Centre uden egen centerside.
 export const FITNESSX_SIGNUP_URL = `${FITNESSX_BASE_URL}/tilmelding/`;
+// WordPress' admin-ajax, som centersiden henter kampagnerne fra.
+export const FITNESSX_AJAX_URL = `${FITNESSX_BASE_URL}/wp-admin/admin-ajax.php`;
 
 // Fitness X har hverken studie-, senior- eller Ældre Sagen-rabat. Træn med en makker ligger som
 // Makkerpris på det enkelte Tilbud (partnerPrice), ikke som Rabat på Kæden.
@@ -230,9 +234,114 @@ export function parseCampaignText(description) {
   throw new Error(`Kampagnen kunne ikke læses: "${text}"`);
 }
 
+// ---------- Kampagner fra centersiden ("overwrite") ----------
+
+// Centersidens script (sj_bf_summer_twentyfive_a.js) sender Centrets medlemskaber til admin-ajax
+// og får kampagnerne tilbage. Prisen står som tal (rabatbelob_i_kr pr. måned), men antallet af
+// måneder står kun i teksten, så den læses defensivt.
+const OVERWRITE_ACTION = 'sj_bf_summer_twentyfive_a_localize_overwrite';
+
+// Formularfelterne til kampagne-kaldet for ét Center, som siden selv sender dem.
+export function overwriteRequestFields(memberships, guid, nonce) {
+  const ids = memberships.map((membership) => ({ location: guid, id: membership.acf.id }));
+  return { action: OVERWRITE_ACTION, nonce, test_medlemskaberid: JSON.stringify(ids) };
+}
+
+// Svaret → Map fra medlemskabets id til dets kampagne. Kaster, hvis svaret ikke er en succes.
+export function parseOverwriteResponse(text) {
+  const response = JSON.parse(text);
+  if (response?.success !== true || !Array.isArray(response.data?.data)) {
+    throw new Error('Kampagne-svaret er ikke en succes');
+  }
+  const items = response.data.data.filter((item) => item?.id != null);
+  return new Map(items.map((item) => [item.id, item]));
+}
+
+const NUMBER_WORDS = { en: 1, et: 1, to: 2, tre: 3, fire: 4, fem: 5, seks: 6 };
+
+// Beløbene i kampagne-svaret har punktum som decimaltegn ("237.50"), ikke som tusindtalsskilletegn.
+const overwriteAmount = (value) => {
+  const text = String(value ?? '').trim();
+  return /^\d+(?:\.\d+)?$/.test(text) ? Number(text) : parseAmount(text);
+};
+
+// Én kampagne fra overwrite → { price, months, text }, eller null, hvis medlemskabet ingen
+// kampagne har. `listedPrice` er medlemskabets normalpris (acf.pris). Kaster, hvis kampagnen ikke
+// kan læses sikkert, så den hellere udelades end gættes.
+export function parseOverwriteCampaign(overwrite, listedPrice) {
+  if (!overwrite || typeof overwrite !== 'object' || Object.keys(overwrite).length === 0) {
+    return null;
+  }
+  if (overwrite.skal_kampagne_vaere_synlig === false) return null;
+  if (overwrite.monthly_payment_or_fixed_amount) {
+    throw new Error('kampagnen er et fast beløb, ikke en månedspris');
+  }
+  const price = overwriteAmount(overwrite.rabatbelob_i_kr);
+  if (price == null || !(price < listedPrice)) {
+    throw new Error(
+      `kampagneprisen "${overwrite.rabatbelob_i_kr}" er ikke under ${listedPrice} kr`,
+    );
+  }
+
+  const texts = [
+    overwrite.overskrift_i_prisvisning,
+    overwrite.beskrivelse_i_prisvisning,
+    overwrite.salgskanal,
+  ].map((text) => plainText(text).replace(/\u200b/g, ''));
+  const all = texts.join(' ');
+  const months = [...all.matchAll(/\b(\d+|en|et|to|tre|fire|fem|seks)\s+(?:måneder|mdr)/gi)].map(
+    ([, count]) => Number(count) || NUMBER_WORDS[count.toLowerCase()],
+  );
+  if (months.length === 0 || months.some((count) => count !== months[0]) || !(months[0] > 0)) {
+    throw new Error(`kampagnens antal måneder kan ikke læses: "${all}"`);
+  }
+  const after = all.match(/Derefter\s+(\d[\d.,]*)\s*kr/i)?.[1];
+  if (after != null && parseAmount(after) !== listedPrice) {
+    throw new Error(`kampagnen siger "derefter ${after} kr", men prisen er ${listedPrice} kr`);
+  }
+  // Overskriften ("Spar 50 % de første to måneder") gælder begge Aldersgrupper; beskrivelsen
+  // nævner Aldersgruppens egen pris.
+  const text = texts[0] || texts[1];
+  return { price, months: months[0], text };
+}
+
+// Centrets medlemskaber med deres kampagne lagt på som `overwrite`, ligesom sidens script gør.
+function withOverwrites(memberships, overwrites) {
+  return memberships.map((membership) =>
+    overwrites.has(membership.id)
+      ? { ...membership, overwrite: overwrites.get(membership.id) }
+      : membership,
+  );
+}
+
 // ---------- Centerside ----------
 
 const AGE_GROUP = (overThirty) => (overThirty === true ? 'over30' : 'under30');
+
+// Fitness X' egen værdi for Aldersgruppen i tilmeldingslinket (stavefejlen er sidens egen).
+const VAT_GROUPS = { under30: 'under_thiry', over30: 'over_thirty' };
+
+// Tilmelding til ét medlemskab i ét Center, som centersidens "Vælg"-knapper laver det
+// (sj_bf_summer_twentyfive_centersider.js): /tilmelding/?location=<Centrets GUID>
+// &product=<medlemskabets id>&urlreferrer=<centersiden>&vat_group=<Aldersgruppe>.
+export function signupUrlFor({ guid, productId, ageGroup, centerUrl }) {
+  const url = new URL(FITNESSX_SIGNUP_URL);
+  url.searchParams.set('location', guid);
+  url.searchParams.set('product', String(productId));
+  if (centerUrl) url.searchParams.set('urlreferrer', new URL(centerUrl).pathname);
+  url.searchParams.set('vat_group', VAT_GROUPS[ageGroup]);
+  return url.href;
+}
+
+// Ét tilmeldingslink pr. Aldersgruppe ud fra medlemskabernes id'er ({ under30, over30 }).
+// undefined, hvis Centrets GUID eller et id mangler.
+function signupUrlsFor(productIds, { guid, centerUrl }) {
+  if (!guid || productIds?.under30 == null || productIds?.over30 == null) return undefined;
+  return {
+    under30: signupUrlFor({ guid, productId: productIds.under30, ageGroup: 'under30', centerUrl }),
+    over30: signupUrlFor({ guid, productId: productIds.over30, ageGroup: 'over30', centerUrl }),
+  };
+}
 
 // "Kategori 2 &#8211; Under 30 (Aarhus) NYT" → "Kategori 2"; "Kategori 2 + Reformer U/30 NYT" →
 // "Kategori 2 + Reformer"; "Åbningstilbud – Drop 3 – U/30 (Lindgreens Allé)" → "Åbningstilbud –
@@ -299,6 +408,8 @@ function offerFromGroup(group, warnings) {
   const first = group.find((membership) => membership.acf.over_under_tredive === false) ?? group[0];
   const name = offerNameFromTitle(first.title);
   const standardPrice = {};
+  // Medlemskabets id pr. Aldersgruppe (til tilmeldingslinket).
+  const productIds = {};
   // Kampagnepris pr. Aldersgruppe; format B dækker begge Aldersgrupper med én pris.
   const campaignPrices = {};
   let campaign = null;
@@ -312,6 +423,8 @@ function offerFromGroup(group, warnings) {
     if (parsed?.format === 'B') {
       // Ét medlemskab dækker begge Aldersgrupper; acf.pris er Kampagneprisen.
       Object.assign(standardPrice, parsed.after);
+      productIds.under30 = membership.id;
+      productIds.over30 = membership.id;
       campaignPrices.under30 = listedPrice;
       campaignPrices.over30 = listedPrice;
       campaign ??= { endDate: parsed.endDate, text: plainText(acf.beskrivelse) };
@@ -323,9 +436,27 @@ function offerFromGroup(group, warnings) {
         `${name}: to priser for ${ageGroup} (${standardPrice[ageGroup]} og ${listedPrice}); ` +
           'den laveste bruges',
       );
+      if (listedPrice < standardPrice[ageGroup]) productIds[ageGroup] = membership.id;
       standardPrice[ageGroup] = Math.min(standardPrice[ageGroup], listedPrice);
     } else {
       standardPrice[ageGroup] = listedPrice;
+      productIds[ageGroup] = membership.id;
+    }
+
+    if (!parsed && membership.overwrite) {
+      try {
+        const overwrite = parseOverwriteCampaign(membership.overwrite, listedPrice);
+        if (overwrite) {
+          if (campaign && campaign.months !== overwrite.months) {
+            throw new Error('Aldersgrupperne har forskellige kampagner');
+          }
+          campaignPrices[ageGroup] = overwrite.price;
+          campaign ??= { months: overwrite.months, text: overwrite.text };
+        }
+      } catch (error) {
+        warnings.push(`${name}: ${error.message}; kampagnen regnes ikke med`);
+        campaignPrices[ageGroup] = undefined;
+      }
     }
 
     if (parsed?.format === 'A') {
@@ -365,20 +496,52 @@ function offerFromGroup(group, warnings) {
     campaign,
     signupFee: parseAmount(first.acf.opstartsgebyr) ?? undefined,
     adminFee: parseAmount(first.acf.administrationsgebyr) ?? undefined,
+    productIds,
   };
 }
 
 // Gruppe af makker-medlemskaber → samlet pris for to og pris pr. person pr. Aldersgruppe.
-function partnerFromGroup(group) {
+// Har medlemskaberne en kampagne (overwrite) for begge Aldersgrupper med samme antal måneder,
+// bliver den Makkerprisens kampagne: { total, perPerson, months, text }.
+function partnerFromGroup(group, warnings = []) {
   const first = group[0];
   const total = {};
   const perPerson = {};
-  for (const { acf } of group) {
+  const productIds = {};
+  const campaigns = {};
+  for (const { id, acf, overwrite } of group) {
     const ageGroup = AGE_GROUP(acf.over_under_tredive);
+    productIds[ageGroup] = id;
     total[ageGroup] = parseAmount(acf.pris);
     perPerson[ageGroup] = parseAmount(acf.pris_pr_person_i_tal) ?? total[ageGroup] / 2;
+    try {
+      const campaign = parseOverwriteCampaign(overwrite, total[ageGroup]);
+      if (campaign) {
+        const each = overwriteAmount(overwrite.pris_pr_person_i_tal_overwrite);
+        campaigns[ageGroup] = { ...campaign, perPerson: each > 0 ? each : campaign.price / 2 };
+      }
+    } catch (error) {
+      const name = offerNameFromTitle(first.title);
+      warnings.push(`${name}: ${error.message}; kampagnen regnes ikke med`);
+    }
+  }
+  const { under30, over30 } = campaigns;
+  let campaign = null;
+  if (under30 && over30 && under30.months === over30.months) {
+    campaign = {
+      total: { under30: under30.price, over30: over30.price },
+      perPerson: { under30: under30.perPerson, over30: over30.perPerson },
+      months: under30.months,
+      text: under30.text,
+    };
+  } else if (under30 || over30) {
+    warnings.push(
+      `${offerNameFromTitle(first.title)}: kampagnen gælder ikke ens for begge Aldersgrupper ` +
+        'og regnes ikke med',
+    );
   }
   return {
+    campaign,
     key: first.acf.medlemskabs_typeid,
     name: offerNameFromTitle(first.title),
     category: categoryOf(first.title),
@@ -389,6 +552,7 @@ function partnerFromGroup(group) {
     perPerson,
     signupFee: parseAmount(first.acf.opstartsgebyr) ?? undefined,
     adminFee: parseAmount(first.acf.administrationsgebyr) ?? undefined,
+    productIds,
   };
 }
 
@@ -423,7 +587,9 @@ export function offersForCenter(ajaxObject, guid) {
     }
   }
 
-  const partners = groupByType(partnerMemberships, warnings).map(partnerFromGroup);
+  const partners = groupByType(partnerMemberships, warnings).map((group) =>
+    partnerFromGroup(group, warnings),
+  );
   const used = new Set();
   for (const offer of offers) {
     const candidates = partners.filter(
@@ -446,9 +612,14 @@ export function offersForCenter(ajaxObject, guid) {
       special: partner.special,
       centerCount: partner.centerCount,
       standardPrice: { ...partner.total },
-      campaign: null,
+      campaign: partner.campaign && {
+        price: partner.campaign.total,
+        months: partner.campaign.months,
+        text: partner.campaign.text,
+      },
       signupFee: partner.signupFee,
       adminFee: partner.adminFee,
+      productIds: partner.productIds,
       partner,
       partnerOnly: true,
     });
@@ -577,9 +748,20 @@ function partnerSignupFeeFor(draft, fees) {
   return (signupFee + PARTNER_FEE) / PEOPLE_PER_PARTNER_OFFER;
 }
 
-export function buildOffer(center, draft, { today, fees = {} }) {
-  const months = draft.campaign ? wholeMonthsUntil(today, draft.campaign.endDate) : 0;
+// `guid` er Centrets GUID. Med det får Tilbuddet et tilmeldingslink pr. Aldersgruppe direkte til
+// medlemskabet i Centret (og Makkerprisen et til makker-medlemskabet); ellers Centrets link.
+export function buildOffer(center, draft, { today, fees = {}, guid }) {
+  // En overwrite-kampagne har et fast antal måneder; en tekstkampagne gælder til sin slutdato.
+  const months = draft.campaign
+    ? (draft.campaign.months ?? wholeMonthsUntil(today, draft.campaign.endDate))
+    : 0;
+  const partnerCampaign = draft.partner?.campaign;
   const campaign = months > 0 ? draft.campaign : null;
+  const links = { guid, centerUrl: pageUrlOf(center) };
+  const partnerSignupUrl =
+    draft.partner && !draft.partnerOnly
+      ? signupUrlsFor(draft.partner.productIds, links)
+      : undefined;
   return {
     id: `${center.id}-${slugify(draft.name)}`,
     name: draft.name,
@@ -587,19 +769,29 @@ export function buildOffer(center, draft, { today, fees = {} }) {
     standardPrice: draft.standardPrice,
     campaignPrice: campaign ? campaign.price : null,
     campaignMonths: campaign ? months : 0,
-    ...(campaign && { campaignEndDate: campaign.endDate, campaignText: campaign.text }),
+    ...(campaign?.endDate && { campaignEndDate: campaign.endDate }),
+    ...(campaign && { campaignText: campaign.text }),
     signupFee: draft.signupFee ?? fees.signupFee,
     adminFee: draft.adminFee ?? fees.adminFee,
     bindingMonths: BINDING_MONTHS,
     // Makkerpris pr. person pr. Aldersgruppe.
     partnerPrice: draft.partner ? { ...draft.partner.perPerson } : null,
+    ...(partnerCampaign && {
+      partnerCampaignPrice: { ...partnerCampaign.perPerson },
+      partnerCampaignMonths: partnerCampaign.months,
+    }),
     ...(draft.partner && {
       partnerSignupFee: partnerSignupFeeFor(draft, fees),
       partnerRequirement: partnerRequirementFor(draft.partner),
     }),
-    signupUrl: center.signupUrl,
+    signupUrl: signupUrlsFor(draft.productIds, links) ?? center.signupUrl,
+    ...(partnerSignupUrl && { partnerSignupUrl }),
   };
 }
+
+// Centersiden, hvis Centret har en (ellers er linket Kædens fælles tilmeldingsside).
+const pageUrlOf = (center) =>
+  center.signupUrl && center.signupUrl !== FITNESSX_SIGNUP_URL ? center.signupUrl : undefined;
 
 const FEE_LABELS = [
   ['signupFee', 'Oprettelsesgebyr'],
@@ -611,7 +803,9 @@ const FEE_LABELS = [
 // Resultat: { chain, centers: [Center med offers], readErrors: [{ centerId, message }], warnings }.
 // Kaster kun, hvis selve centerlisten ikke kan hentes eller læses.
 //
-// Kald: centerlisten, prislisten og én centerside pr. Center med link. Et Center uden link til
+// Kald: centerlisten, prislisten, én centerside pr. Center med link og ét kampagne-kald
+// (admin-ajax) pr. Center. Kan kampagnerne ikke hentes, prissættes Centret uden kampagne og med en
+// advarsel. Et Center uden link til
 // centersiden prissættes ud fra de andre centersider, da alle sider har hele Kædens medlemskaber;
 // det kræver, at centerlisten har Centrets GUID. Dets tilmeldingslink er Kædens tilmeldingsside.
 export async function scrapeFitnessx({ http, today, limit } = {}) {
@@ -667,7 +861,23 @@ export async function scrapeFitnessx({ http, today, limit } = {}) {
       }
     }
 
-    const { offers, warnings: offerWarnings } = offersForCenter(ajaxObject, guid);
+    // Kampagnerne hentes med sidens egen nonce (eller en anden sides, hvis Centret ingen side har).
+    let overwrites = new Map();
+    const nonce = page?.ajaxObject.nonce ?? [...pages.values()][0]?.ajaxObject.nonce;
+    const memberships = membershipsForCenter(ajaxObject, guid);
+    if (nonce && memberships.length > 0) {
+      try {
+        const fields = overwriteRequestFields(memberships, guid, nonce);
+        overwrites = parseOverwriteResponse(await http.postForm(FITNESSX_AJAX_URL, fields));
+      } catch (error) {
+        warnings.push(`${center.name}: kampagnerne kunne ikke hentes (${error.message})`);
+      }
+    }
+
+    const { offers, warnings: offerWarnings } = offersForCenter(
+      { medlemskaber: withOverwrites(memberships, overwrites) },
+      guid,
+    );
     warnings.push(...offerWarnings.map((warning) => `${center.name}: ${warning}`));
     if (offers.length === 0) {
       readErrors.push({ centerId: center.id, message: 'Centret har ingen Tilbud' });
@@ -688,7 +898,7 @@ export async function scrapeFitnessx({ http, today, limit } = {}) {
     const output = { ...centerData, signupUrl: center.signupUrl ?? FITNESSX_SIGNUP_URL };
     centers.push({
       ...output,
-      offers: offers.map((draft) => buildOffer(output, draft, { today, fees })),
+      offers: offers.map((draft) => buildOffer(output, draft, { today, fees, guid })),
     });
   }
 

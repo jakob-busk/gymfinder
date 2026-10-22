@@ -37,6 +37,11 @@ const VIBORG_KAT_1 = 'fitnessx-viborg-kategori-1';
 const VIBORG_KAT_2 = 'fitnessx-viborg-kategori-2';
 const COPENHAGEN = { latitude: 55.6761, longitude: 12.5683 };
 
+// Tilmeldingslinket til ét medlemskab i Viborg, som centersidens "Vælg"-knap laver det.
+const viborgSignupLink = (product, vatGroup) =>
+  `https://fitnessx.dk/tilmelding/?location=${GUIDS.viborg}&product=${product}` +
+  `&urlreferrer=${encodeURIComponent(new URL(VIBORG_URL).pathname)}&vat_group=${vatGroup}`;
+
 const fitnessxScraper = (routes = fitnessxRoutes(), today = NIGHT_1) => ({
   chainId: 'fitnessx',
   scrape: () => scrapeFitnessx({ http: createFixtureHttp(routes), today }),
@@ -150,11 +155,22 @@ describe('Fitness X i nat-jobbet: normal kørsel', () => {
         'I melder jer ind sammen og betaler samlet 560 kr/md (under 30) eller ' +
         '600 kr/md (30+). Det koster 100 kr én gang at tilføje makkeren. ' +
         'I får begge adgang til 31 Centre.',
-      signupUrl: VIBORG_URL,
+      // Direkte til medlemskabet (og Træningsven-medlemskabet) i Viborg pr. Aldersgruppe.
+      signupUrl: {
+        under30: viborgSignupLink(34727, 'under_thiry'),
+        over30: viborgSignupLink(34726, 'over_thirty'),
+      },
+      partnerSignupUrl: {
+        under30: viborgSignupLink(36058, 'under_thiry'),
+        over30: viborgSignupLink(36057, 'over_thirty'),
+      },
       lastSeen: NIGHT_1,
     });
     assert.deepEqual(data.PriceHistory[VIBORG][VIBORG_KAT_1], {
-      [NIGHT_1]: { standardPrice: { under30: 400, over30: 450 } },
+      [NIGHT_1]: {
+        standardPrice: { under30: 400, over30: 450 },
+        partnerPrice: { under30: 300, over30: 325 },
+      },
     });
     // Hjørring uden link: skrevet med Kædens tilmeldingsside.
     assert.equal(data.Centers['fitnessx-hjoerring'].signupUrl, FITNESSX_SIGNUP_URL);
@@ -246,8 +262,18 @@ describe('Fitness X i nat-jobbet: normal kørsel', () => {
         {
           centerId: VIBORG,
           offerId: VIBORG_KAT_1,
-          before: { standardPrice: { under30: 400, over30: 450 }, campaignPrice: null },
-          after: { standardPrice: { under30: 420, over30: 470 }, campaignPrice: null },
+          before: {
+            standardPrice: { under30: 400, over30: 450 },
+            campaignPrice: null,
+            partnerPrice: { under30: 300, over30: 325 },
+            partnerCampaignPrice: null,
+          },
+          after: {
+            standardPrice: { under30: 420, over30: 470 },
+            campaignPrice: null,
+            partnerPrice: { under30: 300, over30: 325 },
+            partnerCampaignPrice: null,
+          },
         },
       ],
     );
@@ -257,6 +283,48 @@ describe('Fitness X i nat-jobbet: normal kørsel', () => {
       over30: 470,
     });
     assert.deepEqual(Object.keys(data.PriceHistory[VIBORG][VIBORG_KAT_1]), [NIGHT_1, NIGHT_2]);
+  });
+
+  test('en ændret Makkerpris står som prisændring og i prishistorikken', async () => {
+    const db = createFakeDatabase();
+    await runNight(db, NIGHT_1);
+    // Træningsven i Kategori 1 bliver 20 kr dyrere pr. person.
+    const routes = fitnessxRoutes();
+    routes[VIBORG_URL] = withAjaxObject(routes[VIBORG_URL], (ajaxObject) => {
+      for (const { acf } of membershipsTitled(ajaxObject, /^Kategori 1 \+ Træningsven/)) {
+        acf.pris = String(Number(acf.pris) + 40);
+        acf.pris_pr_person_i_tal = String(Number(acf.pris_pr_person_i_tal) + 20);
+      }
+    });
+    const { report } = await runNight(db, NIGHT_2, { routes });
+
+    const [fitnessx] = report.chains;
+    assert.deepEqual(
+      fitnessx.priceChanges.filter((change) => change.centerId === VIBORG),
+      [
+        {
+          centerId: VIBORG,
+          offerId: VIBORG_KAT_1,
+          before: {
+            standardPrice: { under30: 400, over30: 450 },
+            campaignPrice: null,
+            partnerPrice: { under30: 300, over30: 325 },
+            partnerCampaignPrice: null,
+          },
+          after: {
+            standardPrice: { under30: 400, over30: 450 },
+            campaignPrice: null,
+            partnerPrice: { under30: 320, over30: 345 },
+            partnerCampaignPrice: null,
+          },
+        },
+      ],
+    );
+    assert.deepEqual(db.snapshot().PriceHistory[VIBORG][VIBORG_KAT_1][NIGHT_2], {
+      standardPrice: { under30: 400, over30: 450 },
+      partnerPrice: { under30: 320, over30: 345 },
+    });
+    assert.match(formatReport(report), /Prisændring fitnessx-viborg .*"partnerPrice":\{"under30":320/);
   });
 
   test('en tør kørsel beregner opdateringen, men skriver intet', async () => {

@@ -2,6 +2,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { runNightlyJob } from './nightlyJob.mjs';
 import { lowerOfferPrices, runPriceDropDemo } from './priceDropDemo.mjs';
 import { createFakeDatabase } from './testing/fakeDatabase.mjs';
 import { createFakePushClient } from './testing/fakePush.mjs';
@@ -134,5 +135,118 @@ describe('runPriceDropDemo', () => {
       });
     await assert.rejects(run('findes-ikke', 50), /Centret findes-ikke findes ikke/);
     await assert.rejects(run('test-1', 0), /positivt antal kr\/md/);
+  });
+});
+
+// Nattens scraping af Testkæden med de rigtige priser (Basis 300 kr, Plus 350/400 kr), evt. ændret.
+const testChainScraper = (prices = {}) => ({
+  chainId: 'test',
+  scrape: async () => ({
+    chain: { id: 'test', name: 'Testkæde', website: 'https://example.dk' },
+    centers: [
+      {
+        id: 'test-1',
+        chainId: 'test',
+        name: 'Test Center',
+        address: 'Testvej 1, 8000 Aarhus C',
+        signupUrl: 'https://example.dk/tilmeld',
+        location: AARHUS,
+        offers: [
+          {
+            id: 'a',
+            name: 'Basis',
+            subscriptionType: 'Lokal center',
+            standardPrice: prices.a ?? 300,
+            signupFee: 0,
+          },
+          {
+            id: 'b',
+            name: 'Plus',
+            subscriptionType: 'Landsdækkende',
+            standardPrice: prices.b ?? { under30: 350, over30: 400 },
+            signupFee: 0,
+          },
+        ],
+      },
+    ],
+  }),
+});
+
+describe('demoen kan ikke låse falske priser fast', () => {
+  const demo = (db, amount = 50) =>
+    runPriceDropDemo({
+      db,
+      pushClient: createFakePushClient(),
+      centerId: 'test-1',
+      amount,
+      today: TODAY,
+    });
+
+  test('de sænkede Tilbud markeres med de rigtige priser', async () => {
+    const db = database();
+    await demo(db);
+    const offer = db.snapshot().Offers['test-1'].b;
+    assert.deepEqual(offer.standardPrice, { under30: 300, over30: 350 });
+    assert.deepEqual(offer.demoPriceDrop, {
+      date: TODAY,
+      realPrices: { standardPrice: { under30: 350, over30: 400 } },
+    });
+  });
+
+  test('en ny demo på samme Center afvises, til nat-jobbet har skrevet rigtige priser', async () => {
+    const db = database();
+    await demo(db, 100);
+    const before = db.snapshot();
+    await assert.rejects(demo(db, 100), /Centret test-1 blev demo-sænket 2026-10-22/);
+    assert.deepEqual(db.snapshot(), before);
+    // Prisen er højst 30 % under den rigtige, ikke 49 %.
+    assert.equal(before.Offers['test-1'].a.standardPrice, 210);
+  });
+
+  test('nat-jobbet sætter de rigtige priser tilbage, og demoen kan køres igen', async () => {
+    const db = database();
+    await demo(db, 100);
+    const { ok, report } = await runNightlyJob({
+      db,
+      scrapers: [testChainScraper()],
+      today: '2026-10-23',
+    });
+
+    assert.equal(ok, true);
+    const [chain] = report.chains;
+    assert.deepEqual(chain.failures, []);
+    // Sammenlignet med de rigtige priser er intet ændret.
+    assert.deepEqual(chain.priceChanges, []);
+    const offers = db.snapshot().Offers['test-1'];
+    assert.equal(offers.a.standardPrice, 300);
+    assert.equal(offers.a.demoPriceDrop, undefined);
+    assert.deepEqual(offers.b.standardPrice, { under30: 350, over30: 400 });
+    assert.equal(offers.b.demoPriceDrop, undefined);
+
+    await demo(db, 100);
+    assert.equal(db.snapshot().Offers['test-1'].a.standardPrice, 210);
+  });
+
+  test('en rigtig prisstigning samme nat afvises ikke, selv om den er +57 % fra demoprisen', async () => {
+    const db = database();
+    await demo(db, 100);
+    // 330 kr er +10 % fra den rigtige pris, men +57 % fra demoprisen på 210 kr.
+    const { ok, report } = await runNightlyJob({
+      db,
+      scrapers: [testChainScraper({ a: 330 })],
+      today: '2026-10-23',
+    });
+
+    assert.equal(ok, true);
+    assert.deepEqual(report.chains[0].failures, []);
+    assert.deepEqual(report.chains[0].priceChanges, [
+      {
+        centerId: 'test-1',
+        offerId: 'a',
+        before: { standardPrice: 300, campaignPrice: null },
+        after: { standardPrice: 330, campaignPrice: null },
+      },
+    ]);
+    assert.equal(db.snapshot().Offers['test-1'].a.standardPrice, 330);
   });
 });

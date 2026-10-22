@@ -72,7 +72,12 @@ export function compareFitnessxCenter(listed, centerHtml, priceList) {
       const { partner } = offer;
       for (const [ageGroup, label] of AGE_GROUPS) {
         const name = offer.partnerOnly ? offer.name : `${offer.name} med Træningsven`;
-        const what = `${name}, ${label}, for to (kr/md)`;
+        // Et særmedlemskab (fx Aarhus-særprisen med adgang til 9 Centre) har sin egen pris på
+        // prislisten og ikke Kategoriens almindelige Træningsven-pris.
+        const special = partner.special
+          ? `, særmedlemskab med ${partner.centerCount ?? '?'} Centre`
+          : '';
+        const what = `${name}${special}, ${label}, for to (kr/md)`;
         compare(what, partner.total[ageGroup], {
           category: partner.category,
           reformer: partner.reformer,
@@ -157,7 +162,10 @@ export function formatFitnessxVerification({ date, results, wholeChain }) {
     'Tre tilfældige Centre er hentet fra fitnessx.dk. Centersiderne viser ingen priser i selve',
     'HTML\'en (de tegnes i browseren), så kolonnen "Hjemmeside" er det, en besøgende kan læse på',
     'Kædens prisliste (https://fitnessx.dk/oevrige-priser/) for Centrets Kategori, og adressen er',
-    'adresselinjen øverst på centersiden. "Scraper" er det, scraperen læser i sidens',
+    'adresselinjen øverst på centersiden. Sælger Centret et særmedlemskab i stedet for',
+    'Kategoriens almindelige (fx Træningsven i Aarhus-centrene: "SÆRPRIS I AARHUS" med adgang til',
+    '9 Centre), er "Hjemmeside" prislistens pris under Særmedlemskaber, og rækken siger',
+    'særmedlemskab. "Scraper" er det, scraperen læser i sidens',
     '`sj_ajax_object`. Genereres med `npm run verify:fitnessx` i `scraper/` (centerliste,',
     'prisliste, tre centersider og siderne for de Centre, der ikke har GUID i centerlisten).',
     '',

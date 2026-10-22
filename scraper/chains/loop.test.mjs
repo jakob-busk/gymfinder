@@ -6,12 +6,15 @@ import assert from 'node:assert/strict';
 import {
   LOOP_CENTER_LIST_URL,
   LOOP_PRICES_URL,
+  LOOP_SIGNUP_URL,
   extractInlineObject,
   parseCampaign,
   parseCenterList,
   parsePricesPage,
+  parseSignupPage,
   scrapeLoop,
   signupUrlFor,
+  subscriptionParam,
 } from './loop.mjs';
 import { centerProblems, isInDenmark, offerProblems } from '../sanity.mjs';
 import {
@@ -26,8 +29,11 @@ import {
 
 const TODAY = '2026-10-22';
 
+// Tilmeldingssidens priskort, som linkene bruges med.
+const SIGNUP_CARDS = parseSignupPage(loopFixture('bliv-medlem.html'));
+
 const parseFixture = (html = loopFixture('centerliste.html'), today = TODAY) =>
-  parseCenterList(html, today);
+  parseCenterList(html, today, { signupCards: SIGNUP_CARDS });
 const centerById = (result, id) => result.centers.find((center) => center.id === id);
 const offerNames = (center) => center.offers.map((offer) => offer.name);
 
@@ -56,9 +62,13 @@ const adultOffer = (loopId) => ({
   partnerRequirement:
     'I skal bo i samme husstand og deler ét familiemedlemskab til 589 kr + 10 kr i ' +
     'Admingebyr pr. 30 dage.',
+  // Priskortets egen stavemåde (lille k), ellers vælger tilmeldingssiden kun Centret.
   signupUrl:
-    `https://loopfitness.dk/medlemskab/bliv-medlem?center=${loopId}` +
-    '&subscription=Kampagne%3A+100+kr.+resten+af+%C3%A5ret',
+    `https://loopfitness.dk/medlemskab/bliv-medlem/?center=${loopId}` +
+    '&subscription=kampagne%3A+100+kr.+resten+af+%C3%A5ret',
+  partnerSignupUrl:
+    `https://loopfitness.dk/medlemskab/bliv-medlem/?center=${loopId}` +
+    '&subscription=kampagne%3A+100+kr+resten+af+%C3%A5ret+-+familie',
 });
 
 describe('LOOP centerliste', () => {
@@ -171,6 +181,16 @@ describe('LOOP centerliste', () => {
     // ALL IN FAMILY har ingen kampagne (kampagneprisen er lig prisen).
     assert.equal('partnerCampaignPrice' in allIn, false);
     assert.match(allIn.partnerRequirement, /649 kr \+ 10 kr i Admingebyr pr\. 30 dage/);
+    // Uden priskort bruges abonnementernes egne navne (siden viser dem som ekstra knapper).
+    assert.equal(
+      allIn.signupUrl,
+      'https://loopfitness.dk/medlemskab/bliv-medlem/?center=114' +
+        '&subscription=ALL+IN+%28DS%2C+LOOP+%26+HOLD%29',
+    );
+    assert.equal(
+      new URL(allIn.partnerSignupUrl).searchParams.get('subscription'),
+      'ALL IN FAMILY (DS, LOOP & HOLD)',
+    );
 
     const destination = skagen.offers[2];
     assert.equal(destination.subscriptionType, 'Lokal center');
@@ -437,11 +457,12 @@ describe('LOOP rabatter (/priser/)', () => {
 });
 
 describe('hele LOOP-kørslen (falsk HTTP med gemte svar)', () => {
-  test('er høflig: kun to kald, centerlisten og prissiden', async () => {
+  test('er høflig: kun tre kald, centerlisten, prissiden og tilmeldingssiden', async () => {
     const http = createFixtureHttp(loopRoutes());
     const result = await scrapeLoop({ http, today: TODAY });
 
-    assert.deepEqual(http.requests, [LOOP_CENTER_LIST_URL, LOOP_PRICES_URL]);
+    assert.deepEqual(http.requests, [LOOP_CENTER_LIST_URL, LOOP_PRICES_URL, LOOP_SIGNUP_URL]);
+    assert.deepEqual(result.centers[0].offers[0], adultOffer(145));
     assert.equal(result.centers.length, 9);
     assert.deepEqual(result.readErrors, []);
     assert.deepEqual(result.warnings, []);
@@ -469,6 +490,17 @@ describe('hele LOOP-kørslen (falsk HTTP med gemte svar)', () => {
     await assert.rejects(scrapeLoop({ http: createFixtureHttp(routes), today: TODAY }), /HTTP 503/);
   });
 
+  test('kan tilmeldingssiden ikke hentes, bruges abonnementernes navne med en advarsel', async () => {
+    const routes = { ...loopRoutes(), [LOOP_SIGNUP_URL]: new Error('HTTP 503') };
+    const result = await scrapeLoop({ http: createFixtureHttp(routes), today: TODAY });
+    assert.equal(result.centers.length, 9);
+    assert.deepEqual(result.warnings, ['Tilmeldingssiden kunne ikke hentes (HTTP 503)']);
+    assert.equal(
+      new URL(result.centers[0].offers[0].signupUrl).searchParams.get('subscription'),
+      'Kampagne: 100 kr. resten af året',
+    );
+  });
+
   test('en tom centerliste giver 0 Centre', async () => {
     const routes = { ...loopRoutes(), [LOOP_CENTER_LIST_URL]: centerListWith([]) };
     const result = await scrapeLoop({ http: createFixtureHttp(routes), today: TODAY });
@@ -480,12 +512,30 @@ describe('tilmeldingslink', () => {
   test('samme form som LOOPs egne priskort: Center og abonnementets navn', () => {
     assert.equal(
       signupUrlFor({ loopId: 145, subscription: 'kampagne: 100 kr resten af året - familie' }),
-      'https://loopfitness.dk/medlemskab/bliv-medlem?center=145' +
+      'https://loopfitness.dk/medlemskab/bliv-medlem/?center=145' +
         '&subscription=kampagne%3A+100+kr+resten+af+%C3%A5ret+-+familie',
     );
     assert.equal(
       signupUrlFor({ loopId: 1 }),
-      'https://loopfitness.dk/medlemskab/bliv-medlem?center=1',
+      'https://loopfitness.dk/medlemskab/bliv-medlem/?center=1',
     );
+  });
+
+  test('tilmeldingssidens priskort læses uden "kids"', () => {
+    assert.deepEqual(SIGNUP_CARDS, [
+      'kampagne: 100 kr. resten af året',
+      'kampagne: 100 kr resten af året - familie',
+      'Åbningskampagne - flintholm - 1 kr.',
+      'Åbningskampagne familie - flintholm',
+    ]);
+  });
+
+  test('priskortets stavemåde bruges, ellers abonnementets eget navn', () => {
+    assert.equal(
+      subscriptionParam('Kampagne:  100 kr. resten af året ', SIGNUP_CARDS),
+      'kampagne: 100 kr. resten af året',
+    );
+    assert.equal(subscriptionParam(' LOOP med holdtræning', SIGNUP_CARDS), 'LOOP med holdtræning');
+    assert.equal(subscriptionParam('Holdtræning'), 'Holdtræning');
   });
 });

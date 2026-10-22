@@ -5,6 +5,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
+import { SIGNUP_ERROR_MESSAGE } from '../data/errors';
 import { NOT_STATED_LABELS } from '../data/matchning';
 import { openSignupPage } from '../services/Signup';
 
@@ -46,9 +47,11 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
 
   const handleSignup = async () => {
     try {
-      await openSignupPage(center, chain);
+      // Det billigste Tilbud for brugeren, som kortet viser.
+      await openSignupPage(center, chain, bestOffer);
     } catch (error) {
-      Alert.alert('Kunne ikke åbne tilmeldingen', error.message);
+      console.error('Åbn tilmelding fejlede:', error);
+      Alert.alert('Kunne ikke åbne tilmeldingen', SIGNUP_ERROR_MESSAGE);
     }
   };
 

@@ -4,6 +4,7 @@
 //                                 eksterne scripts, manned_periods og private_groups fjernet)
 //   centerliste-alle-137.html.gz  /centre/ helt urørt, alle 137 Centre
 //   priser.html                   /priser/ med rabatkortene (styles og scripts fjernet)
+//   bliv-medlem.html              /medlemskab/bliv-medlem/ trimmet til priskortene
 //   centerside-145-aabenraa.html  centersiden for Aabenraa (til stikprøven)
 //   abonnement-145-*.json         admin-ajax loop_get_subscription for Aabenraa
 import { readFileSync } from 'node:fs';
@@ -12,6 +13,7 @@ import { gunzipSync } from 'node:zlib';
 import {
   LOOP_CENTER_LIST_URL,
   LOOP_PRICES_URL,
+  LOOP_SIGNUP_URL,
   extractInlineObject,
 } from '../chains/loop.mjs';
 
@@ -49,8 +51,9 @@ export const centerListWith = (loopIds) =>
     ),
   );
 
-// URL → HTML for en hel LOOP-kørsel: centerlisten og prissiden.
+// URL → HTML for en hel LOOP-kørsel: centerlisten, prissiden og tilmeldingssiden.
 export const loopRoutes = () => ({
   [LOOP_CENTER_LIST_URL]: loopFixture('centerliste.html'),
   [LOOP_PRICES_URL]: loopFixture('priser.html'),
+  [LOOP_SIGNUP_URL]: loopFixture('bliv-medlem.html'),
 });

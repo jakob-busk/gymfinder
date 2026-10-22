@@ -3,6 +3,7 @@ import {
   feeSummary,
   formatKr,
   matchCenter,
+  offerSignupUrl,
   partnerInfo,
   priceBreakdown,
   signupLink,
@@ -331,6 +332,48 @@ describe('signupLink', () => {
   test('falder tilbage til Kædens hjemmeside og giver null uden link', () => {
     expect(signupLink(center({ signupUrl: undefined }), CHAIN)).toMatch(/^https:\/\/kaede\.dk\?/);
     expect(signupLink(center({ signupUrl: undefined }), null)).toBeNull();
+  });
+
+  test('åbner Tilbuddets eget link med samme henvisning', () => {
+    const best = bestOfferFor({ signupUrl: 'https://kaede.dk/tilmeld?produkt=basis' });
+    expect(signupLink(center(), CHAIN, best)).toBe(
+      'https://kaede.dk/tilmeld?produkt=basis&utm_source=gymfinder&utm_medium=henvisning' +
+        '&utm_content=kaede-centrum',
+    );
+  });
+
+  test('vælger linket for brugerens Aldersgruppe i dag', () => {
+    const links = {
+      standardPrice: { under30: 250, over30: 300 },
+      signupUrl: { under30: 'https://kaede.dk/u30', over30: 'https://kaede.dk/o30' },
+    };
+    expect(offerSignupUrl(bestOfferFor(links))).toBe('https://kaede.dk/o30');
+    expect(offerSignupUrl(bestOfferFor(links, { birthDate: '2000-01-01' }))).toBe(
+      'https://kaede.dk/u30',
+    );
+  });
+
+  test('er Makkerpris billigst, åbnes Makkerprisens link', () => {
+    const partner = {
+      signupUrl: 'https://kaede.dk/basis',
+      partnerPrice: 200,
+      partnerSignupUrl: { under30: 'https://kaede.dk/makker-u30', over30: 'https://kaede.dk/makker' },
+    };
+    expect(offerSignupUrl(bestOfferFor(partner, { discountProfile: ['partner'] }))).toBe(
+      'https://kaede.dk/makker',
+    );
+    expect(offerSignupUrl(bestOfferFor(partner))).toBe('https://kaede.dk/basis');
+    // Uden eget link til Makkerprisen bruges Tilbuddets.
+    expect(
+      offerSignupUrl(
+        bestOfferFor({ ...partner, partnerSignupUrl: undefined }, { discountProfile: ['partner'] }),
+      ),
+    ).toBe('https://kaede.dk/basis');
+  });
+
+  test('uden link på Tilbuddet bruges Centrets', () => {
+    expect(offerSignupUrl(bestOfferFor())).toBeNull();
+    expect(signupLink(center(), CHAIN, bestOfferFor())).toMatch(/^https:\/\/kaede\.dk\/tilmeld\?/);
   });
 });
 

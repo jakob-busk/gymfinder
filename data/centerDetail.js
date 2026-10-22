@@ -174,10 +174,32 @@ export function facilityRows(center) {
   return rows;
 }
 
+// Et tilmeldingslink er én URL eller { under30, over30 } (fx SATS og Fitness X, hvor under 30
+// er sit eget medlemskab). Giver linket for Aldersgruppen.
+function linkForAgeGroup(link, ageGroup) {
+  if (!link || typeof link === 'string') return link || null;
+  return link[ageGroup] ?? link.over30 ?? link.under30 ?? null;
+}
+
+// Tilbuddets eget tilmeldingslink for brugeren: til netop dette medlemskab i netop dette Center
+// i brugerens Aldersgruppe i dag. Er Makkerpris den billigste mulighed, bruges Makkerprisens
+// link, hvis Kæden har et. null, hvis Tilbuddet ikke har et link (fx håndindtastede data).
+export function offerSignupUrl(pricedOffer) {
+  const offer = pricedOffer?.offer;
+  if (!offer) return null;
+  const ageGroup = pricedOffer.monthlyBreakdown?.[0]?.ageGroup;
+  const partnerLink =
+    pricedOffer.yearlyOption?.kind === 'partner'
+      ? linkForAgeGroup(offer.partnerSignupUrl, ageGroup)
+      : null;
+  return partnerLink ?? linkForAgeGroup(offer.signupUrl, ageGroup);
+}
+
 // Kædens tilmeldingsside med et henvisningslink, så Kæden kan se, at brugeren kom fra GymFinder.
-// Bruger Centrets eget tilmeldingslink, ellers Kædens hjemmeside. null, hvis ingen af dem findes.
-export function signupLink(center, chain) {
-  const url = center?.signupUrl ?? chain?.website;
+// Bruger Tilbuddets eget link (pricedOffer er et prissat Tilbud fra Matchning), ellers Centrets
+// tilmeldingslink og til sidst Kædens hjemmeside. null, hvis ingen af dem findes.
+export function signupLink(center, chain, pricedOffer) {
+  const url = offerSignupUrl(pricedOffer) ?? center?.signupUrl ?? chain?.website;
   if (!url) return null;
 
   const [withoutHash, hash] = url.split('#');

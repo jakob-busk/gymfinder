@@ -8,6 +8,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferPriceCard from '../components/OfferPriceCard';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
+import { SIGNUP_ERROR_MESSAGE } from '../data/errors';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
@@ -17,6 +18,8 @@ import { openSignupPage } from '../services/Signup';
 // Ærlig årspris, Kvartalspris og prisudregning måned for måned. Priserne kommer fra Matchning,
 // så de er de samme som på Find. Viser også 30-års-advarsel, Spar mere-forslag, Makkerpris og
 // "Gå til tilmelding" og "Spørg Ronnie om dette center". ♥ i titelrækken gør Centret til Favorit.
+// "Gå til tilmelding" åbner det billigste Tilbud for brugeren; har Centret flere Tilbud, har hvert
+// Tilbud også sin egen knap, der åbner tilmeldingen til netop det medlemskab.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
@@ -55,11 +58,13 @@ export default function CenterDetailScreen({ navigation, route }) {
     offers.map((priced) => [priced.offer.id, priced.offer.name]),
   );
 
-  const handleSignup = async () => {
+  // Åbner tilmeldingen til ét Tilbud i Centret; uden Tilbud det billigste for brugeren.
+  const handleSignup = async (pricedOffer = bestOffer) => {
     try {
-      await openSignupPage(center, chain);
+      await openSignupPage(center, chain, pricedOffer);
     } catch (error) {
-      Alert.alert('Kunne ikke åbne tilmeldingen', error.message);
+      console.error('Åbn tilmelding fejlede:', error);
+      Alert.alert('Kunne ikke åbne tilmeldingen', SIGNUP_ERROR_MESSAGE);
     }
   };
 
@@ -144,12 +149,15 @@ export default function CenterDetailScreen({ navigation, route }) {
           pricedOffer={priced}
           user={user}
           isCheapest={priced === bestOffer}
+          // Med flere Tilbud får hvert sin egen tilmeldingsknap.
+          onSignup={offers.length > 1 ? () => handleSignup(priced) : undefined}
         />
       ))}
 
-      <ButtonComponent title="Gå til tilmelding" type="primary" onPress={handleSignup} />
+      <ButtonComponent title="Gå til tilmelding" type="primary" onPress={() => handleSignup()} />
       <Text style={[GlobalStyle.mapLegend, GlobalStyle.paragraph]}>
-        Du tilmelder dig på {chain?.name ?? 'kædens'} egen side.
+        Åbner {bestOffer.offer.name}, der er billigst for dig, på {chain?.name ?? 'kædens'} egen
+        side.
       </Text>
       <ButtonComponent title="Spørg Ronnie om dette center" onPress={handleAskRonnie} />
     </ScrollView>

@@ -68,10 +68,19 @@ describe('Fitness X-stikprøve mod prislisten og centersiden', () => {
     );
     const partnerChecks = result.checks
       .filter((check) => check.what.startsWith('Kategori 2 + Reformer med Træningsven'))
-      .map((check) => [check.scraper, check.website]);
+      .map((check) => [check.what, check.scraper, check.website]);
+    // Særprisen er ikke Kategoriens almindelige Træningsven-pris (860/1000), og rækken siger det.
     assert.deepEqual(partnerChecks, [
-      [800, 800],
-      [950, 950],
+      [
+        'Kategori 2 + Reformer med Træningsven, særmedlemskab med 9 Centre, under 30, for to (kr/md)',
+        800,
+        800,
+      ],
+      [
+        'Kategori 2 + Reformer med Træningsven, særmedlemskab med 9 Centre, 30+, for to (kr/md)',
+        950,
+        950,
+      ],
     ]);
   });
 

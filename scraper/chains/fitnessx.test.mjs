@@ -4,6 +4,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  FITNESSX_AJAX_URL,
   FITNESSX_CENTER_LIST_URL,
   FITNESSX_PRICE_LIST_URL,
   FITNESSX_SIGNUP_URL,
@@ -15,6 +16,7 @@ import {
   parseCampaignText,
   parseCenterList,
   parseCenterPage,
+  parseOverwriteCampaign,
   parsePriceList,
   scrapeFitnessx,
 } from './fitnessx.mjs';
@@ -47,6 +49,12 @@ function offersFrom(html, center = { id: 'fitnessx-test', signupUrl: 'https://fi
 }
 
 const byName = (offers, name) => offers.find((offer) => offer.name === name);
+
+// Tilmeldingslinket til ét medlemskab i Viborg, som centersidens "Vælg"-knap laver det.
+const viborgLink = (product, vatGroup) =>
+  `https://fitnessx.dk/tilmelding/?location=${GUIDS.viborg}&product=${product}` +
+  '&urlreferrer=%2Ffitness%2Ffitness-viborg%2Ffitness-viborg-tingvej%2F' +
+  `&vat_group=${vatGroup}`;
 
 const partnerText = (under30, over30, centers) =>
   `I melder jer ind sammen og betaler samlet ${under30} kr/md (under 30) eller ` +
@@ -586,12 +594,27 @@ describe('hele Fitness X-kørslen (falsk HTTP med gemte svar)', () => {
       },
     );
     assert.equal(viborg.offers[0].id, 'fitnessx-viborg-kategori-2');
-    assert.equal(viborg.offers[0].signupUrl, VIBORG_URL);
+    // Tilmelding direkte til medlemskabet i Viborg, ét link pr. Aldersgruppe.
+    assert.deepEqual(viborg.offers[0].signupUrl, {
+      under30: viborgLink(34727, 'under_thiry'),
+      over30: viborgLink(34726, 'over_thirty'),
+    });
+    // Makkerprisen åbner Træningsven-medlemskabet.
+    assert.deepEqual(viborg.offers[0].partnerSignupUrl, {
+      under30: viborgLink(36058, 'under_thiry'),
+      over30: viborgLink(36057, 'over_thirty'),
+    });
 
     // Hjørring prissættes ud fra de andre centersider og får Kædens tilmeldingsside som link.
     const hjoerring = result.centers[1];
     assert.equal(hjoerring.signupUrl, FITNESSX_SIGNUP_URL);
     assert.equal(hjoerring.offers[0].name, 'Kategori 5 + Træningsven');
+    // Uden centerside: stadig direkte til medlemskabet ud fra GUID'et, men uden urlreferrer.
+    assert.deepEqual(
+      Object.fromEntries(new URL(hjoerring.offers[0].signupUrl.over30).searchParams),
+      { location: GUIDS.hjoerring, product: '38795', vat_group: 'over_thirty' },
+    );
+    assert.equal('partnerSignupUrl' in hjoerring.offers[0], false);
     assert.deepEqual(hjoerring.offers[0].partnerPrice, { under30: 150, over30: 175 });
   });
 
@@ -691,6 +714,119 @@ describe('hele Fitness X-kørslen (falsk HTTP med gemte svar)', () => {
     await assert.rejects(
       scrapeFitnessx({ http: createFixtureHttp(changed), today: TODAY }),
       /ingen centerliste/,
+    );
+  });
+});
+
+// Kampagne-svaret for Ankersgade (fixtures/fitnessx/overwrite-aarhus-ankersgade.json) er hentet
+// 2026-10-22 med samme kald, som centersiden laver i browseren ("SPAR 50 % I 2 MÅNEDER").
+const ANKERSGADE_URL = FIXTURE_CENTERS['Aarhus C, Ankersgade'].url;
+const overwriteItem = (id) =>
+  JSON.parse(fitnessxFixture('overwrite-aarhus-ankersgade.json')).data.data.find(
+    (item) => item.id === id,
+  );
+
+// Kørsel, hvor Ankersgades side har en nonce, og admin-ajax svarer med kampagnerne for Ankersgade
+// (andre Centre: ingen kampagner). `answer` kan erstatte svaret.
+async function scrapeWithCampaigns(answer) {
+  const routes = fitnessxRoutes();
+  routes[ANKERSGADE_URL] = withAjaxObject(routes[ANKERSGADE_URL], (ajaxObject) => {
+    ajaxObject.nonce = 'test-nonce';
+  });
+  const http = createFixtureHttp(routes);
+  const posts = [];
+  http.postForm = async (url, fields) => {
+    posts.push({ url, fields });
+    const [{ location }] = JSON.parse(fields.test_medlemskaberid);
+    if (answer) return answer(location);
+    return location === GUIDS.ankersgade
+      ? fitnessxFixture('overwrite-aarhus-ankersgade.json')
+      : JSON.stringify({ success: true, data: { data: [] } });
+  };
+  const result = await scrapeFitnessx({ http, today: TODAY });
+  const ankersgade = result.centers.find((center) => center.name.includes('Ankersgade'));
+  const offer = (name) => ankersgade.offers.find((candidate) => candidate.name === name);
+  return { result, posts, offer };
+}
+
+describe('Fitness X: kampagner fra centersiden (overwrite)', () => {
+  test('"Spar 50 % de første to måneder" læses som pris og antal måneder', () => {
+    // Medlemskab 42114: Kategori 2 + Reformer, 30+, 600 kr (samme som checkout viser).
+    assert.deepEqual(parseOverwriteCampaign(overwriteItem(42114), 600), {
+      price: 300,
+      months: 2,
+      text: 'Spar 50 % de første to måneder',
+    });
+  });
+
+  test('ingen kampagne giver null; usikre kampagner afvises i stedet for at blive gættet', () => {
+    const item = overwriteItem(42114);
+    assert.equal(parseOverwriteCampaign(undefined, 600), null);
+    assert.equal(parseOverwriteCampaign([], 600), null);
+    assert.equal(parseOverwriteCampaign({ ...item, skal_kampagne_vaere_synlig: false }, 600), null);
+    assert.throws(
+      () => parseOverwriteCampaign({ ...item, monthly_payment_or_fixed_amount: true }, 600),
+      /fast beløb/,
+    );
+    assert.throws(() => parseOverwriteCampaign(item, 650), /derefter 600 kr/);
+    assert.throws(() => parseOverwriteCampaign(item, 250), /ikke under 250/);
+    const noMonths = {
+      ...item,
+      overskrift_i_prisvisning: 'Spar 50 %',
+      beskrivelse_i_prisvisning: 'Træn til halv pris.',
+      salgskanal: 'Kategori 2',
+    };
+    assert.throws(() => parseOverwriteCampaign(noMonths, 600), /antal måneder/);
+    const twoDifferent = { ...item, salgskanal: 'Kategori 2 (50% i 3 mdr.)' };
+    assert.throws(() => parseOverwriteCampaign(twoDifferent, 600), /antal måneder/);
+  });
+
+  test('kampagnen bliver Kampagnepris og Makkerprisens kampagne pr. Aldersgruppe', async () => {
+    const { result, posts, offer } = await scrapeWithCampaigns();
+
+    // Ét kald pr. Center med sidens egen nonce og Centrets GUID.
+    const ankersgadePost = posts.find(
+      ({ fields }) => JSON.parse(fields.test_medlemskaberid)[0].location === GUIDS.ankersgade,
+    );
+    assert.equal(ankersgadePost.url, FITNESSX_AJAX_URL);
+    assert.equal(ankersgadePost.fields.action, 'sj_bf_summer_twentyfive_a_localize_overwrite');
+    assert.equal(ankersgadePost.fields.nonce, 'test-nonce');
+
+    const kategori2Reformer = offer('Kategori 2 + Reformer');
+    assert.deepEqual(kategori2Reformer.campaignPrice, { under30: 255, over30: 300 });
+    assert.equal(kategori2Reformer.campaignMonths, 2);
+    assert.equal(kategori2Reformer.campaignText, 'Spar 50 % de første to måneder');
+    assert.equal(kategori2Reformer.campaignEndDate, undefined);
+    // Træningsven-særprisen i Aarhus: 400/475 kr for to → 200/237,50 kr pr. person.
+    assert.deepEqual(kategori2Reformer.partnerCampaignPrice, { under30: 200, over30: 237.5 });
+    assert.equal(kategori2Reformer.partnerCampaignMonths, 2);
+    assert.deepEqual(offer('Kategori 1').partnerCampaignPrice, { under30: 150, over30: 162.5 });
+
+    // Kategori 1 + Træningsven + Reformer har kun kampagne for under 30 og regnes uden.
+    const kategori1Reformer = offer('Kategori 1 + Reformer');
+    assert.deepEqual(kategori1Reformer.campaignPrice, { under30: 275, over30: 325 });
+    assert.equal(kategori1Reformer.partnerCampaignPrice, undefined);
+    assert.deepEqual(
+      result.warnings.filter((warning) => warning.includes('Ankersgade')),
+      [
+        'Fitness X Aarhus C, Ankersgade: Kategori 1 + TV + Reformer: kampagnen gælder ikke ens ' +
+          'for begge Aldersgrupper og regnes ikke med',
+      ],
+    );
+    for (const candidate of [kategori2Reformer, kategori1Reformer]) {
+      assert.deepEqual(offerProblems(candidate), []);
+    }
+  });
+
+  test('fejler kampagne-kaldet, prissættes Centret uden kampagne og med en advarsel', async () => {
+    const { result, offer } = await scrapeWithCampaigns(() => {
+      throw new Error('HTTP 403');
+    });
+    assert.equal(offer('Kategori 2').campaignPrice, null);
+    assert.ok(
+      result.warnings.includes(
+        'Fitness X Aarhus C, Ankersgade: kampagnerne kunne ikke hentes (HTTP 403)',
+      ),
     );
   });
 });
