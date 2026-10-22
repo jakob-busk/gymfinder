@@ -9,6 +9,7 @@ import {
   newFavorite,
   removeFavorite,
 } from '../data/favorites';
+import { setFavoritePriceAlert } from '../data/priceAlerts';
 
 // Favoritter gemmes i Realtime Database under Users/<uid>/favorites/<centerId>, så de følger
 // brugeren (også efter "Gem din profil" og log ind på en ny telefon). En kopi gemmes altid i
@@ -107,7 +108,10 @@ export async function clearLocalFavorites(uid) {
 //   isFavorite       (centerId) => true/false
 //   toggleFavorite   (centerId, honestYearlyPrice) gør Centret til Favorit eller fjerner det
 //   removeFavorite   (centerId)
-// Ændringer vises med det samme; toggle/remove afviser, hvis de ikke kunne gemmes.
+//   setPriceAlert    (centerId, { thresholdPerMonth } | null, honestYearlyPrice) slår
+//                    Prisalarmen til (målt fra prisen lige nu) eller fra (se data/priceAlerts.js)
+//   updateFavorite   (centerId, favorite) erstatter én Favorit, fx efter en Prisalarm-besked
+// Ændringer vises med det samme; ændringerne afviser, hvis de ikke kunne gemmes.
 export function useFavorites({ authReady, uid }) {
   const [favorites, setFavorites] = useState({});
   const [loading, setLoading] = useState(true);
@@ -149,10 +153,35 @@ export function useFavorites({ authReady, uid }) {
     [change],
   );
 
+  const setPriceAlert = useCallback(
+    (centerId, priceAlert, honestYearlyPrice) =>
+      change(
+        centerId,
+        setFavoritePriceAlert(latest.current, centerId, priceAlert, honestYearlyPrice),
+      ),
+    [change],
+  );
+
+  const updateFavorite = useCallback(
+    async (centerId, favorite) => {
+      if (!latest.current[centerId]) return;
+      await change(centerId, { ...latest.current, [centerId]: favorite });
+    },
+    [change],
+  );
+
   const isFavorite = useCallback((centerId) => Boolean(favorites[centerId]), [favorites]);
 
   return useMemo(
-    () => ({ favorites, loading, isFavorite, toggleFavorite, removeFavorite: handleRemove }),
-    [favorites, loading, isFavorite, toggleFavorite, handleRemove],
+    () => ({
+      favorites,
+      loading,
+      isFavorite,
+      toggleFavorite,
+      removeFavorite: handleRemove,
+      setPriceAlert,
+      updateFavorite,
+    }),
+    [favorites, loading, isFavorite, toggleFavorite, handleRemove, setPriceAlert, updateFavorite],
   );
 }
