@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, Pressable, Linking } from 'react-native';
+import { View, Text, Pressable, Alert } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import InfoButton from './InfoButton';
 import { NOT_STATED_LABELS } from '../data/matchning';
+import { openSignupPage } from '../services/Signup';
 
 const kr = (amount) => `${Math.round(amount)} kr`;
 
@@ -40,6 +41,14 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
   const [expanded, setExpanded] = useState(false);
   const { center, chain, bestOffer } = match;
   const binding = bestOffer.bindingMonths;
+
+  const handleSignup = async () => {
+    try {
+      await openSignupPage(center, chain);
+    } catch (error) {
+      Alert.alert('Kunne ikke åbne tilmeldingen', error.message);
+    }
+  };
 
   return (
     <View style={GlobalStyle.card}>
@@ -131,7 +140,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails }) {
       <ButtonComponent
         title="Gå til tilmelding"
         type="primary"
-        onPress={() => Linking.openURL(center.signupUrl ?? chain?.website)}
+        onPress={handleSignup}
       />
     </View>
   );
