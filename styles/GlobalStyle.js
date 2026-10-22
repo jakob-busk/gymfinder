@@ -16,6 +16,8 @@ const colors = {
   // Centerdetalje: advarsel om, at prisen stiger, når brugeren fylder 30.
   warning: '#E65100',
   warningLight: '#FFF3E0',
+  // ♥ på Centre, der er Favoritter (og dem, der kan blive det).
+  favorite: '#D81B60',
 };
 
 const GlobalStyle = StyleSheet.create({
@@ -378,6 +380,28 @@ const GlobalStyle = StyleSheet.create({
     color: colors.warning,
     fontWeight: 'bold',
     marginBottom: 4,
+  },
+  // Favoritter: ♥-knappen og rækkerne på Favoritter-skærmen.
+  shrinkText: {
+    flexShrink: 1,
+  },
+  favoriteButton: {
+    paddingHorizontal: 4,
+  },
+  favoriteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  favoriteInfo: {
+    flex: 1,
+  },
+  priceDropText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  priceRiseText: {
+    color: colors.muted,
   },
 });
 

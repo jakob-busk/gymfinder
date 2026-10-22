@@ -38,8 +38,11 @@ Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorag
 | `PriceHistory/<centerId>/<offerId>/<dato>` | Prishistorik pr. Tilbud pr. dag (kun scraperen læser og skriver) |
 | `Users/<uid>` | Brugerens egne data |
 | `Users/<uid>/profile` | Profil: adresse og placering, fødselsdato, Rabatprofil, Nuværende medlemskab, Præferencer og hvornår onboarding blev gennemført |
+| `Users/<uid>/favorites/<centerId>` | Favorit: hvornår den blev gemt, Ærlig årspris da brugeren sidst fik den at vide (grundlag for prisfald) og evt. Prisalarm med tærskel |
 
 **Profil uden Firebase.** Profilen gemmes altid også i AsyncStorage. Uden Firebase-nøgler (eller uden forbindelse) bruges den lokale kopi, så appen husker brugeren efter genstart alligevel. Om onboarding er gennemført, caches i AsyncStorage, så den ikke vises igen på telefonen. Oversættelsen af profilen til og fra databasen ligger i `data/userProfile.js`.
+
+**Favoritter.** Hver Favorit gemmes på sin egen sti under brugerens uid, så Prisalarmer og nat-jobbet kan ændre én Favorit uden at røre de andre. Den pris, der følges, er den laveste Ærlig årspris blandt Centrets Tilbud for brugeren (`favoritePrice` i `data/favorites.js`, som også nat-jobbet kan bruge). Ligesom profilen gemmes Favoritterne også i AsyncStorage, så de huskes uden Firebase og offline. Favoritter gemt uden login lægges op på brugeren, når der kommer en uid, og log ud fjerner dem fra telefonen (`services/Favorites.js`).
 
 **Konto.** Sidste onboarding-trin og Profil tilbyder "Gem din profil" (navn, e-mail og adgangskode) eller at fortsætte anonymt. Gem din profil linker den anonyme bruger til e-mail og adgangskode (`linkWithCredential`), så uid'et er det samme, og profil, Favoritter og Prisalarmer under `Users/<uid>` følger med uden at blive kopieret. Med "Jeg har allerede en konto" (velkomsten eller Profil) logger man ind på en ny telefon. Så skifter uid'et til kontoens, profilen hentes, og onboarding springes over, hvis den er gennemført på kontoen. Log ud (Profil) fjerner profilen og onboarding-status fra telefonen og starter en ny anonym bruger. Data på kontoen bliver i databasen. Fejl som forkert adgangskode, e-mail i brug og svag adgangskode vises på dansk (`data/account.js`). Login-logikken ligger i `services/Auth.js`. Uden Firebase skjules kontodelen.
 
@@ -68,7 +71,7 @@ Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre,
 
 npm test
 
-Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil) og Centerdetaljens visningslogik i `data/centerDetail.js` (månedsudregning mod Matchnings Ærlig årspris, 30-års-advarsel, gebyrer, Makkerpris og tilmeldingslink).
+Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil) og Centerdetaljens visningslogik i `data/centerDetail.js` (månedsudregning mod Matchnings Ærlig årspris, 30-års-advarsel, gebyrer, Makkerpris og tilmeldingslink). Favoritter testes i `data/favorites.js` (pris der følges, rækkefølge og formen i databasen) og `services/Favorites.js` (gemt under uid, følger kontoen, lokal kopi uden Firebase, log ud).
 
 ## Natlig scraper
 **Ansvarlig:** Jakob
@@ -112,7 +115,7 @@ Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, S
 
 - **Find**: kort med din egen pin (blå) og en pin pr. Center, og en scrollbar liste over præcis de samme Centre nedenunder. Begge viser resultatet fra Matchning, så kun Centre inden for maks. afstand og dine Filtre vises, og sorteringen (Ærlig årspris, Kvartalspris, pris høj→lav eller afstand) gælder listen. Det Anbefalede Center har en orange pin og et ANBEFALET-mærke. Tryk på en pin viser Kæde, Ærlig årspris, Distance, nøgleord (fx sauna) og "Se mere", der åbner Centerdetalje. Matcher intet, viser Ronnie forslag til at løsne Filtrene. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata. Kortet (`react-native-maps`) kræver ingen API-nøgle i Expo Go
 - **Spørg Ronnie**: chat med Ronnie (pladsholder med Ronnie indtil videre)
-- **Favoritter**: gemte Centre og Prisalarmer (pladsholder)
+- **Favoritter**: ♥ på et Center i listen på Find eller på Centerdetalje gør det til Favorit (tryk igen for at fjerne). Favoritter-skærmen viser hver Favorit med den aktuelle laveste Ærlig årspris blandt de Tilbud, du kan bruge dér, og hvor meget den er faldet eller steget, siden du gemte den. Tryk åbner Centerdetalje, og Fjern sletter Favoritten. Favoritterne følger kontoen og huskes efter genstart. Prisalarmer kommer senere
 - **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre. Under Konto kan man gemme sin profil, logge ind eller logge ud
 - **Om os**: kort om GymFinder, åbnes fra Profil
 - **Log ind** (`screens/LoginScreen.js`): log ind med e-mail og adgangskode, fx på en ny telefon. Åbnes fra velkomsten og fra Profil

@@ -24,6 +24,7 @@ import PreferencesScreen from './screens/Onboarding/PreferencesScreen';
 import FinishScreen from './screens/Onboarding/FinishScreen';
 import { UserContext } from './data/UserContext';
 import { accountsAvailable, useAuthSession } from './services/Auth';
+import { useFavorites } from './services/Favorites';
 import { useUserProfile } from './services/UserProfile';
 import GlobalStyle, { colors } from './styles/GlobalStyle';
 
@@ -125,6 +126,9 @@ export default function App() {
     uid: authUser?.uid ?? null,
   });
 
+  // Favoritter følger samme uid som profilen og gemmes under Users/<uid>/favorites.
+  const favorites = useFavorites({ authReady, uid: authUser?.uid ?? null });
+
   const userContext = useMemo(
     () => ({
       user,
@@ -136,8 +140,19 @@ export default function App() {
       createAccount,
       logIn,
       logOut,
+      favorites,
     }),
-    [user, setUser, authUser, completeOnboarding, account, createAccount, logIn, logOut],
+    [
+      user,
+      setUser,
+      authUser,
+      completeOnboarding,
+      account,
+      createAccount,
+      logIn,
+      logOut,
+      favorites,
+    ],
   );
 
   if (loading) {

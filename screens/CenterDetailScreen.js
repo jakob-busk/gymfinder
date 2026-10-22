@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
+import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferPriceCard from '../components/OfferPriceCard';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
@@ -14,7 +15,7 @@ import { openSignupPage } from '../services/Signup';
 // Centerdetalje: adresse, Distance, faciliteter og Kæde, og alle Centrets Tilbud med brugerens
 // Ærlig årspris, Kvartalspris og prisudregning måned for måned. Priserne kommer fra Matchning,
 // så de er de samme som på Find. Viser også 30-års-advarsel, Spar mere-forslag, Makkerpris og
-// "Gå til tilmelding".
+// "Gå til tilmelding". ♥ i titelrækken gør Centret til Favorit.
 export default function CenterDetailScreen({ route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
@@ -63,9 +64,9 @@ export default function CenterDetailScreen({ route }) {
 
   return (
     <ScrollView style={GlobalStyle.screen} contentContainerStyle={GlobalStyle.stepContent}>
-      {/* ♥ (gør Centret til Favorit) får plads i titelrækken, når Favoritter er bygget. */}
       <View style={GlobalStyle.titleRow}>
-        <Text style={GlobalStyle.title}>{center.name}</Text>
+        <Text style={[GlobalStyle.title, GlobalStyle.shrinkText]}>{center.name}</Text>
+        <FavoriteButton center={center} chain={chain} />
       </View>
       <Text style={GlobalStyle.cardTitle}>{chain?.name}</Text>
       <Text style={GlobalStyle.distanceText}>
