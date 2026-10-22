@@ -16,7 +16,7 @@
 // Realtime Database gemmer hverken null eller tomme lister. Når data læses, sættes de manglende
 // felter derfor tilbage til Matchnings standardværdier (fx null = ukendt, [] = ingen Rabatter).
 
-import { FACILITY_FILTERS } from './matchning';
+import { FACILITY_FILTERS } from './matchning.js';
 
 export const CENTER_DATA_PATHS = {
   chains: 'Chains',
