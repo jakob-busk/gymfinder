@@ -11,22 +11,28 @@ import CenterPinInfo from '../components/CenterPinInfo';
 import RonnieMascot from '../components/RonnieMascot';
 import { SORT_OPTIONS, matchCenters } from '../data/matchning';
 import { loosenFilterSuggestions } from '../data/findView';
+import { activeFilterCount } from '../data/filterSettings';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
+import { useFilterSettings } from '../services/FilterSettings';
 
 // Find: kort med brugerens placering og en pin pr. Center, og en liste over de samme Centre
-// nedenunder. Begge viser præcis resultatet fra Matchning, så Filtre (brugerens Præferencer,
-// inkl. maks. afstand) og sortering slår ens igennem. Anbefalet er lavest Ærlig årspris blandt
-// sikre match og fremhæves både på kortet og i listen.
+// nedenunder. Begge viser præcis resultatet fra Matchning, så Filtre (fra Filtre-skærmen, med
+// Præferencerne som udgangspunkt, inkl. maks. afstand) og sortering slår ens igennem. Filtre og
+// sortering huskes efter genstart. Anbefalet er lavest Ærlig årspris blandt sikre match og
+// fremhæves både på kortet og i listen.
 export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
-  const [sortBy, setSortBy] = useState('honestYearlyPrice');
   const [selectedId, setSelectedId] = useState(null);
   const centerData = useCenterData();
+  const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(
+    user.preferences,
+  );
+  const loading = centerData.loading || filterSettings.loading;
+  const filterCount = activeFilterCount(filters);
 
-  const filters = user.preferences;
   const { centers, recommendedId } = matchCenters({
-    centers: centerData.centers,
+    centers: loading ? [] : centerData.centers,
     chains: centerData.chains,
     user,
     filters,
@@ -40,7 +46,7 @@ export default function FindScreen({ navigation }) {
   const showDetails = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
 
   const renderList = () => {
-    if (centerData.loading) return <ActivityIndicator />;
+    if (loading) return <ActivityIndicator />;
 
     if (centers.length === 0) {
       const suggestions = loosenFilterSuggestions(filters);
@@ -85,7 +91,10 @@ export default function FindScreen({ navigation }) {
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
       <View style={GlobalStyle.titleRow}>
         <Text style={GlobalStyle.title}>Find</Text>
-        <ButtonComponent title="Filtre" onPress={() => navigation.navigate('Filtre')} />
+        <ButtonComponent
+          title={filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre'}
+          onPress={() => navigation.navigate('Filtre')}
+        />
       </View>
 
       {centerData.source === 'sample' && !centerData.loading && (
