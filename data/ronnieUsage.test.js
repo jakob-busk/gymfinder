@@ -70,8 +70,9 @@ describe('tælleren', () => {
 
   test('tilbage-tallet går aldrig under 0', () => {
     expect(remainingQuestions(null, WEEK)).toBe(RONNIE_WEEKLY_LIMIT);
-    expect(remainingQuestions({ week: WEEK, count: 28 }, WEEK)).toBe(2);
-    expect(remainingQuestions({ week: WEEK, count: 45 }, WEEK)).toBe(0);
+    const count = RONNIE_WEEKLY_LIMIT - 2;
+    expect(remainingQuestions({ week: WEEK, count }, WEEK)).toBe(2);
+    expect(remainingQuestions({ week: WEEK, count: RONNIE_WEEKLY_LIMIT + 15 }, WEEK)).toBe(0);
   });
 });
 

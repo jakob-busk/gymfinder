@@ -6,7 +6,7 @@
 // Ét spørgsmål er én besked fra brugeren, uanset hvor mange opslagsrunder Ronnie laver.
 
 // Så mange spørgsmål må hver bruger stille Ronnie pr. uge (mandag-søndag, dansk tid).
-export const RONNIE_WEEKLY_LIMIT = 30;
+export const RONNIE_WEEKLY_LIMIT = 100;
 
 // Er der så få spørgsmål tilbage eller færre, viser Spørg Ronnie, hvor mange der er tilbage.
 export const RONNIE_REMAINING_NOTICE_FROM = 5;
