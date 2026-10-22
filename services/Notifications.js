@@ -111,7 +111,8 @@ export async function showPriceAlerts(messages, onOpenCenter) {
   }
   const [first] = messages;
   const others = messages.length - 1;
-  const more = others > 0 ? ` (og ${others} ${others === 1 ? 'Prisalarm' : 'Prisalarmer'} mere)` : '';
+  const word = others === 1 ? 'Prisalarm' : 'Prisalarmer';
+  const more = others > 0 ? ` (og ${others} ${word} mere)` : '';
   Alert.alert(first.title, `${first.body}${more}`, [
     { text: 'Luk', style: 'cancel' },
     { text: 'Se Center', onPress: () => onOpenCenter(first.data.centerId) },

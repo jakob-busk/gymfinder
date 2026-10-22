@@ -59,10 +59,16 @@ export function thresholdText(priceAlert) {
   return threshold == null ? '' : String(threshold).replace('.', ',');
 }
 
-// Kort beskrivelse af en Prisalarm til UI, fx "mindst 50 kr/md" eller "ethvert fald".
-export function describeThreshold(priceAlert) {
+// Hvad en Prisalarm gør, som en sætning til UI. kind er 'favorite' eller 'currentMembership'.
+export function describePriceAlert(priceAlert, kind = 'favorite') {
   const threshold = normalizeThreshold(priceAlert?.thresholdPerMonth);
-  return threshold == null ? 'ethvert fald' : `mindst ${formatKr(threshold)}/md`;
+  const amount = threshold == null ? null : `${formatKr(threshold)}/md`;
+  if (kind === 'currentMembership') {
+    return amount
+      ? `Besked, når et Tilbud er mindst ${amount} billigere end dit nuværende medlemskab.`
+      : 'Besked, når et Tilbud er billigere end dit nuværende medlemskab.';
+  }
+  return amount ? `Besked, når prisen falder mindst ${amount}.` : 'Besked ved ethvert prisfald.';
 }
 
 // Er Besparelsen (kr/md) stor nok til at udløse alarmen?

@@ -4,7 +4,7 @@ import {
   centerIdFromNotification,
   changeCurrentMembershipThreshold,
   currentMembershipAlertTrigger,
-  describeThreshold,
+  describePriceAlert,
   favoriteAlertTriggers,
   fromStoredCurrentMembershipAlert,
   hasAnyPriceAlert,
@@ -86,9 +86,14 @@ describe('tærskel', () => {
     expect(thresholdText({ thresholdPerMonth: 25.5 })).toBe('25,5');
   });
 
-  test('beskrives på dansk', () => {
-    expect(describeThreshold({ thresholdPerMonth: 50 })).toBe('mindst 50 kr/md');
-    expect(describeThreshold({ thresholdPerMonth: null })).toBe('ethvert fald');
+  test('beskrives på dansk for Favorit og Nuværende medlemskab', () => {
+    expect(describePriceAlert({ thresholdPerMonth: 50 })).toBe(
+      'Besked, når prisen falder mindst 50 kr/md.',
+    );
+    expect(describePriceAlert({ thresholdPerMonth: null })).toBe('Besked ved ethvert prisfald.');
+    expect(describePriceAlert({ thresholdPerMonth: 50 }, 'currentMembership')).toBe(
+      'Besked, når et Tilbud er mindst 50 kr/md billigere end dit nuværende medlemskab.',
+    );
   });
 });
 

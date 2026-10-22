@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -24,9 +24,22 @@ import PreferencesScreen from './screens/Onboarding/PreferencesScreen';
 import FinishScreen from './screens/Onboarding/FinishScreen';
 import { UserContext } from './data/UserContext';
 import { accountsAvailable, useAuthSession } from './services/Auth';
+import { useCenterData } from './services/CenterData';
 import { useFavorites } from './services/Favorites';
+import {
+  initNotificationHandler,
+  listenForAlertTaps,
+  usePriceAlertCheck,
+} from './services/Notifications';
+import { useCurrentMembershipAlert } from './services/PriceAlerts';
 import { useUserProfile } from './services/UserProfile';
 import GlobalStyle, { colors } from './styles/GlobalStyle';
+
+// Prisalarmer vises også som notifikation, mens appen er åben.
+initNotificationHandler();
+
+// Bruges til at åbne Centerdetalje, når brugeren trykker på en Prisalarm.
+const navigationRef = createNavigationContainerRef();
 
 const RootStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
@@ -129,6 +142,34 @@ export default function App() {
   // Favoritter følger samme uid som profilen og gemmes under Users/<uid>/favorites.
   const favorites = useFavorites({ authReady, uid: authUser?.uid ?? null });
 
+  // Prisalarm på Nuværende medlemskab (Users/<uid>/currentMembershipAlert).
+  const membershipAlert = useCurrentMembershipAlert({ authReady, uid: authUser?.uid ?? null });
+
+  // Tryk på en Prisalarm (lokal eller push fra nat-jobbet) åbner Centerdetalje.
+  const [navigationReady, setNavigationReady] = useState(false);
+  const appReady = navigationReady && !loading && !showOnboarding;
+  const openCenter = useCallback((centerId) => {
+    if (navigationRef.isReady()) navigationRef.navigate('CenterDetaljer', { centerId });
+  }, []);
+
+  useEffect(() => {
+    if (!appReady) return undefined;
+    return listenForAlertTaps(openCenter);
+  }, [appReady, openCenter]);
+
+  // Sikkerhedsnet: ved app-åbning tjekkes Prisalarmerne mod de aktuelle priser.
+  const centerData = useCenterData();
+  usePriceAlertCheck({
+    ready: appReady && !favorites.loading && !membershipAlert.loading && !centerData.loading,
+    uid: authUser?.uid ?? null,
+    user,
+    favorites,
+    membershipAlert,
+    centers: centerData.centers,
+    chains: centerData.chains,
+    onOpenCenter: openCenter,
+  });
+
   const userContext = useMemo(
     () => ({
       user,
@@ -141,6 +182,7 @@ export default function App() {
       logIn,
       logOut,
       favorites,
+      membershipAlert,
     }),
     [
       user,
@@ -152,6 +194,7 @@ export default function App() {
       logIn,
       logOut,
       favorites,
+      membershipAlert,
     ],
   );
 
@@ -168,7 +211,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <UserContext.Provider value={userContext}>
-        <NavigationContainer>
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={() => setNavigationReady(true)}
+        >
           <RootStack.Navigator screenOptions={stackHeader}>
             {showOnboarding ? onboardingScreens() : appScreens()}
           </RootStack.Navigator>
