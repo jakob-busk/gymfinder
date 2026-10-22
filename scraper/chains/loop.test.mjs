@@ -131,7 +131,7 @@ describe('LOOP centerliste', () => {
     assert.equal('open24h' in centerById(changed, 'loop-119').facilities, false);
   });
 
-  test('Nibe: to ekstra abonnementer med holdtræning, det ene med kampagne de første 30 dage', () => {
+  test('Nibe: to ekstra Tilbud med holdtræning, det ene med kampagne de første 30 dage', () => {
     const [voksen, holdtraening, loopMedHold] = centerById(result, 'loop-143').offers;
     assert.deepEqual(voksen, adultOffer(143));
     assert.deepEqual(
@@ -151,7 +151,7 @@ describe('LOOP centerliste', () => {
     assert.equal(loopMedHold.campaignMonths, 0);
   });
 
-  test('Skagen: ALL IN FAMILY bliver Makkerpris på ALL IN; Destination Skagen er Lokal center', () => {
+  test('Skagen: ALL IN FAMILY er Makkerpris på ALL IN; Destination Skagen er lokal', () => {
     const skagen = centerById(result, 'loop-114');
     assert.deepEqual(offerNames(skagen), [
       'Voksen',
@@ -328,7 +328,7 @@ describe('LOOP kampagne', () => {
     });
   });
 
-  test('under 30 dage tilbage, eller udløbet: ingen kampagne, så prisen ikke bliver for lav', () => {
+  test('under 30 dage tilbage eller udløbet: ingen kampagne (hellere for høj pris)', () => {
     assert.deepEqual(parseCampaign(voksen, '2026-12-05'), { campaign: null });
     assert.deepEqual(parseCampaign(voksen, '2027-01-02'), { campaign: null });
   });
@@ -403,7 +403,7 @@ describe('LOOP rabatter (/priser/)', () => {
     assert.equal(result.chain.discounts[0].percentOff, 20);
   });
 
-  test('mangler et rabatkort, fejler hele kørslen, så Rabatten ikke forsvinder stille', async () => {
+  test('mangler et rabatkort, fejler kørslen, så Rabatten ikke forsvinder stille', async () => {
     const routes = loopRoutes();
     routes[LOOP_PRICES_URL] = routes[LOOP_PRICES_URL].replace(/Ældre Sagen/g, 'Fagforeningen');
     await assert.rejects(
@@ -439,7 +439,10 @@ describe('hele LOOP-kørslen (falsk HTTP med gemte svar)', () => {
       today: TODAY,
       limit: 3,
     });
-    assert.deepEqual(result.centers.map((center) => center.id), ['loop-145', 'loop-119', 'loop-232']);
+    assert.deepEqual(
+      result.centers.map((center) => center.id),
+      ['loop-145', 'loop-119', 'loop-232'],
+    );
   });
 
   test('kan centerlisten ikke hentes, fejler hele kørslen', async () => {
@@ -466,6 +469,9 @@ describe('tilmeldingslink', () => {
       'https://loopfitness.dk/medlemskab/bliv-medlem?center=145' +
         '&subscription=kampagne%3A+100+kr+resten+af+%C3%A5ret+-+familie',
     );
-    assert.equal(signupUrlFor({ loopId: 1 }), 'https://loopfitness.dk/medlemskab/bliv-medlem?center=1');
+    assert.equal(
+      signupUrlFor({ loopId: 1 }),
+      'https://loopfitness.dk/medlemskab/bliv-medlem?center=1',
+    );
   });
 });
