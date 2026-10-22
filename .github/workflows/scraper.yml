@@ -1,0 +1,71 @@
+# Natlig scraper: henter rigtige Centre og Tilbud fra kædernes hjemmesider og skriver dem til
+# Realtime Database. Kører gratis på GitHub Actions uden AI eller betalte tjenester.
+#
+# Secrets (Settings → Secrets and variables → Actions → New repository secret):
+#   FIREBASE_SERVICE_ACCOUNT  hele service account-JSON'en på én linje
+#   FIREBASE_DATABASE_URL     https://<projekt-id>-default-rtdb.europe-west1.firebasedatabase.app
+name: Natlig scraper
+
+on:
+  schedule:
+    # 02:17 UTC = 03:17 dansk vintertid / 04:17 sommertid. Ikke på hel time, hvor køen er lang.
+    # GitHub kører kun skemaet fra default-branchen.
+    - cron: '17 2 * * *'
+  # "Kør nu"-knap under Actions-fanen. Tør kørsel skriver ikke til databasen.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Tør kørsel (læs og lav rapport, men skriv ikke)'
+        type: boolean
+        default: false
+
+# Aldrig to kørsler på samme tid, så de ikke skriver oven i hinanden.
+concurrency:
+  group: scraper
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: scraper
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scraper/package-lock.json
+
+      - run: npm ci
+
+      # Parser- og nat-job-testene skal være grønne, før der skrives noget.
+      - run: npm test
+
+      - name: Scrape og skriv til databasen
+        if: ${{ !inputs.dry_run }}
+        run: npm run scrape -- --report report.md
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+
+      - name: Tør kørsel (intet skrives)
+        if: ${{ inputs.dry_run }}
+        run: npm run scrape:dry-run -- --report report.md
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+
+      # Rapporten gemmes også, når en Kæde blev sprunget over og jobbet er rødt.
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: scraper-rapport
+          path: scraper/report.md
+          if-no-files-found: ignore
