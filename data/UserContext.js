@@ -1,5 +1,7 @@
 import { createContext } from 'react';
 
 // App-dækkende brugerdata, som App.js stiller til rådighed for alle skærme:
-// { user, setUser, authUser }. Skærme læser den med useContext(UserContext).
+// { user, setUser, authUser, completeOnboarding } og til Konto
+// { account, accountsAvailable, createAccount, logIn, logOut }.
+// Skærme læser den med useContext(UserContext).
 export const UserContext = createContext(null);

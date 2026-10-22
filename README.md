@@ -23,10 +23,10 @@ Appen bruger Firebase Realtime Database til Kæder, Centre og Tilbud og Firebase
 
 **Opsætning af appen**
 1. Kopiér `.env.example` til `.env`, og udfyld værdierne fra Firebase-konsollen (Projektindstillinger → Generelt → web-app). Database-URL'en står øverst på Realtime Database-siden.
-2. Slå **Anonymous** til under Authentication → Sign-in method.
+2. Slå **Anonymous** og **Email/Password** til under Authentication → Sign-in method.
 3. Genstart Expo (`npx expo start -c`), så de nye `EXPO_PUBLIC_*`-værdier bliver læst.
 
-Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorage, så brugeren beholder samme uid efter genstart. Profil viser de første tegn af uid'et.
+Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorage, så brugeren beholder samme uid efter genstart. Under Konto på Profil kan brugeren gemme sin profil, logge ind eller logge ud.
 
 **Datamodel** (streng-id'er som nøgler, fx `sats-oesterbro`)
 
@@ -40,6 +40,8 @@ Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorag
 | `Users/<uid>/profile` | Profil: adresse og placering, fødselsdato, Rabatprofil, Nuværende medlemskab, Præferencer og hvornår onboarding blev gennemført |
 
 **Profil uden Firebase.** Profilen gemmes altid også i AsyncStorage. Uden Firebase-nøgler (eller uden forbindelse) bruges den lokale kopi, så appen husker brugeren efter genstart alligevel. Om onboarding er gennemført, caches i AsyncStorage, så den ikke vises igen på telefonen. Oversættelsen af profilen til og fra databasen ligger i `data/userProfile.js`.
+
+**Konto.** Sidste onboarding-trin og Profil tilbyder "Gem din profil" (navn, e-mail og adgangskode) eller at fortsætte anonymt. Gem din profil linker den anonyme bruger til e-mail og adgangskode (`linkWithCredential`), så uid'et er det samme, og profil, Favoritter og Prisalarmer under `Users/<uid>` følger med uden at blive kopieret. Med "Jeg har allerede en konto" (velkomsten eller Profil) logger man ind på en ny telefon. Så skifter uid'et til kontoens, profilen hentes, og onboarding springes over, hvis den er gennemført på kontoen. Log ud (Profil) fjerner profilen og onboarding-status fra telefonen og starter en ny anonym bruger. Data på kontoen bliver i databasen. Fejl som forkert adgangskode, e-mail i brug og svag adgangskode vises på dansk (`data/account.js`). Login-logikken ligger i `services/Auth.js`. Uden Firebase skjules kontodelen.
 
 Oversættelsen mellem databasen og Matchning ligger i `data/centerData.js`. Databasen gemmer hverken `null` eller tomme lister, så manglende felter læses som "ukendt" (fx Binding og faciliteter).
 
@@ -62,7 +64,7 @@ npm run seed           # skriver til databasen
 ```
 
 ## Test
-Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre, Anbefalet og sortering), oversættelsen af centerdata til og fra databasen (`data/centerData.js`), brugerprofilen (`data/userProfile.js` og `services/UserProfile.js`: fødselsdato, månedspris, gem/hent med lokal kopi og hvornår onboarding vises), Firebase-konfigurationen og sikkerhedsreglerne testes med Jest via jest-expo. Testene bruger ikke netværk:
+Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre, Anbefalet og sortering), oversættelsen af centerdata til og fra databasen (`data/centerData.js`), brugerprofilen (`data/userProfile.js` og `services/UserProfile.js`: fødselsdato, månedspris, gem/hent med lokal kopi og hvornår onboarding vises), konto (`data/account.js` og `services/Auth.js`: validering, danske fejltekster, opgradering med samme uid, log ind og log ud), Firebase-konfigurationen og sikkerhedsreglerne testes med Jest via jest-expo. Testene bruger ikke netværk:
 
 npm test
 
@@ -106,13 +108,14 @@ npm run scrape                            # skriver til databasen
 ## Skærme
 Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, Spørg Ronnie, Favoritter og Profil). Centerdetalje og Filtre åbnes som stack oven på fanerne, og Om os åbnes fra Profil.
 
-- **Onboarding** (`screens/Onboarding/`, kun første gang): velkomst med Ronnie → adresse (geokodes) eller "Brug min placering" → fødselsdato → Rabatprofil → Nuværende medlemskab (egen månedspris og evt. Kæde, eller "Ingen") → Præferencer → fortsæt anonymt. Adresse og fødselsdato er krævet; resten kan springes over. Afslås adgang til placering, skriver man bare adressen
+- **Onboarding** (`screens/Onboarding/`, kun første gang): velkomst med Ronnie → adresse (geokodes) eller "Brug min placering" → fødselsdato → Rabatprofil → Nuværende medlemskab (egen månedspris og evt. Kæde, eller "Ingen") → Præferencer → gem din profil (konto) eller fortsæt anonymt. Fra velkomsten kan man logge ind med en eksisterende konto i stedet. Adresse og fødselsdato er krævet; resten kan springes over. Afslås adgang til placering, skriver man bare adressen
 
 - **Find**: kort med din egen pin (blå) og en pin pr. Center, og en scrollbar liste over præcis de samme Centre nedenunder. Begge viser resultatet fra Matchning, så kun Centre inden for maks. afstand og dine Filtre vises, og sorteringen (Ærlig årspris, Kvartalspris, pris høj→lav eller afstand) gælder listen. Det Anbefalede Center har en orange pin og et ANBEFALET-mærke. Tryk på en pin viser Kæde, Ærlig årspris, Distance, nøgleord (fx sauna) og "Se mere", der åbner Centerdetalje. Matcher intet, viser Ronnie forslag til at løsne Filtrene. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata. Kortet (`react-native-maps`) kræver ingen API-nøgle i Expo Go
 - **Spørg Ronnie**: chat med Ronnie (pladsholder med Ronnie indtil videre)
 - **Favoritter**: gemte Centre og Prisalarmer (pladsholder)
-- **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre
+- **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre. Under Konto kan man gemme sin profil, logge ind eller logge ud
 - **Om os**: kort om GymFinder, åbnes fra Profil
+- **Log ind** (`screens/LoginScreen.js`): log ind med e-mail og adgangskode, fx på en ny telefon. Åbnes fra velkomsten og fra Profil
 - **Centerdetalje**: det valgte Center (pladsholder)
 - **Filtre**: Filtre til Find (pladsholder; Find bruger indtil videre Præferencerne fra Profil)
 
@@ -123,7 +126,7 @@ Hver skærmfil har en `// Ansvarlig: <navn>`-kommentar øverst.
 
 | Ansvarlig | Skærme og dele |
 |---|---|
-| Jakob | Onboarding (`screens/Onboarding/`), Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), scraper og nat-job |
+| Jakob | Onboarding (`screens/Onboarding/`), Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), Log ind (`screens/LoginScreen.js`), scraper og nat-job |
 | Christian | Find (`screens/FindScreen.js`), Filtre (`screens/FiltersScreen.js`), Centerdetalje (`screens/CenterDetailScreen.js`) |
 | Bastian | Spørg Ronnie (`screens/AskRonnieScreen.js`), Favoritter/Alarmer (`screens/FavoritesScreen.js`) |
 

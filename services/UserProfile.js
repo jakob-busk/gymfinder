@@ -64,6 +64,13 @@ export async function saveOnboardingDone() {
   await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
 }
 
+// Ved log ud: fjern brugerens profil og onboarding-status fra telefonen, så den næste bruger
+// starter forfra. Profilen i databasen røres ikke.
+export async function clearLocalUserData(uid) {
+  const keys = [localProfileKey(uid), localProfileKey(null), ONBOARDING_DONE_KEY];
+  await AsyncStorage.multiRemove(keys);
+}
+
 // Brugerens profil til hele appen. Venter på login (authReady), henter profilen for uid og
 // gemmer ændringer automatisk. Returnerer:
 //   user               profilen (samme form som brugeren i Matchning)
