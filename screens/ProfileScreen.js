@@ -17,7 +17,7 @@ const PREFERENCE_TOGGLES = [
 
 // Profil siden. Brugeren kan ændre sine oplysninger, Rabatprofil og Præferencer.
 // Ændringerne gemmes i state i App.js.
-export default function ProfileScreen({ user, setUser }) {
+export default function ProfileScreen({ user, setUser, authUser }) {
   const updateField = (field, value) => {
     setUser((current) => ({ ...current, [field]: value }));
   };
@@ -62,6 +62,9 @@ export default function ProfileScreen({ user, setUser }) {
       <Text>Brugernavn: {user.username}</Text>
       <Text>Email: {user.email}</Text>
       <Text>Adgangskode: ********</Text>
+      <Text>
+        Login: {authUser ? `Anonym bruger (id ${authUser.uid.slice(0, 8)}…)` : 'Ikke forbundet'}
+      </Text>
 
       <Text style={GlobalStyle.sectionLabel}>Rabatprofil</Text>
       <View style={GlobalStyle.sortRow}>

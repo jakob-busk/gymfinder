@@ -1,21 +1,23 @@
 // Ansvarlig: Jakob
 import { useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import CenterCard from '../components/CenterCard';
-import { CENTERS, CHAINS } from '../data/const';
 import { DISCOUNT_GROUPS, SORT_OPTIONS, matchCenters } from '../data/matchning';
+import { useCenterData } from '../services/CenterData';
 
-// Dashboard: viser Centre for brugeren via Matchning. Brugerens Præferencer bruges som Filtre,
-// og Anbefalet er altid lavest Ærlig årspris blandt sikre match, uanset sortering.
+// Dashboard: viser Centre for brugeren via Matchning. Kæder, Centre og Tilbud hentes fra
+// Realtime Database (eller eksempeldata, hvis databasen ikke er sat op). Brugerens Præferencer
+// bruges som Filtre, og Anbefalet er altid lavest Ærlig årspris blandt sikre match.
 export default function DashboardScreen({ user }) {
   const [sortBy, setSortBy] = useState('honestYearlyPrice');
+  const centerData = useCenterData();
 
   const { centers, recommendedId } = matchCenters({
-    centers: CENTERS,
-    chains: CHAINS,
+    centers: centerData.centers,
+    chains: centerData.chains,
     user,
     filters: user.preferences,
     sortBy,
@@ -34,6 +36,10 @@ export default function DashboardScreen({ user }) {
         <Text>Rabatprofil: {discountLabels.length > 0 ? discountLabels.join(', ') : 'Ingen'}</Text>
       </View>
 
+      {centerData.source === 'sample' && !centerData.loading && (
+        <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
+      )}
+
       <Text style={GlobalStyle.sectionLabel}>Sorter efter</Text>
       <View style={GlobalStyle.sortRow}>
         {SORT_OPTIONS.map((option) => (
@@ -46,7 +52,9 @@ export default function DashboardScreen({ user }) {
         ))}
       </View>
 
-      {centers.length === 0 ? (
+      {centerData.loading ? (
+        <ActivityIndicator />
+      ) : centers.length === 0 ? (
         <Text style={GlobalStyle.emptyText}>
           Ingen Centre matcher dine Filtre lige nu. Prøv at løsne dem på Profil-siden.
         </Text>
