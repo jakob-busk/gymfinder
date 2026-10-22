@@ -121,17 +121,19 @@ export async function showPriceAlerts(messages, onOpenCenter) {
 
 // Kalder onOpenCenter(centerId), når brugeren trykker på en Prisalarm, både mens appen kører og
 // når appen blev startet af trykket. Returnerer en funktion, der stopper lytningen.
+// Et håndteret tryk ryddes som "sidste svar", så det ikke åbner Centret igen, når App.js starter
+// lytningen forfra (fx efter log ind/ud, hvor uid'et skifter).
 export function listenForAlertTaps(onOpenCenter) {
   if (!Notifications) return () => {};
 
   const handleResponse = (response) => {
     const centerId = centerIdFromNotification(response?.notification?.request?.content?.data);
     if (centerId) onOpenCenter(centerId);
+    Notifications.clearLastNotificationResponse();
   };
 
   const subscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
   handleResponse(Notifications.getLastNotificationResponse());
-  Notifications.clearLastNotificationResponse();
 
   return () => subscription.remove();
 }

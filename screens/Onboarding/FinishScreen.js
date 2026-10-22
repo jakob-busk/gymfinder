@@ -1,12 +1,13 @@
 // Ansvarlig: Jakob
 import { useContext } from 'react';
-import { Text } from 'react-native';
+import { Alert, Text } from 'react-native';
 
 import GlobalStyle from '../../styles/GlobalStyle';
 import AccountForm from '../../components/AccountForm';
 import OnboardingStep from '../../components/OnboardingStep';
 import RonnieMascot from '../../components/RonnieMascot';
 import { UserContext } from '../../data/UserContext';
+import { accountErrorMessage } from '../../data/account';
 
 // Trin 6: "Gem din profil" med navn, e-mail og adgangskode, eller "Fortsæt anonymt".
 // Med konto linkes den anonyme bruger, så alt, der er udfyldt, følger med til kontoen.
@@ -14,9 +15,18 @@ import { UserContext } from '../../data/UserContext';
 export default function FinishScreen() {
   const { completeOnboarding, createAccount, accountsAvailable } = useContext(UserContext);
 
+  // Fejler oprettelsen, viser AccountForm fejlen under felterne. Er kontoen oprettet, men kunne
+  // profilen ikke gemmes i databasen (fx regler, der afviser), ligger den stadig på telefonen,
+  // og brugeren får at vide hvorfor.
   const handleCreateAccount = async (form) => {
-    await createAccount(form);
-    await completeOnboarding();
+    const account = await createAccount(form);
+    const saveError = await completeOnboarding(account?.uid);
+    if (saveError) {
+      Alert.alert(
+        'Kontoen er oprettet, men profilen er kun gemt på telefonen',
+        accountErrorMessage(saveError),
+      );
+    }
   };
 
   return (
@@ -24,7 +34,7 @@ export default function FinishScreen() {
       step={6}
       title="Så er du klar!"
       nextLabel="Fortsæt anonymt"
-      onNext={completeOnboarding}
+      onNext={() => completeOnboarding()}
     >
       <RonnieMascot size="small" />
       {accountsAvailable && (

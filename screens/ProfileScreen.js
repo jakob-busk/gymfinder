@@ -29,6 +29,17 @@ export default function ProfileScreen({ navigation }) {
     setUser((current) => ({ ...current, [field]: value }));
   };
 
+  // Adresse og fødselsdato er krævet. Mens brugeren retter dem til noget ufærdigt (null),
+  // beholder Profil den gamle værdi, så appen ikke springer tilbage til onboarding.
+  // Felterne viser selv, at den gamle værdi stadig gælder.
+  const handleAddress = (place) => {
+    if (place) setUser((current) => ({ ...current, ...place }));
+  };
+
+  const handleBirthDate = (birthDate) => {
+    if (birthDate) updateField('birthDate', birthDate);
+  };
+
   const handleCreateAccount = async (form) => {
     await createAccount(form);
     Alert.alert('Din profil er gemt', 'Du kan nu logge ind med din e-mail på en anden telefon.');
@@ -107,16 +118,11 @@ export default function ProfileScreen({ navigation }) {
         <AddressField
           address={user.address}
           location={user.location}
-          onChange={({ address, location }) =>
-            setUser((current) => ({ ...current, address, location }))
-          }
+          onChange={handleAddress}
         />
 
         <Text style={GlobalStyle.sectionLabel}>Fødselsdato</Text>
-        <BirthDateField
-          birthDate={user.birthDate}
-          onChange={(birthDate) => updateField('birthDate', birthDate)}
-        />
+        <BirthDateField birthDate={user.birthDate} onChange={handleBirthDate} />
 
         <Text style={GlobalStyle.sectionLabel}>Rabatprofil</Text>
         <DiscountProfilePicker

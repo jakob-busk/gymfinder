@@ -57,6 +57,8 @@ jest.mock('firebase/auth', () => ({
 const { signInAnonymously } = require('firebase/auth');
 const { createAccount, logIn, logOut } = require('./Auth');
 const { loadOnboardingDone, saveOnboardingDone, saveUserProfile } = require('./UserProfile');
+const { loadFilterSettings, saveFilterSettings } = require('./FilterSettings');
+const { recordRonnieQuestion } = require('./RonnieUsage');
 
 const FORM = { name: 'Jakob', email: 'jakob@example.dk', password: 'hemmelig' };
 
@@ -110,10 +112,13 @@ test('log ud logger ud og rydder telefonen', async () => {
   await createAccount(FORM);
   await saveUserProfile(user.uid, { address: 'Østerbrogade 79' });
   await saveOnboardingDone();
+  await saveFilterSettings({ filters: { sauna: true }, sortBy: 'distance' });
+  await recordRonnieQuestion(user.uid);
 
   await logOut(user.uid);
 
   expect(mockAuth.currentUser).toBeNull();
   expect(await loadOnboardingDone()).toBe(false);
+  expect(await loadFilterSettings()).toBeNull();
   expect(await AsyncStorage.getAllKeys()).toEqual([]);
 });

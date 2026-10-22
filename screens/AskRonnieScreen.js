@@ -1,5 +1,5 @@
 // Ansvarlig: Bastian
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,24 +11,30 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import RonnieMascot from '../components/RonnieMascot';
 import { RONNIE_SUGGESTIONS, ronnieErrorMessage, ronnieMatches } from '../data/ronnie';
+import { remainingNotice, ronnieWeekOffMessage } from '../data/ronnieUsage';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 import { geocodeAddress } from '../services/Location';
 import { askRonnie, ronnieAvailable } from '../services/Ronnie';
+import { loadRemainingRonnieQuestions, recordRonnieQuestion } from '../services/RonnieUsage';
 
 // Spørg Ronnie: chat med Ronnie, der kun anbefaler Centre fra GymFinder og sammenligner på
 // brugerens Ærlig årspris. Ronnie kender de 20 nærmeste Centre, der matcher brugerens Filtre
 // (plus det Center, man spørger om fra Centerdetalje). Spørger man om et andet sted i landet, slår
 // han stedet op og får de nærmeste Centre dér. Hele samtalen sendes med hver gang, så han husker
 // den. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner.
+// Hver bruger kan stille RONNIE_WEEKLY_LIMIT spørgsmål om ugen (se data/ronnieUsage.js). Derefter
+// holder Ronnie fri resten af ugen, og der sendes intet til OpenAI.
 export default function AskRonnieScreen({ navigation, route }) {
-  const { user } = useContext(UserContext);
+  const { user, authUser } = useContext(UserContext);
+  const uid = authUser?.uid ?? null;
   const centerData = useCenterData();
   const { filters, ...filterSettings } = useFilterSettings(user.preferences);
   const [messages, setMessages] = useState([]);
@@ -36,6 +42,8 @@ export default function AskRonnieScreen({ navigation, route }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [askedCenterIds, setAskedCenterIds] = useState([]);
+  // Spørgsmål tilbage i denne uge; null, indtil tælleren er hentet.
+  const [remaining, setRemaining] = useState(null);
   const nextMessageId = useRef(1);
   const scrollRef = useRef(null);
 
@@ -53,7 +61,24 @@ export default function AskRonnieScreen({ navigation, route }) {
     }
   }, [question, askedCenterId, askedAt]);
 
+  // Tælleren hentes, hver gang fanen får fokus, så en ny uge (eller en anden telefon) ses.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      loadRemainingRonnieQuestions(uid)
+        .then((left) => {
+          if (active) setRemaining(left);
+        })
+        .catch((loadError) => console.error('Hent Ronnie-tæller fejlede:', loadError));
+      return () => {
+        active = false;
+      };
+    }, [uid]),
+  );
+
   const loading = centerData.loading || filterSettings.loading;
+  const weekOff = remaining === 0;
+  const notice = remaining == null ? null : remainingNotice(remaining);
   const matches = useMemo(
     () =>
       loading
@@ -85,6 +110,10 @@ export default function AskRonnieScreen({ navigation, route }) {
       };
       const reply = await askRonnie({ conversation, matches, user, lookupInput });
       setMessages([...conversation, withId(reply)]);
+      // Tælles først, når Ronnie har svaret, så en fejl og "Prøv igen" kun koster ét spørgsmål.
+      recordRonnieQuestion(uid)
+        .then(setRemaining)
+        .catch((recordError) => console.error('Gem Ronnie-tæller fejlede:', recordError));
     } catch (sendError) {
       console.error('Spørg Ronnie fejlede:', sendError);
       setError(ronnieErrorMessage(sendError));
@@ -93,9 +122,28 @@ export default function AskRonnieScreen({ navigation, route }) {
     }
   };
 
+  // Grænsen tjekkes, før der sendes noget til OpenAI. false, når ugens spørgsmål er brugt.
+  // Kan tælleren slet ikke læses, får brugeren lov at spørge (fejlen logges).
+  const hasQuestionsLeft = async () => {
+    setSending(true);
+    let left;
+    try {
+      left = await loadRemainingRonnieQuestions(uid);
+    } catch (limitError) {
+      console.error('Tjek af Ronnies ugentlige grænse fejlede:', limitError);
+      return true;
+    }
+    setRemaining(left);
+    if (left > 0) return true;
+    setError(null);
+    setSending(false);
+    return false;
+  };
+
   const handleSend = async (text) => {
     const content = text.trim();
-    if (!content || sending || loading) return;
+    if (!content || sending || loading || weekOff) return;
+    if (!(await hasQuestionsLeft())) return;
     const conversation = [...messages, withId({ role: 'user', content })];
     setMessages(conversation);
     setInput('');
@@ -103,7 +151,10 @@ export default function AskRonnieScreen({ navigation, route }) {
   };
 
   // Prøv igen sender samme samtale igen; brugerens sidste besked står der allerede.
-  const handleRetry = () => sendConversation(messages);
+  const handleRetry = async () => {
+    if (sending || !(await hasQuestionsLeft())) return;
+    await sendConversation(messages);
+  };
 
   const centerName = (centerId) =>
     centerData.centers.find((center) => center.id === centerId)?.name ?? 'Centret';
@@ -190,7 +241,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                         key={suggestion}
                         title={suggestion}
                         onPress={() => handleSend(suggestion)}
-                        disabled={sending || loading}
+                        disabled={sending || loading || weekOff}
                       />
                     ))}
                   </View>
@@ -207,7 +258,18 @@ export default function AskRonnieScreen({ navigation, route }) {
                 </View>
               )}
 
-              {error && (
+              {weekOff && (
+                <View style={[GlobalStyle.infoBox, GlobalStyle.paragraph]}>
+                  <Text style={GlobalStyle.infoTitle}>Ronnie holder fri resten af ugen</Text>
+                  <Text>{ronnieWeekOffMessage(new Date())}</Text>
+                </View>
+              )}
+
+              {notice && (
+                <Text style={[GlobalStyle.mutedText, GlobalStyle.paragraph]}>{notice}</Text>
+              )}
+
+              {error && !weekOff && (
                 <View style={[GlobalStyle.warningBox, GlobalStyle.paragraph]}>
                   <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
                   <Text>{error}</Text>
@@ -233,7 +295,7 @@ export default function AskRonnieScreen({ navigation, route }) {
             title="Send"
             type="primary"
             onPress={() => handleSend(input)}
-            disabled={sending || loading || !input.trim()}
+            disabled={sending || loading || weekOff || !input.trim()}
           />
         </View>
       </KeyboardAvoidingView>

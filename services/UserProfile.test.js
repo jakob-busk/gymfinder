@@ -122,7 +122,18 @@ test('efter log ud er telefonen ryddet, men profilen ligger stadig på kontoen',
 
   expect(await loadOnboardingDone()).toBe(false);
   expect(await loadUserProfile('uid-2')).toBeNull();
-  expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
   mockDatabase.failReads = true;
   expect(await loadUserProfile('uid-1')).toBeNull();
+  mockDatabase.failReads = false;
+  expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
+});
+
+test('profilen fra databasen huskes på telefonen, så den også findes uden net', async () => {
+  // Fx login på en ny telefon: profilen findes kun i databasen.
+  mockDatabase.data['Users/uid-1/profile'] = PROFILE;
+  expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
+
+  mockDatabase.failReads = true;
+
+  expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
 });

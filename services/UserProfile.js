@@ -31,15 +31,26 @@ async function loadLocalProfile(uid) {
   return json ? fromStoredProfile(JSON.parse(json)) : null;
 }
 
+async function saveLocalProfile(uid, profile) {
+  await AsyncStorage.setItem(localProfileKey(uid), JSON.stringify(toStoredProfile(profile)));
+}
+
 // Henter brugerens profil. Databasen vinder, når den har en profil; ellers bruges den lokale
 // kopi. Er profilen gemt, før der var login (uden Firebase eller offline ved første opstart),
 // bruges den. null, hvis brugeren ikke har gemt noget endnu.
+// Profilen fra databasen gemmes også lokalt, så den (og at onboarding er gennemført) huskes,
+// hvis appen næste gang åbnes uden net, fx efter login på en ny telefon.
 export async function loadUserProfile(uid) {
   if (rtdb && uid) {
     try {
       const snapshot = await withTimeout(get(ref(rtdb, profilePath(uid))), LOAD_TIMEOUT_MS);
       const profile = fromStoredProfile(snapshot.val());
-      if (profile) return profile;
+      if (profile) {
+        await saveLocalProfile(uid, profile).catch((saveError) =>
+          console.error('Gem lokal kopi af profil fejlede:', saveError),
+        );
+        return profile;
+      }
     } catch (error) {
       console.error('Hent profil fejlede:', error);
     }
@@ -51,9 +62,8 @@ export async function loadUserProfile(uid) {
 
 // Gemmer profilen lokalt og, hvis Firebase er sat op, i databasen.
 export async function saveUserProfile(uid, profile) {
-  const stored = toStoredProfile(profile);
-  await AsyncStorage.setItem(localProfileKey(uid), JSON.stringify(stored));
-  if (rtdb && uid) await set(ref(rtdb, profilePath(uid)), stored);
+  await saveLocalProfile(uid, profile);
+  if (rtdb && uid) await set(ref(rtdb, profilePath(uid)), toStoredProfile(profile));
 }
 
 export async function loadOnboardingDone() {
@@ -77,13 +87,18 @@ export async function clearLocalUserData(uid) {
 //   setUser            ændrer profilen (som useState); ændringen gemmes efter en kort pause
 //   loading            true, indtil profilen er hentet
 //   showOnboarding     true, indtil onboarding er gennemført
-//   completeOnboarding afslutter onboarding som anonym og gemmer med det samme
+//   completeOnboarding afslutter onboarding og gemmer med det samme. Returnerer null, eller
+//                      fejlen, hvis profilen ikke kunne gemmes i databasen
 export function useUserProfile({ authReady, uid }) {
   const [user, setProfile] = useState(EMPTY_PROFILE);
   const [cachedDone, setCachedDone] = useState(false);
   const [loading, setLoading] = useState(true);
   // Kun ændringer fra brugeren gemmes, ikke den profil, der lige er hentet.
   const changed = useRef(false);
+  // Profilen, der lige er gennemført onboarding med, og for hvilket uid. Opretter "Gem din
+  // profil" en ny konto (når der ikke var en anonym bruger), skifter uid'et midt i det hele,
+  // og så må hentningen for det nye uid ikke vise onboarding igen.
+  const justCompleted = useRef(null);
 
   useEffect(() => {
     if (!authReady) return undefined;
@@ -95,8 +110,10 @@ export function useUserProfile({ authReady, uid }) {
         const [profile, done] = await Promise.all([loadUserProfile(uid), loadOnboardingDone()]);
         if (cancelled) return;
         changed.current = false;
-        setProfile(profile ?? EMPTY_PROFILE);
-        setCachedDone(done);
+        const completed = justCompleted.current?.uid === uid ? justCompleted.current.profile : null;
+        justCompleted.current = null;
+        setProfile(completed ?? profile ?? EMPTY_PROFILE);
+        setCachedDone(done || completed != null);
       } catch (error) {
         console.error('Hent profil fejlede:', error);
       } finally {
@@ -123,16 +140,22 @@ export function useUserProfile({ authReady, uid }) {
     setProfile(update);
   }, []);
 
-  const completeOnboarding = useCallback(async () => {
+  // accountUid: uid'et for en konto, der lige er oprettet (se FinishScreen). Ellers det aktuelle.
+  const completeOnboarding = useCallback(async (accountUid = uid) => {
     const completed = { ...user, onboardingCompletedAt: new Date().toISOString() };
+    justCompleted.current = { uid: accountUid, profile: completed };
     changed.current = false;
     setProfile(completed);
     setCachedDone(true);
     try {
       await saveOnboardingDone();
-      await saveUserProfile(uid, completed);
+      await saveUserProfile(accountUid, completed);
+      return null;
     } catch (error) {
-      console.error('Gem profil fejlede:', error);
+      // Profilen er gemt på telefonen før databasen, så appen virker videre. Fejlen returneres,
+      // så "Gem din profil" kan fortælle, at profilen ikke kom med op på kontoen.
+      console.warn('Gem profil fejlede:', error);
+      return error;
     }
   }, [user, uid]);
 

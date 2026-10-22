@@ -46,8 +46,35 @@ export const DISCOUNT_GROUP_DESCRIPTIONS = {
 };
 
 const MAX_AGE = 120;
+// Fitnesscentre kræver typisk, at man er mindst 15 år.
+export const MIN_AGE = 15;
 
 const pad = (value) => String(value).padStart(2, '0');
+
+// Den seneste og tidligste fødselsdato, der kan vælges i datovælgeren (lokale datoer).
+//   { minimumDate, maximumDate }
+export function birthDateLimits(today = new Date()) {
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const day = today.getDate();
+  return {
+    minimumDate: new Date(year - MAX_AGE, month, day),
+    maximumDate: new Date(year - MIN_AGE, month, day),
+  };
+}
+
+// Dato fra datovælgeren → 'YYYY-MM-DD' (brugerens lokale dato, ikke UTC).
+export function dateToBirthDate(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+// 'YYYY-MM-DD' → lokal Date til datovælgeren. Uden fødselsdato: 25 år før i dag, så
+// datovælgeren starter et sted, hvor de fleste brugere hurtigt finder deres år.
+export function birthDateToDate(birthDate, today = new Date()) {
+  if (!birthDate) return new Date(today.getFullYear() - 25, 0, 1);
+  const [year, month, day] = birthDate.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
 
 // Accepterer dansk format (12-03-1997, 12.3.1997, 12/03/1997) og ISO (1997-03-12).
 // Returnerer { birthDate: 'YYYY-MM-DD' } eller { error } med en dansk fejltekst.
@@ -72,6 +99,10 @@ export function parseBirthDate(text, today = new Date()) {
   const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   if (date.getTime() > todayUtc) return { error: 'Fødselsdatoen kan ikke ligge i fremtiden.' };
   if (today.getFullYear() - year > MAX_AGE) return { error: 'Tjek årstallet.' };
+  const latestUtc = Date.UTC(today.getFullYear() - MIN_AGE, today.getMonth(), today.getDate());
+  if (date.getTime() > latestUtc) {
+    return { error: `Du skal være mindst ${MIN_AGE} år for at bruge GymFinder.` };
+  }
 
   return { birthDate: `${year}-${pad(month)}-${pad(day)}` };
 }

@@ -240,6 +240,29 @@ const GlobalStyle = StyleSheet.create({
     color: colors.primary,
     marginBottom: 10,
   },
+  // Adressefeltet: forslagene under feltet, mens brugeren skriver.
+  addressSuggestions: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    marginTop: -6,
+    marginBottom: 10,
+    backgroundColor: colors.background,
+  },
+  addressSuggestion: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.muted,
+  },
+  addressSuggestionText: {
+    color: colors.text,
+  },
+  // Fødselsdato: datovælgeren på iPhone, under feltet.
+  datePickerBox: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   loadingScreen: {
     flex: 1,
     alignItems: 'center',

@@ -13,7 +13,9 @@ import {
 import { auth } from '../database/firebase';
 import { describeAccount } from '../data/account';
 import { clearLocalFavorites } from './Favorites';
+import { clearFilterSettings } from './FilterSettings';
 import { clearLocalPriceAlerts } from './PriceAlerts';
+import { clearLocalRonnieUsage } from './RonnieUsage';
 import { clearLocalUserData } from './UserProfile';
 
 // Konto kræver Firebase. Uden .env gemmes brugerdata kun på telefonen.
@@ -59,7 +61,13 @@ export async function createAccount({ name, email, password }) {
   const { user } = current?.isAnonymous
     ? await linkWithCredential(current, EmailAuthProvider.credential(email, password))
     : await createUserWithEmailAndPassword(firebaseAuth, email, password);
-  await updateProfile(user, { displayName: name });
+  // Her er kontoen allerede oprettet. Fejler navnet (fx forbindelsen ryger), må det ikke ligne,
+  // at det hele fejlede: et nyt forsøg ville så melde "e-mail i brug". Navnet er kun til visning.
+  try {
+    await updateProfile(user, { displayName: name });
+  } catch (error) {
+    console.warn('Gem navn på kontoen fejlede:', error);
+  }
   return user;
 }
 
@@ -70,14 +78,17 @@ export async function logIn({ email, password }) {
   return user;
 }
 
-// Log ud: den lokale kopi af brugerens data (profil, Favoritter og Prisalarm) slettes først, så den næste, der bruger telefonen,
-// starter forfra med onboarding. Data på kontoen bliver liggende i databasen.
+// Log ud: den lokale kopi af brugerens data (profil, Favoritter, Prisalarm, Filtre og
+// Ronnie-tælleren) slettes først, så den næste, der bruger telefonen, starter forfra med
+// onboarding og sine egne Præferencer. Data på kontoen bliver liggende i databasen.
 // Bagefter oprettes automatisk en ny anonym bruger (startAnonymousSession).
 export async function logOut(uid) {
   const firebaseAuth = requireAuth();
   await clearLocalUserData(uid);
   await clearLocalFavorites(uid);
   await clearLocalPriceAlerts(uid);
+  await clearFilterSettings();
+  await clearLocalRonnieUsage(uid);
   await signOut(firebaseAuth);
 }
 

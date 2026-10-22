@@ -44,6 +44,24 @@ describe('accountErrorMessage', () => {
   test('ukendte fejl får en generel tekst', () => {
     expect(accountErrorMessage(new Error('boom'))).toBe('Noget gik galt. Prøv igen om lidt.');
   });
+
+  test('en ukendt fejlkode vises, så fejlen kan findes', () => {
+    expect(accountErrorMessage({ code: 'auth/noget-nyt' })).toBe(
+      'Noget gik galt (fejlkode: auth/noget-nyt). Prøv igen om lidt.',
+    );
+  });
+
+  test.each([
+    ['auth/operation-not-allowed', 'Email/Password'],
+    ['auth/admin-restricted-operation', 'Nye konti er slået fra'],
+    ['auth/configuration-not-found', 'Login er ikke sat op'],
+    ['auth/invalid-api-key', 'sat forkert op'],
+    ['auth/api-key-not-valid.-please-pass-a-valid-api-key.', 'sat forkert op'],
+    ['auth/password-does-not-meet-requirements', 'opfylder ikke kravene'],
+    ['PERMISSION_DENIED', 'Databasen afviste'],
+  ])('opsætningsfejlen %s forklares på dansk', (code, text) => {
+    expect(accountErrorMessage({ code })).toContain(text);
+  });
 });
 
 describe('describeAccount', () => {

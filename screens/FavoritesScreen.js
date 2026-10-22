@@ -9,6 +9,7 @@ import InfoButton from '../components/InfoButton';
 import PriceAlertEditor from '../components/PriceAlertEditor';
 import RonnieMascot from '../components/RonnieMascot';
 import { formatKr } from '../data/centerDetail';
+import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoriteRows } from '../data/favorites';
 import { changeCurrentMembershipThreshold, newCurrentMembershipAlert } from '../data/priceAlerts';
 import { UserContext } from '../data/UserContext';
@@ -104,7 +105,8 @@ export default function FavoritesScreen({ navigation }) {
           try {
             await favorites.removeFavorite(row.centerId);
           } catch (error) {
-            Alert.alert('Kunne ikke fjerne Favorit', error.message);
+            console.error('Fjern Favorit fejlede:', error);
+            Alert.alert('Kunne ikke fjerne Favorit', TRY_AGAIN_MESSAGE);
           }
         },
       },

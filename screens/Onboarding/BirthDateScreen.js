@@ -9,6 +9,7 @@ import { UserContext } from '../../data/UserContext';
 export default function BirthDateScreen({ navigation }) {
   const { user, setUser } = useContext(UserContext);
 
+  // null betyder, at datoen er rettet til noget ugyldigt. Så spærres "Næste" igen.
   const handleBirthDate = (birthDate) => {
     setUser((current) => ({ ...current, birthDate }));
   };

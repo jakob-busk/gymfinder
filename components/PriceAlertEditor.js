@@ -3,6 +3,7 @@ import { Alert, Text, TextInput, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { describePriceAlert, parseThreshold, thresholdText } from '../data/priceAlerts';
 
 const FIELD_LABELS = {
@@ -36,7 +37,8 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
       await onSave(result.thresholdPerMonth);
       setEditing(false);
     } catch (saveError) {
-      Alert.alert('Kunne ikke gemme Prisalarm', saveError.message);
+      console.error('Gem Prisalarm fejlede:', saveError);
+      Alert.alert('Kunne ikke gemme Prisalarm', TRY_AGAIN_MESSAGE);
     } finally {
       setSaving(false);
     }
@@ -46,7 +48,8 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
     try {
       await onDisable();
     } catch (disableError) {
-      Alert.alert('Kunne ikke slå Prisalarm fra', disableError.message);
+      console.error('Slå Prisalarm fra fejlede:', disableError);
+      Alert.alert('Kunne ikke slå Prisalarm fra', TRY_AGAIN_MESSAGE);
     }
   };
 

@@ -1,5 +1,8 @@
 import {
   EMPTY_PREFERENCES,
+  birthDateLimits,
+  birthDateToDate,
+  dateToBirthDate,
   formatBirthDate,
   formatPlaceAddress,
   fromStoredProfile,
@@ -39,12 +42,31 @@ describe('fødselsdato', () => {
     ['29-02-2001', 'Den dato findes ikke.'],
     ['23-10-2026', 'Fødselsdatoen kan ikke ligge i fremtiden.'],
     ['01-01-1890', 'Tjek årstallet.'],
+    ['22-10-2026', 'Du skal være mindst 15 år for at bruge GymFinder.'],
+    ['23-10-2011', 'Du skal være mindst 15 år for at bruge GymFinder.'],
   ])('%s afvises', (text, error) => {
     expect(parseBirthDate(text, TODAY)).toEqual({ error });
   });
 
-  test('i dag er en gyldig fødselsdato', () => {
-    expect(parseBirthDate('22-10-2026', TODAY)).toEqual({ birthDate: '2026-10-22' });
+  test('man må være præcis 15 år', () => {
+    expect(parseBirthDate('22-10-2011', TODAY)).toEqual({ birthDate: '2011-10-22' });
+  });
+
+  test('datovælgeren går fra 120 til 15 år før i dag', () => {
+    expect(birthDateLimits(TODAY)).toEqual({
+      minimumDate: new Date(1906, 9, 22),
+      maximumDate: new Date(2011, 9, 22),
+    });
+  });
+
+  test('datovælgerens dato gemmes som den lokale dato', () => {
+    expect(dateToBirthDate(new Date(1997, 2, 12, 23, 30))).toBe('1997-03-12');
+    expect(dateToBirthDate(new Date(2001, 11, 1, 0, 5))).toBe('2001-12-01');
+  });
+
+  test('fødselsdatoen åbner datovælgeren på den dato, ellers 25 år tilbage', () => {
+    expect(birthDateToDate('1997-03-12', TODAY)).toEqual(new Date(1997, 2, 12));
+    expect(birthDateToDate(null, TODAY)).toEqual(new Date(2001, 0, 1));
   });
 
   test('vises i dansk format', () => {

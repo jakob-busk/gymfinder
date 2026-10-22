@@ -3,6 +3,7 @@ import { Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
+import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoritePrice } from '../data/favorites';
 import { UserContext } from '../data/UserContext';
 
@@ -22,7 +23,8 @@ export default function FavoriteButton({ center, chain }) {
     try {
       await favorites.toggleFavorite(center.id, price);
     } catch (error) {
-      Alert.alert('Kunne ikke gemme Favorit', error.message);
+      console.error('Gem Favorit fejlede:', error);
+      Alert.alert('Kunne ikke gemme Favorit', TRY_AGAIN_MESSAGE);
     }
   };
 

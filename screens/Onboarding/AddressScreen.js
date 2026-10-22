@@ -9,8 +9,14 @@ import { UserContext } from '../../data/UserContext';
 export default function AddressScreen({ navigation }) {
   const { user, setUser } = useContext(UserContext);
 
-  const handleAddress = ({ address, location }) => {
-    setUser((current) => ({ ...current, address, location }));
+  // null betyder, at brugeren har rettet teksten uden at vælge en ny adresse. Så nulstilles
+  // adressen, og "Næste" spærres, indtil en adresse er valgt igen.
+  const handleAddress = (place) => {
+    setUser((current) => ({
+      ...current,
+      address: place?.address ?? '',
+      location: place?.location ?? null,
+    }));
   };
 
   return (
