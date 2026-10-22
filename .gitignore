@@ -30,8 +30,13 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (kun .env.example committes)
+.env
 .env*.local
+
+# Firebase service account-nøgler
+*service-account*.json
+*serviceAccount*.json
 
 # typescript
 *.tsbuildinfo

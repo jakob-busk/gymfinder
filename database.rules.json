@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "Chains": {
+      ".read": true,
+      ".write": false
+    },
+    "Centers": {
+      ".read": true,
+      ".write": false
+    },
+    "Offers": {
+      ".read": true,
+      ".write": false
+    },
+    "Users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
