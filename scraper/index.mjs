@@ -3,6 +3,7 @@
 //   npm run scrape                      henter alle Kæder og skriver til databasen
 //   npm run scrape:dry-run              live-kørsel uden skrivning; laver kun en rapport
 //   node index.mjs --dry-run --limit 3  live-kørsel med kun 3 Centre pr. Kæde (få kald)
+//   ... --chain puregym                 kun én Kæde
 //   ... --report <fil>                  gemmer rapporten som Markdown
 //
 // Exit-kode 1, hvis en Kæde blev sprunget over eller jobbet fejlede, så kørslen bliver rød.
@@ -20,6 +21,7 @@ function argValue(name) {
 const dryRun = process.argv.includes('--dry-run');
 const limit = Number(argValue('--limit')) || undefined;
 const reportFile = argValue('--report');
+const onlyChain = argValue('--chain');
 const hasDatabase = Boolean(
   process.env.FIREBASE_SERVICE_ACCOUNT && process.env.FIREBASE_DATABASE_URL,
 );
@@ -34,10 +36,13 @@ try {
 
   const today = todayInDenmark();
   const http = createHttpClient();
-  const scrapers = CHAIN_SCRAPERS.map(({ chainId, scrape }) => ({
-    chainId,
-    scrape: () => scrape({ http, today, limit }),
-  }));
+  const scrapers = CHAIN_SCRAPERS.filter(({ chainId }) => !onlyChain || chainId === onlyChain).map(
+    ({ chainId, scrape }) => ({
+      chainId,
+      scrape: () => scrape({ http, today, limit }),
+    }),
+  );
+  if (scrapers.length === 0) throw new Error(`Ukendt Kæde: ${onlyChain}`);
 
   const db = connection?.db ?? null;
   const { ok, report } = await runNightlyJob({ db, scrapers, today, dryRun });
