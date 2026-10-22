@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, Text, TextInput, View } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import {
   birthDateLimits,
@@ -88,6 +88,7 @@ export default function BirthDateField({ birthDate, onChange }) {
         onChangeText={handleChangeText}
         onBlur={handleBlur}
         placeholder="DD-MM-ÅÅÅÅ"
+        placeholderTextColor={colors.muted}
         keyboardType="numbers-and-punctuation"
         maxLength={10}
         accessibilityLabel="Fødselsdato"

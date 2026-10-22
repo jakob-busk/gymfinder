@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import {
+  DarkTheme,
+  NavigationContainer,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
 
 import FindScreen from './screens/FindScreen';
 import AskRonnieScreen from './screens/AskRonnieScreen';
@@ -33,7 +38,9 @@ import {
 } from './services/Notifications';
 import { useCurrentMembershipAlert } from './services/PriceAlerts';
 import { useUserProfile } from './services/UserProfile';
-import GlobalStyle, { colors } from './styles/GlobalStyle';
+import ProfileEditScreen from './screens/ProfileEditScreen';
+import GlobalStyle, { colors, fonts } from './styles/GlobalStyle';
+import { APP_FONTS } from './styles/fonts';
 
 // Prisalarmer vises også som notifikation, mens appen er åben.
 initNotificationHandler();
@@ -52,7 +59,35 @@ const TAB_ICONS = {
   Profil: 'person',
 };
 
-const stackHeader = { headerTintColor: colors.primary, headerBackTitle: 'Tilbage' };
+// Topbjælken på stack-skærme: mørk, titel i Audiowide og pink tilbage-pil.
+const stackHeader = {
+  headerBackTitle: 'Tilbage',
+  headerTintColor: colors.primary,
+  headerStyle: { backgroundColor: colors.headerBackground },
+  headerTitleStyle: { fontFamily: fonts.display, color: colors.headerText },
+  headerShadowVisible: false,
+  contentStyle: { backgroundColor: colors.background },
+};
+
+// React Navigations mørke tema med appens farver og skrift (fanebjælke, baggrunde).
+const navigationFont = (fontFamily) => ({ fontFamily, fontWeight: 'normal' });
+const navigationTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.surface,
+    text: colors.text,
+    border: colors.border,
+  },
+  fonts: {
+    regular: navigationFont(fonts.body),
+    medium: navigationFont(fonts.medium),
+    bold: navigationFont(fonts.bold),
+    heavy: navigationFont(fonts.bold),
+  },
+};
 
 // Profil-fanen er en stack, så Om os og Log ind åbnes oven på Profil, og fanebjælken bliver
 // stående.
@@ -66,6 +101,7 @@ function ProfileTab() {
       />
       <ProfileStack.Screen name="Om os" component={AboutScreen} />
       <ProfileStack.Screen name="Log ind" component={LoginScreen} />
+      <ProfileStack.Screen name="Redigér profil" component={ProfileEditScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -76,9 +112,18 @@ function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name={TAB_ICONS[route.name]} color={color} size={size} />
+        tabBarActiveTintColor: colors.tabActive,
+        tabBarInactiveTintColor: colors.tabInactive,
+        tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.border },
+        tabBarLabelStyle: { fontFamily: fonts.semibold },
+        tabBarIcon: ({ color, size, focused }) => (
+          <Ionicons
+            name={TAB_ICONS[route.name]}
+            color={color}
+            size={size}
+            // Den aktive fane gløder.
+            style={focused ? GlobalStyle.tabIconGlow : null}
+          />
         ),
       })}
     >
@@ -96,7 +141,11 @@ function Tabs() {
 function onboardingScreens() {
   return (
     <>
-      <RootStack.Screen name="Velkomst" component={WelcomeScreen} options={{ headerShown: false }} />
+      <RootStack.Screen
+        name="Velkomst"
+        component={WelcomeScreen}
+        options={{ headerShown: false }}
+      />
       <RootStack.Screen name="Log ind" component={LoginScreen} />
       <RootStack.Screen name="Adresse" component={AddressScreen} />
       <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
@@ -133,6 +182,10 @@ export default function App() {
   // Firebase-brugeren (anonym ved første opstart). null, hvis Firebase ikke er sat op.
   // Ved log ind skifter uid'et, og profilen for kontoen hentes.
   const { authUser, account, authReady, createAccount, logIn, logOut } = useAuthSession();
+
+  // Appens skrifter (Inter, Audiowide og Monoton). Appen venter, til de er hentet.
+  const [fontsLoaded, fontError] = useFonts(APP_FONTS);
+
   // Profil, Favoritter og Prisalarm venter alle på login og følger samme uid.
   const session = { authReady, uid: authUser?.uid ?? null };
 
@@ -197,7 +250,7 @@ export default function App() {
     ],
   );
 
-  if (loading) {
+  if (loading || (!fontsLoaded && !fontError)) {
     return (
       <SafeAreaProvider>
         <View style={GlobalStyle.loadingScreen}>
@@ -212,13 +265,14 @@ export default function App() {
       <UserContext.Provider value={userContext}>
         <NavigationContainer
           ref={navigationRef}
+          theme={navigationTheme}
           onReady={() => setNavigationReady(true)}
         >
           <RootStack.Navigator screenOptions={stackHeader}>
             {showOnboarding ? onboardingScreens() : appScreens()}
           </RootStack.Navigator>
         </NavigationContainer>
-        <StatusBar style="auto" />
+        <StatusBar style="light" />
       </UserContext.Provider>
     </SafeAreaProvider>
   );

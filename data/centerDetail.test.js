@@ -6,6 +6,7 @@ import {
   offerSignupUrl,
   partnerInfo,
   priceBreakdown,
+  receiptLines,
   signupLink,
   turns30Notice,
 } from './centerDetail';
@@ -357,7 +358,10 @@ describe('signupLink', () => {
     const partner = {
       signupUrl: 'https://kaede.dk/basis',
       partnerPrice: 200,
-      partnerSignupUrl: { under30: 'https://kaede.dk/makker-u30', over30: 'https://kaede.dk/makker' },
+      partnerSignupUrl: {
+        under30: 'https://kaede.dk/makker-u30',
+        over30: 'https://kaede.dk/makker',
+      },
     };
     expect(offerSignupUrl(bestOfferFor(partner, { discountProfile: ['partner'] }))).toBe(
       'https://kaede.dk/makker',
@@ -382,5 +386,33 @@ describe('formatKr', () => {
     expect(formatKr(1234)).toBe('1.234 kr');
     expect(formatKr(224.5)).toBe('224,50 kr');
     expect(formatKr(0)).toBe('0 kr');
+  });
+});
+
+describe('receiptLines', () => {
+  test('samler måneder i træk med samme pris og slags pris på én linje', () => {
+    const best = bestOfferFor({
+      standardPrice: 299,
+      campaignPrice: 99,
+      campaignMonths: 2,
+      signupFee: 60,
+      adminFee: 15,
+    });
+    const lines = receiptLines(priceBreakdown(best).rows);
+
+    expect(lines).toEqual([
+      { key: '1', label: 'Måned 1–2', kindLabel: 'Kampagnepris', total: 114, share: 1, count: 2 },
+      { key: '3', label: 'Måned 3–12', kindLabel: 'Standardpris', total: 314, share: 1, count: 10 },
+    ]);
+  });
+
+  test('den delvise 13. betaling ved 30 dage står alene', () => {
+    const best = bestOfferFor({ standardPrice: 240, billingIntervalDays: 30 });
+    const lines = receiptLines(priceBreakdown(best).rows);
+
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatchObject({ label: 'Betaling 1–12', count: 12, total: 240 });
+    expect(lines[1]).toMatchObject({ label: 'Betaling 13', count: 1 });
+    expect(lines[1].share).toBeCloseTo(1 / 6, 4);
   });
 });

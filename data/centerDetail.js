@@ -70,6 +70,8 @@ export function priceBreakdown(pricedOffer) {
     const share = i < fullPayments ? 1 : paymentsPerYear - fullPayments;
     return {
       key: String(period.month),
+      unit: monthly ? 'Måned' : 'Betaling',
+      number: period.month,
       label: `${monthly ? 'Måned' : 'Betaling'} ${period.month}`,
       kindLabel: kindLabel(period, pricedOffer, ageMatters),
       price: period.price,
@@ -90,6 +92,42 @@ export function priceBreakdown(pricedOffer) {
     yearTotal,
     honestYearlyPrice: yearTotal / MONTHS_IN_YEAR,
   };
+}
+
+// Linjerne på kvitteringen på Centerdetalje: måneder i træk med samme pris og samme slags pris
+// samles på én linje, fx "Måned 2–12 · Standardpris · 11 × 279 kr". En betaling, der kun delvist
+// falder inden for året (ved betaling pr. 30 dage), står altid alene.
+// rows er priceBreakdown(...).rows. Returnerer [{ key, label, kindLabel, total, count, share }].
+export function receiptLines(rows) {
+  const lines = [];
+  for (const row of rows) {
+    const last = lines[lines.length - 1];
+    const joins =
+      last &&
+      row.share === 1 &&
+      last.share === 1 &&
+      last.total === row.total &&
+      last.kindLabel === row.kindLabel;
+    if (joins) {
+      last.to = row.number;
+      last.count += 1;
+    } else {
+      lines.push({
+        key: row.key,
+        unit: row.unit,
+        from: row.number,
+        to: row.number,
+        kindLabel: row.kindLabel,
+        total: row.total,
+        share: row.share,
+        count: 1,
+      });
+    }
+  }
+  return lines.map(({ unit, from, to, ...line }) => ({
+    ...line,
+    label: `${unit} ${from === to ? from : `${from}–${to}`}`,
+  }));
 }
 
 // Advarsel, når brugeren fylder 30 inden for året, og prisen for den billigste mulighed stiger

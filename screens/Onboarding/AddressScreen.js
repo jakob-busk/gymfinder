@@ -3,6 +3,7 @@ import { useContext } from 'react';
 
 import OnboardingStep from '../../components/OnboardingStep';
 import AddressField from '../../components/AddressField';
+import RonnieHint from '../../components/RonnieHint';
 import { UserContext } from '../../data/UserContext';
 
 // Trin 1 (krævet): adresse eller "Brug min placering". Distance til Centrene regnes herfra.
@@ -27,6 +28,9 @@ export default function AddressScreen({ navigation }) {
       onNext={() => navigation.navigate('Fødselsdato')}
       nextDisabled={user.location == null}
     >
+      <RonnieHint pose="peger">
+        Jeg bruger kun din adresse til at regne afstanden til Centrene ud.
+      </RonnieHint>
       <AddressField address={user.address} location={user.location} onChange={handleAddress} />
     </OnboardingStep>
   );

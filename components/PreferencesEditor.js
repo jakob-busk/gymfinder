@@ -1,7 +1,9 @@
 import { Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
-import ButtonComponent from './ButtonComponent';
+import Chip from './Chip';
+import SegmentedControl from './SegmentedControl';
+import ToggleRow from './ToggleRow';
 import { MACHINES } from '../data/const';
 import { MAX_DISTANCE_OPTIONS } from '../data/userProfile';
 
@@ -14,7 +16,9 @@ const PREFERENCE_TOGGLES = [
   { key: 'noBinding', label: 'Ingen binding' },
 ];
 
-// Redigér Præferencer: maskiner, faciliteter, Abonnementstype, Binding og maks. afstand.
+const DISTANCE_OPTIONS = MAX_DISTANCE_OPTIONS.map((km) => ({ value: km, label: `${km} km` }));
+
+// Redigér Præferencer: maks. afstand, krav (kontakter) og maskiner (mærker).
 // onChange får hele det nye Præference-objekt.
 export default function PreferencesEditor({ preferences, onChange }) {
   const update = (field, value) => onChange({ ...preferences, [field]: value });
@@ -28,38 +32,35 @@ export default function PreferencesEditor({ preferences, onChange }) {
 
   return (
     <View>
-      <Text style={GlobalStyle.fieldLabel}>Maskiner</Text>
-      <View style={GlobalStyle.sortRow}>
+      <Text style={GlobalStyle.groupTitle}>Maks. afstand</Text>
+      <SegmentedControl
+        options={DISTANCE_OPTIONS}
+        value={preferences.maxDistanceKm}
+        onChange={(km) => update('maxDistanceKm', km)}
+      />
+
+      <Text style={GlobalStyle.groupTitle}>Krav</Text>
+      <View style={GlobalStyle.group}>
+        {PREFERENCE_TOGGLES.map(({ key, label }, index) => (
+          <View key={key}>
+            {index > 0 && <View style={GlobalStyle.groupDivider} />}
+            <ToggleRow
+              label={label}
+              value={Boolean(preferences[key])}
+              onChange={(value) => update(key, value)}
+            />
+          </View>
+        ))}
+      </View>
+
+      <Text style={GlobalStyle.groupTitle}>Maskiner</Text>
+      <View style={GlobalStyle.chipRow}>
         {MACHINES.map((machine) => (
-          <ButtonComponent
+          <Chip
             key={machine}
-            title={machine}
-            type={preferences.machines.includes(machine) ? 'primary' : 'secondary'}
+            label={machine}
+            selected={preferences.machines.includes(machine)}
             onPress={() => toggleMachine(machine)}
-          />
-        ))}
-      </View>
-
-      <Text style={GlobalStyle.fieldLabel}>Krav</Text>
-      <View style={GlobalStyle.sortRow}>
-        {PREFERENCE_TOGGLES.map(({ key, label }) => (
-          <ButtonComponent
-            key={key}
-            title={label}
-            type={preferences[key] ? 'primary' : 'secondary'}
-            onPress={() => update(key, !preferences[key])}
-          />
-        ))}
-      </View>
-
-      <Text style={GlobalStyle.fieldLabel}>Maks. afstand</Text>
-      <View style={GlobalStyle.sortRow}>
-        {MAX_DISTANCE_OPTIONS.map((km) => (
-          <ButtonComponent
-            key={km}
-            title={`${km} km`}
-            type={preferences.maxDistanceKm === km ? 'primary' : 'secondary'}
-            onPress={() => update('maxDistanceKm', km)}
           />
         ))}
       </View>

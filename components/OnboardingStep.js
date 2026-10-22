@@ -25,7 +25,10 @@ export default function OnboardingStep({
         style={GlobalStyle.screen}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={GlobalStyle.stepContent} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={GlobalStyle.stepContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {step != null && (
             <Text style={GlobalStyle.stepCounter}>
               Trin {step} af {ONBOARDING_STEP_COUNT}
@@ -37,8 +40,13 @@ export default function OnboardingStep({
         </ScrollView>
 
         <View style={GlobalStyle.stepFooter}>
-          {onSkip && <ButtonComponent title="Spring over" onPress={onSkip} />}
-          <ButtonComponent title={nextLabel} type="primary" onPress={onNext} disabled={nextDisabled} />
+          {onSkip && <ButtonComponent title="Spring over" type="text" onPress={onSkip} />}
+          <ButtonComponent
+            title={nextLabel}
+            type="primary"
+            onPress={onNext}
+            disabled={nextDisabled}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

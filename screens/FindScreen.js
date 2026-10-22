@@ -1,6 +1,6 @@
 // Ansvarlig: Christian
 import { useContext, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
@@ -8,7 +8,10 @@ import ButtonComponent from '../components/ButtonComponent';
 import CenterCard from '../components/CenterCard';
 import CenterMap from '../components/CenterMap';
 import CenterPinInfo from '../components/CenterPinInfo';
+import MapLegend from '../components/MapLegend';
+import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
+import ScreenHeader from '../components/ScreenHeader';
 import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
 import { loosenFilterSuggestions } from '../data/findView';
@@ -17,8 +20,9 @@ import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
-// Find: kort med brugerens placering og en pin pr. Center, og en liste over de samme Centre
-// nedenunder. Begge viser præcis resultatet fra Matchning, så Filtre (fra Filtre-skærmen, med
+// Find: kort med brugerens placering og en pin pr. Center, sortering og Filtre under kortet, og
+// en liste over de samme Centre nedenunder. Kortet ligger øverst i listen, så det scroller væk,
+// og listen får hele skærmen, når man scroller ned. Begge viser præcis resultatet fra Matchning, så Filtre (fra Filtre-skærmen, med
 // Præferencerne som udgangspunkt, inkl. maks. afstand) og sortering slår ens igennem. Filtre og
 // sortering huskes efter genstart. Anbefalet er lavest Ærlig årspris blandt sikre match og
 // fremhæves både på kortet og i listen.
@@ -26,9 +30,7 @@ export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [selectedId, setSelectedId] = useState(null);
   const centerData = useCenterData();
-  const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(
-    user.preferences,
-  );
+  const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(user.preferences);
   const loading = centerData.loading || filterSettings.loading;
   const filterCount = activeFilterCount(filters);
 
@@ -45,17 +47,29 @@ export default function FindScreen({ navigation }) {
   const selected = centers.find((match) => match.center.id === selectedId);
 
   const showDetails = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
+  const filterLabel = filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre';
+  const legendText =
+    `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
+    (filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : '');
 
-  const renderList = () => {
-    if (loading) return <ActivityIndicator />;
+  // Mens Centrene hentes, eller når ingen matcher: Ronnie i stedet for listen.
+  const renderStatus = () => {
+    if (loading) {
+      return (
+        <View style={GlobalStyle.paragraph}>
+          <RonnieHint pose="sveder/løfter">Ronnie finder Centre tæt på dig …</RonnieHint>
+          <ActivityIndicator />
+        </View>
+      );
+    }
 
     if (centers.length === 0) {
       const suggestions = loosenFilterSuggestions(filters, {
         hasLocation: Boolean(user.location),
       });
       return (
-        <ScrollView contentContainerStyle={GlobalStyle.emptyState}>
-          <RonnieMascot size="small" />
+        <View style={GlobalStyle.emptyState}>
+          <RonnieMascot size="small" pose="trækker på skuldrene" />
           <Text style={GlobalStyle.centeredText}>
             Ronnie kunne ikke finde nogen Centre, der matcher dine Filtre. Prøv at løsne dem:
           </Text>
@@ -71,41 +85,20 @@ export default function FindScreen({ navigation }) {
               onPress={() => navigation.navigate('Filtre')}
             />
           </View>
-        </ScrollView>
+        </View>
       );
     }
-
-    return (
-      <FlatList
-        data={centers}
-        keyExtractor={(match) => match.center.id}
-        renderItem={({ item }) => (
-          <CenterCard
-            match={item}
-            isRecommended={item.center.id === recommendedId}
-            onShowDetails={() => showDetails(item.center.id)}
-          />
-        )}
-      />
-    );
+    return null;
   };
 
-  return (
-    <SafeAreaView style={GlobalStyle.container} edges={['top']}>
-      <View style={GlobalStyle.titleRow}>
-        <Text style={GlobalStyle.title}>Find</Text>
-        <ButtonComponent
-          title={filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre'}
-          onPress={() => navigation.navigate('Filtre')}
-        />
-      </View>
+  const notice = centerData.source === 'sample' && !centerData.loading && (
+    <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
+  );
 
-      {centerData.source === 'sample' && !centerData.loading && (
-        <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
-      )}
-
-      <SortPicker sortBy={sortBy} onChange={setSortBy} />
-
+  // Kort, forklaring og sortering/Filtre øverst i listen.
+  const listHeader = (
+    <>
+      {notice}
       <View style={GlobalStyle.mapBox}>
         <CenterMap
           userLocation={user.location}
@@ -122,13 +115,39 @@ export default function FindScreen({ navigation }) {
           />
         )}
       </View>
-      <Text style={GlobalStyle.mapLegend}>
-        {centers.length} {centers.length === 1 ? 'Center' : 'Centre'}
-        {filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : ''}
-        {user.address ? ` fra ${user.address}` : ''} · Blå = dig · Orange = Anbefalet
-      </Text>
+      <MapLegend text={legendText} />
 
-      {renderList()}
+      {/* Sortering og Filtre samlet i én række under kortet. */}
+      <View style={GlobalStyle.toolbar}>
+        <SortPicker sortBy={sortBy} onChange={setSortBy} />
+        <ButtonComponent
+          title={filterLabel}
+          type="ghost"
+          icon="options-outline"
+          onPress={() => navigation.navigate('Filtre')}
+        />
+      </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={GlobalStyle.container} edges={['top']}>
+      <ScreenHeader logo />
+      <FlatList
+        data={centers}
+        keyExtractor={(match) => match.center.id}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={renderStatus()}
+        contentContainerStyle={GlobalStyle.scrollEnd}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <CenterCard
+            match={item}
+            isRecommended={item.center.id === recommendedId}
+            onShowDetails={() => showDetails(item.center.id)}
+          />
+        )}
+      />
     </SafeAreaView>
   );
 }

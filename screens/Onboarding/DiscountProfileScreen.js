@@ -3,6 +3,7 @@ import { useContext } from 'react';
 
 import OnboardingStep from '../../components/OnboardingStep';
 import DiscountProfilePicker from '../../components/DiscountProfilePicker';
+import RonnieHint from '../../components/RonnieHint';
 import { UserContext } from '../../data/UserContext';
 
 // Trin 3 (valgfrit): Rabatprofil. Rabatterne for de valgte Rabatgrupper regnes med i
@@ -27,10 +28,11 @@ export default function DiscountProfileScreen({ navigation }) {
       onNext={() => navigation.navigate('Medlemskab')}
       onSkip={handleSkip}
     >
-      <DiscountProfilePicker
-        discountProfile={user.discountProfile}
-        onChange={setDiscountProfile}
-      />
+      <RonnieHint pose="tænker">
+        Studerende, senior eller vil du træne med en makker? Så kan du ofte spare flere hundrede
+        kroner om året.
+      </RonnieHint>
+      <DiscountProfilePicker discountProfile={user.discountProfile} onChange={setDiscountProfile} />
     </OnboardingStep>
   );
 }

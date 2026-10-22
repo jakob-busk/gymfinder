@@ -1,42 +1,65 @@
 // Ansvarlig: Jakob
 import { useContext } from 'react';
 import { Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle from '../../styles/GlobalStyle';
+import GlobalStyle, { brand, colors } from '../../styles/GlobalStyle';
+import BrandLogo from '../../components/BrandLogo';
 import ButtonComponent from '../../components/ButtonComponent';
-import OnboardingStep from '../../components/OnboardingStep';
 import RonnieMascot from '../../components/RonnieMascot';
 import { UserContext } from '../../data/UserContext';
 
-// Velkomst: Ronnie fortæller kort, hvad GymFinder kan, før brugeren giver oplysninger.
-// Har brugeren allerede en konto (fx på en ny telefon), kan onboarding springes over med Log ind.
+// Det GymFinder kan, i tre korte punkter.
+const POINTS = [
+  ['pricetag', 'Én ærlig årspris med alle gebyrer, kampagner og dine Rabatter regnet med'],
+  ['map', 'Centre tæt på dig, sorteret efter hvad du reelt betaler'],
+  ['notifications', 'Besked, når et Center bliver billigere'],
+];
+
+// Velkomst: logo, Ronnie stort på nattehimlen, hvad GymFinder kan, og "Kom i gang" før brugeren
+// giver oplysninger. Har brugeren allerede en konto (fx på en ny telefon), kan onboarding
+// springes over med Log ind.
 export default function WelcomeScreen({ navigation }) {
   const { accountsAvailable } = useContext(UserContext);
 
   return (
-    <OnboardingStep
-      title="Hej, jeg er Ronnie!"
-      nextLabel="Kom i gang"
-      onNext={() => navigation.navigate('Adresse')}
-    >
-      <RonnieMascot />
-      <Text style={GlobalStyle.stepIntro}>
-        Jeg hjælper dig med at finde det Center, der reelt er billigst for netop dig. Jeg regner
-        oprettelsesgebyr, admingebyr, kampagner og dine Rabatter med og viser det hele som én Ærlig
-        årspris.
-      </Text>
-      <Text style={GlobalStyle.stepIntro}>
-        Først skal jeg vide, hvor du bor, og hvornår du er født. Resten kan du springe over og
-        tilføje senere under Profil.
-      </Text>
-      {accountsAvailable && (
-        <View style={GlobalStyle.accountActions}>
-          <ButtonComponent
-            title="Jeg har allerede en konto"
-            onPress={() => navigation.navigate('Log ind')}
-          />
+    <LinearGradient colors={brand.heroGradient} style={GlobalStyle.fill}>
+      <SafeAreaView style={GlobalStyle.welcome} edges={['top', 'bottom']}>
+        <View style={GlobalStyle.welcomeTop}>
+          <BrandLogo size="large" />
+          <Text style={GlobalStyle.welcomeTagline}>
+            Fitnesscentret, der reelt er billigst for dig.
+          </Text>
         </View>
-      )}
-    </OnboardingStep>
+
+        <RonnieMascot size="large" pose="vinker" />
+
+        <View style={GlobalStyle.welcomePoints}>
+          {POINTS.map(([icon, text]) => (
+            <View key={icon} style={GlobalStyle.welcomePoint}>
+              <Ionicons name={icon} size={18} color={colors.accentText} />
+              <Text style={GlobalStyle.welcomePointText}>{text}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={GlobalStyle.welcomeActions}>
+          <ButtonComponent
+            title="Kom i gang"
+            type="primary"
+            onPress={() => navigation.navigate('Adresse')}
+          />
+          {accountsAvailable && (
+            <ButtonComponent
+              title="Jeg har allerede en konto"
+              type="text"
+              onPress={() => navigation.navigate('Log ind')}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

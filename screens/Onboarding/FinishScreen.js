@@ -36,7 +36,7 @@ export default function FinishScreen() {
       nextLabel="Fortsæt anonymt"
       onNext={() => completeOnboarding()}
     >
-      <RonnieMascot size="small" />
+      <RonnieMascot pose="jubler" />
       {accountsAvailable && (
         <>
           <Text style={GlobalStyle.stepIntro}>
