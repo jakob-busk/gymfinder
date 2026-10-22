@@ -121,6 +121,12 @@ describe('Forespørgsel til OpenAI', () => {
     expect(request.messages[0].role).toBe('system');
   });
 
+  test('Ronnie kan slå Centre op andre steder i landet med et værktøj', () => {
+    expect(request.tools.map((tool) => tool.function.name)).toEqual(['find_centre_naer_sted']);
+    expect(request.tool_choice).toBe('auto');
+    expect(systemPrompt).toContain('find_centre_naer_sted');
+  });
+
   test('system-prompten har kun GymFinders Centre med personlig Ærlig årspris og gebyrer', () => {
     expect(centersInPrompt.map((c) => c.id)).toEqual(['kaede-1', 'kaede-2']);
     // Studierabat 50 %: (120 + 12 × (150 + 10)) / 12 = 170 kr/md.

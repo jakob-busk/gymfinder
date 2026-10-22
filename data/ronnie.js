@@ -2,11 +2,19 @@
 // hvordan svaret læses, og hvilke fejltekster brugeren ser). Ren JavaScript uden React Native
 // eller Expo, så det kan testes uden netværk. Selve kaldet ligger i services/Ronnie.js.
 //
-// En besked i samtalen: { role: 'user' | 'assistant', content, centerIds? }
+// En besked i samtalen: { role: 'user' | 'assistant', content, centerIds?, lookup? }
 //   centerIds = de Centre, Ronnie nævner i et svar ("Se [center] →"-knapperne).
+//   lookup = Ronnies opslag af andre steder før svaret (se runRonnieLookups):
+//            { toolMessages: [OpenAI-beskeder], matches: [CenterMatch] }.
 
 import { matchCenters } from './matchning.js';
 import { buildRonnieSystemPrompt, ronnieResponseFormat } from './ronniePrompt.js';
+import {
+  findCentersNearPlace,
+  lookupToolContent,
+  placeNameFromToolCall,
+  ronnieLookupTool,
+} from './ronnieLookup.js';
 
 export const RONNIE_MODEL = 'gpt-4o-mini';
 
@@ -18,7 +26,11 @@ export const RONNIE_SUGGESTIONS = [
   'Hvad er det billigste Center for mig?',
   'Jeg vil have sauna og ingen binding. Hvad passer til mig?',
   'Hvor tæt på mig kan jeg træne billigst med holdtræning?',
+  'Jeg har sommerhus i Hornbæk. Hvor kan jeg træne billigst dér?',
 ];
+
+// Så mange runder med opslag må Ronnie lave, før han skal svare.
+export const RONNIE_MAX_LOOKUP_ROUNDS = 2;
 
 // Det færdige spørgsmål, når man trykker "Spørg Ronnie om dette center" på Centerdetalje.
 export function centerQuestion(centerName) {
@@ -51,33 +63,85 @@ export function ronnieMatches({ centers, chains, user, filters, today, includeCe
 }
 
 // Assistent-beskeder sendes tilbage i samme JSON-form, som Ronnie svarer i, så han holder formatet
-// i opfølgende svar. Hele samtalen sendes med hver gang, så Ronnie husker den.
-function toApiMessage(message) {
-  if (message.role !== 'assistant') return { role: 'user', content: message.content };
-  return {
-    role: 'assistant',
-    content: JSON.stringify({ tekst: message.content, centerIds: message.centerIds ?? [] }),
-  };
+// i opfølgende svar. Hele samtalen sendes med hver gang, så Ronnie husker den, også de Centre,
+// han har slået op andre steder (værktøjskaldene står før svaret, som de gjorde første gang).
+function toApiMessages(message) {
+  if (message.role !== 'assistant') return [{ role: 'user', content: message.content }];
+  return [
+    ...(message.lookup?.toolMessages ?? []),
+    {
+      role: 'assistant',
+      content: JSON.stringify({ tekst: message.content, centerIds: message.centerIds ?? [] }),
+    },
+  ];
 }
 
-// Body til OpenAI's Chat Completions: system-prompt med Centrene og hele samtalen.
-export function buildRonnieRequest({ conversation, matches, user }) {
+// Alle Centre, Ronnie kender: dem fra system-prompten, dem han har slået op tidligere i
+// samtalen, og pendingLookupMatches fra opslag i det svar, han er i gang med.
+function knownCenterIds(matches, conversation = [], pendingLookupMatches = []) {
+  const earlierLookups = conversation.flatMap((message) => message.lookup?.matches ?? []);
+  const all = [...matches, ...earlierLookups, ...pendingLookupMatches];
+  return [...new Set(all.map((match) => match.center.id))];
+}
+
+// Body til OpenAI's Chat Completions: system-prompt med Centrene, hele samtalen og værktøjet til
+// opslag af andre steder. pendingToolMessages er værktøjskald og -svar i det svar, Ronnie er i gang
+// med; allowLookup = false tvinger ham til at svare nu.
+export function buildRonnieRequest({
+  conversation,
+  matches,
+  user,
+  pendingToolMessages = [],
+  pendingLookupMatches = [],
+  allowLookup = true,
+}) {
   return {
     model: RONNIE_MODEL,
     temperature: 0.4,
-    response_format: ronnieResponseFormat(matches.map((match) => match.center.id)),
+    response_format: ronnieResponseFormat(
+      knownCenterIds(matches, conversation, pendingLookupMatches),
+    ),
+    tools: [ronnieLookupTool],
+    tool_choice: allowLookup ? 'auto' : 'none',
     messages: [
       { role: 'system', content: buildRonnieSystemPrompt({ matches, user }) },
-      ...conversation.map(toApiMessage),
+      ...conversation.flatMap(toApiMessages),
+      ...pendingToolMessages,
     ],
   };
 }
 
+// Udfører Ronnies værktøjskald (opslag af Centre nær et stednavn) og returnerer de beskeder, der
+// skal sendes tilbage til OpenAI, samt de fundne Centre. Et kald til et ukendt værktøj eller et
+// opslag, der fejler, giver et svar med en status i stedet for en fejl, så Ronnie kan sige det
+// pænt. lookupInput: { geocode, centers, chains, user, filters, today } (se findCentersNearPlace).
+export async function runRonnieLookups(assistantMessage, lookupInput) {
+  const toolCalls = assistantMessage.tool_calls ?? [];
+  const toolMessages = [
+    { role: 'assistant', content: assistantMessage.content ?? null, tool_calls: toolCalls },
+  ];
+  const matches = [];
+  for (const toolCall of toolCalls) {
+    const result = await findCentersNearPlace({
+      ...lookupInput,
+      placeName: placeNameFromToolCall(toolCall),
+    });
+    matches.push(...result.matches);
+    toolMessages.push({
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: lookupToolContent(result),
+    });
+  }
+  return { toolMessages, matches };
+}
+
 // Læser Ronnies svar ({ tekst, centerIds } som JSON) og returnerer en besked til samtalen.
-// centerIds renses, så kun Centre, Ronnie faktisk kender, giver en "Se [center] →"-knap.
+// centerIds renses, så kun Centre, Ronnie faktisk kender (fra prompten, tidligere opslag i
+// conversation eller opslag i dette svar), giver en "Se [center] →"-knap.
 // Er svaret ikke JSON, vises teksten som den er, uden knapper.
-export function parseRonnieReply(content, matches) {
-  const knownIds = new Set(matches.map((match) => match.center.id));
+export function parseRonnieReply(content, matches, { conversation, lookupMatches } = {}) {
+  const knownIds = new Set(knownCenterIds(matches, conversation, lookupMatches));
   const raw = String(content ?? '').trim();
 
   let parsed = null;
