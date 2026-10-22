@@ -119,3 +119,59 @@ describe('HTTP-klient', () => {
     await assert.rejects(http.postForm('https://loopfitness.dk/a', { a: '1' }), /HTTP 500/);
   });
 });
+
+describe('HTTP-klient: formularer med ekstra headers (PureGym)', () => {
+  const FORM_PAGE = 'https://www.puregym.dk/bliv-medlem/118/medlemskab';
+  const AJAX = `${FORM_PAGE}?ajax_form=1&_wrapper_format=drupal_ajax`;
+
+  // Falsk fetch, der også husker metode og indhold.
+  function recordingFetch(responses) {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, ...options });
+      return responses.shift();
+    };
+    return { fetchImpl, calls };
+  }
+
+  test('sender felterne urlencoded med User-Agent, ekstra headers og sidens cookies', async () => {
+    const { fetchImpl, calls } = recordingFetch([
+      new Response('<form>', { headers: { 'set-cookie': 'SSESS1=abc; path=/; HttpOnly' } }),
+      new Response('[{"command":"settings"}]'),
+    ]);
+    const http = createHttpClient({ fetchImpl, delayMs: 0 });
+
+    await http.getText(FORM_PAGE);
+    const body = await http.postForm(
+      AJAX,
+      {
+        form_id: 'buy_membership_v2_2_step_choose_membership_vp',
+        _triggering_element_value: 'Under 30 år',
+      },
+      { 'X-Requested-With': 'XMLHttpRequest' },
+    );
+
+    assert.equal(body, '[{"command":"settings"}]');
+    const post = calls[1];
+    assert.equal(post.method, 'POST');
+    assert.equal(post.url, AJAX);
+    assert.equal(
+      post.body,
+      'form_id=buy_membership_v2_2_step_choose_membership_vp' +
+        '&_triggering_element_value=Under+30+%C3%A5r',
+    );
+    assert.equal(post.headers['User-Agent'], USER_AGENT);
+    assert.equal(post.headers['X-Requested-With'], 'XMLHttpRequest');
+    assert.match(post.headers['Content-Type'], /^application\/x-www-form-urlencoded/);
+    assert.equal(post.headers.Cookie, 'SSESS1=abc');
+  });
+
+  test('en redirect efter POST følges ikke, men giver en fejl', async () => {
+    const { fetchImpl } = recordingFetch([
+      new Response(null, { status: 302, headers: { location: '/' } }),
+    ]);
+    const http = createHttpClient({ fetchImpl, delayMs: 0 });
+
+    await assert.rejects(http.postForm(AJAX, {}), /HTTP 302/);
+  });
+});
