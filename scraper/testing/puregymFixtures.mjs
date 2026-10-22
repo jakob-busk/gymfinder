@@ -63,6 +63,28 @@ export function withCards(text, replace) {
   });
 }
 
+// Ændrer normalprisen for ét medlemskab uden kampagne (fx "Core") i et ajax-svar: prisen i
+// settings, i det med småt og på det synlige kort.
+export function withStandardPrice(text, name, price) {
+  let productId;
+  let oldPrice;
+  const changed = withAjax(text, (commands) => {
+    const product = Object.values(productsIn(commands)).find((p) => p.name === name);
+    productId = product.id;
+    oldPrice = product.price;
+    product.price = price;
+  });
+  return withCards(changed, (html) => {
+    const cardStart = html.indexOf(`data-product_id="${productId}"`);
+    const cardEnd = html.indexOf('id="membership-cards"', cardStart);
+    const card = html.slice(cardStart, cardEnd === -1 ? undefined : cardEnd);
+    const newCard = card
+      .replace(`card__price__title">${oldPrice}<`, `card__price__title">${price}<`)
+      .replace(`medlemskabet er ${oldPrice},-`, `medlemskabet er ${price},-`);
+    return html.replace(card, newCard);
+  });
+}
+
 // URL eller POST-nøgle → svar for en hel PureGym-kørsel: centerliste, prisliste og for hvert
 // Center formularsiden og et ajax-svar pr. Aldersgruppe.
 export function puregymRoutes() {
