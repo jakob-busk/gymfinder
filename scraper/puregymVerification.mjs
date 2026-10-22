@@ -106,19 +106,25 @@ export function compareCenter({ listed, center, responses, centerPageHtml }) {
       });
     });
 
-    // Scraperen gemmer den højeste af de to Aldersgruppers Kampagnepris (se buildOffers).
-    const campaignPrices = visible
-      .filter((card) => card && card.currentPrice < card.standardPrice)
-      .map((card) => card.currentPrice);
-    const websiteCampaign = campaignPrices.length === 2 ? Math.max(...campaignPrices) : null;
-    if (offer.campaignPrice != null || websiteCampaign != null) {
+    // Scraperen gemmer Kampagneprisen pr. Aldersgruppe (ét tal, hvis de er ens; se buildOffers).
+    const onCampaign = visible.map((card) =>
+      card && card.currentPrice < card.standardPrice ? card.currentPrice : null,
+    );
+    const hasCampaign = onCampaign.every((price) => price != null);
+    AGE_GROUPS.forEach((ageGroup, i) => {
+      const scraper =
+        offer.campaignPrice == null || typeof offer.campaignPrice === 'number'
+          ? offer.campaignPrice
+          : offer.campaignPrice[ageGroup];
+      const website = hasCampaign ? onCampaign[i] : null;
+      if (scraper == null && website == null) return;
       checks.push({
-        what: `${offer.name} Kampagnepris (højeste af de to)`,
-        scraper: offer.campaignPrice,
-        website: websiteCampaign,
-        ok: offer.campaignPrice === websiteCampaign,
+        what: `${offer.name} ${AGE_LABELS[ageGroup]} Kampagnepris (kr/md)`,
+        scraper,
+        website,
+        ok: scraper === website,
       });
-    }
+    });
   }
 
   // Et synligt priskort, som scraperen ikke har, er en fejl. Undtagelsen er et medlemskab, der

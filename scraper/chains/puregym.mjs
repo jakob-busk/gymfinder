@@ -321,10 +321,10 @@ function campaignOf(membership) {
 // Slår de to Aldersgruppers medlemskaber sammen til Tilbud for ét Center.
 // fees = { signupFee, adminFee } fra prislisten. Resultat: { offers, warnings }.
 //
-// Kampagneprisen er forskellig for under 30 og 30+ (fx 25 % af hver sin Standardpris), men et
-// Tilbud har kun én Kampagnepris. Den højeste af de to bruges, så Ærlig årspris hellere bliver
-// lidt for høj end for lav. Kampagnen tages kun med, hvis begge Aldersgrupper har den med samme
-// slutdato; ellers ville den ene Aldersgruppe få en pris, PureGym ikke tilbyder den.
+// Kampagneprisen er forskellig for under 30 og 30+ (fx 25 % af hver sin Standardpris), så den
+// gemmes pr. Aldersgruppe ({ under30, over30 }); er de ens, gemmes ét tal. Kampagnen tages kun
+// med, hvis begge Aldersgrupper har den med samme slutdato; ellers ville den ene Aldersgruppe få
+// en pris, PureGym ikke tilbyder den.
 export function buildOffers({ center, byAgeGroup, fees, today }) {
   const warnings = [];
   const byName = new Map();
@@ -368,7 +368,10 @@ export function buildOffers({ center, byAgeGroup, fees, today }) {
         const months = wholeMonthsUntil(today, young.endDate);
         if (months > 0) {
           campaign = {
-            price: Math.max(young.price, old.price),
+            price:
+              young.price === old.price
+                ? young.price
+                : { under30: young.price, over30: old.price },
             months,
             endDate: young.endDate,
             text: old.text ?? young.text,

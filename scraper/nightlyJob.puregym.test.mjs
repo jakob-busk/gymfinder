@@ -115,7 +115,7 @@ describe('normal kørsel med PureGym', () => {
       name: 'Unlimited',
       subscriptionType: 'Landsdækkende',
       standardPrice: { under30: 429, over30: 479 },
-      campaignPrice: 359.25,
+      campaignPrice: { under30: 321.75, over30: 359.25 },
       campaignMonths: 1,
       campaignEndDate: '2026-11-30',
       campaignText: 'INTROPRIS: Spar 25% frem til 30. november 2026',
@@ -145,7 +145,7 @@ describe('normal kørsel med PureGym', () => {
     const markdown = formatReport(report);
     assert.match(markdown, /## puregym: OK/);
     const row =
-      '| PureGym Kbh Ø., Århusgade | Unlimited | 429 / 479 | 359.25 kr i 1 md. | 99 | 0 md. |';
+      '| PureGym Kbh Ø., Århusgade | Unlimited | 429 / 479 | 321.75 / 359.25 kr i 1 md. | 99 | 0 md. |';
     assert.ok(markdown.includes(row));
     assert.ok(markdown.includes('- Advarsel: puregym-107: Core og Hold findes kun for 30+'));
   });
@@ -175,10 +175,31 @@ describe('normal kørsel med PureGym', () => {
 
     test('uden Rabat: Core til Standardpris plus 99 kr i Oprettelsesgebyr', async () => {
       const best = await priceFor(AARHUSGADE, { birthDate: '2000-01-01', discountProfile: [] });
-      // (99 + 12 × 349) / 12 = 357,25. Unlimited med intropris: (99 + 359,25 + 11 × 429) / 12.
+      // (99 + 12 × 349) / 12 = 357,25. Unlimited med intropris for under 30:
+      // (99 + 321,75 + 11 × 429) / 12 = 428,31.
       assert.equal(best.offer.name, 'Core');
       assert.equal(round(best.honestYearlyPrice), 357.25);
       assert.equal(best.yearlyOption.kind, 'standard');
+    });
+
+    test('introprisen pr. Aldersgruppe: under 30 og 30+ får hver deres Kampagnepris', async () => {
+      const unlimitedFor = async (birthDate) => {
+        const { chains, centers } = await readBack();
+        const result = matchCenters({
+          centers,
+          chains,
+          user: { currentMembership: null, birthDate, discountProfile: [] },
+          filters: {},
+          location: { latitude: 55.6761, longitude: 12.5683 },
+          today: NIGHT_1,
+        });
+        const center = result.centers.find((entry) => entry.center.id === AARHUSGADE);
+        return center.offers.find((priced) => priced.offer.name === 'Unlimited');
+      };
+      // Under 30: (99 + 321,75 + 11 × 429) / 12 = 428,31. 30+: (99 + 359,25 + 11 × 479) / 12 =
+      // 477,27.
+      assert.equal(round((await unlimitedFor('2000-01-01')).honestYearlyPrice), 428.31);
+      assert.equal(round((await unlimitedFor('1980-01-01')).honestYearlyPrice), 477.27);
     });
 
     test('Ældre Sagen: satsen afhænger af medlemskabet og giver gratis oprettelse', async () => {

@@ -289,8 +289,8 @@ describe('hele PureGym-kørslen (falsk HTTP med gemte svar)', () => {
 
     const signupUrl = 'https://www.puregym.dk/bliv-medlem/45/medlemskab';
     const fees = { signupFee: 99, adminFee: 0, bindingMonths: 0, signupUrl };
-    const intro = (price) => ({
-      campaignPrice: price,
+    const intro = (under30, over30) => ({
+      campaignPrice: { under30, over30 },
       campaignMonths: 1,
       campaignEndDate: '2026-11-30',
       campaignText: INTRO_TEXT,
@@ -310,7 +310,7 @@ describe('hele PureGym-kørslen (falsk HTTP med gemte svar)', () => {
           name: 'Unlimited',
           subscriptionType: 'Landsdækkende',
           standardPrice: { under30: 429, over30: 479 },
-          ...intro(359.25),
+          ...intro(321.75, 359.25),
           ...fees,
         },
         {
@@ -318,7 +318,7 @@ describe('hele PureGym-kørslen (falsk HTTP med gemte svar)', () => {
           name: 'Plus',
           subscriptionType: 'Landsdækkende',
           standardPrice: { under30: 329, over30: 379 },
-          ...intro(284.25),
+          ...intro(246.75, 284.25),
           ...fees,
         },
         {
@@ -360,11 +360,11 @@ describe('hele PureGym-kørslen (falsk HTTP med gemte svar)', () => {
     });
   });
 
-  test('intropris: den højeste af de to Aldersgruppers Kampagnepris bruges', async () => {
+  test('intropris: begge Aldersgruppers Kampagnepris gemmes', async () => {
     // Under 30 betaler 321,75 og 30+ 359,25 for Unlimited i Århusgade frem til 30/11.
     const { centers } = await run().result;
     const unlimited = centers[1].offers.find((offer) => offer.name === 'Unlimited');
-    assert.equal(unlimited.campaignPrice, 359.25);
+    assert.deepEqual(unlimited.campaignPrice, { under30: 321.75, over30: 359.25 });
     assert.equal(unlimited.campaignMonths, 1);
     assert.equal(unlimited.campaignEndDate, '2026-11-30');
   });

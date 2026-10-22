@@ -2,8 +2,8 @@
 // nat-jobbet for Centrets Kæde, så brugere med en Prisalarm på Centret (eller på Nuværende
 // medlemskab) får en rigtig push. Køres med demoPriceDrop.mjs, aldrig af nat-jobbet.
 //
-// Alle Centrets Tilbud sænkes med samme beløb (Standardpris, Kampagnepris og Makkerpris), men
-// højst 30 %. Så holder næste nats rigtige pris sig inden for sanity-reglen om højst ±50 % på
+// Alle Centrets Tilbud sænkes med samme beløb (Standardpris, Kampagnepris og Makkerpris med
+// kampagne), men højst 30 %. Så holder næste nats rigtige pris sig inden for sanity-reglen om højst ±50 % på
 // én nat, og nat-jobbet sætter de rigtige priser tilbage af sig selv. Prishistorikken røres ikke.
 
 import { CENTER_DATA_PATHS, fromDatabase } from '../data/centerData.js';
@@ -30,6 +30,9 @@ export function lowerOfferPrices(offer, amount) {
   const lowered = { ...offer, standardPrice: lowerPrice(offer.standardPrice, amount) };
   if (offer.campaignPrice != null) lowered.campaignPrice = lowerPrice(offer.campaignPrice, amount);
   if (offer.partnerPrice != null) lowered.partnerPrice = lowerPrice(offer.partnerPrice, amount);
+  if (offer.partnerCampaignPrice != null) {
+    lowered.partnerCampaignPrice = lowerPrice(offer.partnerCampaignPrice, amount);
+  }
   return lowered;
 }
 

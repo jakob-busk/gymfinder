@@ -79,7 +79,13 @@ describe('stikprøve mod puregym.dk', () => {
         { what: 'Unlimited under 30 (kr/md)', scraper: 429, website: 429, ok: true },
         { what: 'Unlimited 30+ (kr/md)', scraper: 479, website: 479, ok: true },
         {
-          what: 'Unlimited Kampagnepris (højeste af de to)',
+          what: 'Unlimited under 30 Kampagnepris (kr/md)',
+          scraper: 321.75,
+          website: 321.75,
+          ok: true,
+        },
+        {
+          what: 'Unlimited 30+ Kampagnepris (kr/md)',
           scraper: 359.25,
           website: 359.25,
           ok: true,
