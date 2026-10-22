@@ -35,6 +35,7 @@ Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorag
 | `Chains/<chainId>` | Kæde med Rabatter |
 | `Centers/<centerId>` | Center: Kæde, adresse, placering, faciliteter (ja/nej/ukendt), maskiner, tilmeldingslink |
 | `Offers/<centerId>/<offerId>` | Tilbud i Centret med priser, gebyrer og Binding |
+| `PriceHistory/<centerId>/<offerId>/<dato>` | Prishistorik pr. Tilbud pr. dag (kun scraperen læser og skriver) |
 | `Users/<uid>` | Brugerens egne data |
 | `Users/<uid>/profile` | Profil: adresse og placering, fødselsdato, Rabatprofil, Nuværende medlemskab, Præferencer og hvornår onboarding blev gennemført |
 
@@ -49,7 +50,7 @@ Oversættelsen mellem databasen og Matchning ligger i `data/centerData.js`. Data
 
 Reglerne lægges op ved at indsætte filens indhold under Realtime Database → Regler i konsollen eller med `firebase deploy --only database`.
 
-**Seed af centerdata.** `scraper/seed.mjs` lægger de håndindtastede Kæder, Centre og Tilbud i databasen. Hver Kæde, hvert Center og hvert Centers Tilbud overskrives på sin egen sti i én samlet opdatering, så scriptet kan køres flere gange med samme resultat. Brugerdata røres ikke.
+**Seed af centerdata.** `scraper/seed.mjs` lægger de håndindtastede Kæder, Centre og Tilbud i databasen. Kæder, som den natlige scraper har overtaget (i dag SATS), springes over. Hver Kæde, hvert Center og hvert Centers Tilbud overskrives på sin egen sti i én samlet opdatering, så scriptet kan køres flere gange med samme resultat. Brugerdata røres ikke.
 1. Kopiér `scraper/.env.example` til `scraper/.env`, og indsæt service account-JSON'en (Projektindstillinger → Service accounts → Generate new private key) og database-URL'en. Nøglefilen må aldrig committes.
 2. Kør:
 
@@ -64,6 +65,41 @@ npm run seed           # skriver til databasen
 Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre, Anbefalet og sortering), oversættelsen af centerdata til og fra databasen (`data/centerData.js`), brugerprofilen (`data/userProfile.js` og `services/UserProfile.js`: fødselsdato, månedspris, gem/hent med lokal kopi og hvornår onboarding vises), Firebase-konfigurationen og sikkerhedsreglerne testes med Jest via jest-expo. Testene bruger ikke netværk:
 
 npm test
+
+## Natlig scraper
+**Ansvarlig:** Jakob
+
+`scraper/` er et selvstændigt Node-projekt (Node 22, ingen Expo og ingen AI), der henter rigtige Centre og Tilbud fra kædernes hjemmesider og skriver dem til Realtime Database med firebase-admin. I dag scrapes SATS; de øvrige Kæder bruger håndindtastede data, indtil deres parser har bestået alle tre testlag.
+
+**Hvornår.** GitHub Actions (`.github/workflows/scraper.yml`) kører hver nat kl. 02:17 UTC (03:17 dansk vintertid) og kan startes manuelt under Actions → Natlig scraper → Run workflow, evt. som tør kørsel. Testene køres før hver kørsel. Rapporten står i jobbets oversigt og som artefakt.
+
+**Secrets** (Settings → Secrets and variables → Actions):
+- `FIREBASE_SERVICE_ACCOUNT`: hele service account-JSON'en på én linje
+- `FIREBASE_DATABASE_URL`: database-URL'en
+
+**Høflighed.** Ærlig User-Agent, ét kald ad gangen og 2,5 sekunders pause mellem kaldene. SATS koster ca. 32 kald pr. nat: centerlisten, én side pr. Center og tre checkout-sider til gebyr og kampagne.
+
+**Regler.**
+- Et Tilbud skrives kun, hvis prisen ligger mellem 50 og 2.000 kr/md, Centrets koordinater ligger i Danmark, de påkrævede felter er udfyldt, Kampagneprisen er lavere end Standardprisen, og Standardprisen højst har ændret sig ±50 % siden sidste nat. Ellers beholdes de gamle data, og fejlen logges.
+- Giver en Kæde 0 Centre, eller fejler mere end 20 %, springes hele Kæden over: de gamle data beholdes, der laves ingen prisændringer (og dermed ingen alarmer), og jobbet bliver rødt.
+- Et Tilbud eller Center, der forsvinder fra hjemmesiden, beholdes med sit "sidst set" (`lastSeen`) og tæller `missingNights` op. Efter 3 nætter fjernes det.
+- Alt skrives i én samlet opdatering, inkl. prishistorik pr. Tilbud pr. dag.
+
+**Kør lokalt** (fra `scraper/`, nøgler i `scraper/.env` som ved seed):
+
+```
+npm install
+npm test                                  # parser, sanity-regler og nat-job (ingen netværk)
+npm run scrape:dry-run -- --limit 3       # live-kørsel uden skrivning, kun 3 Centre
+npm run scrape:dry-run -- --report r.md   # hele live-kørslen med rapport, intet skrives
+npm run verify                            # stikprøve: 3 tilfældige Centre mod hjemmesiden
+npm run scrape                            # skriver til databasen
+```
+
+**Tre testlag.** En Kæde er først "færdig", når alle tre er grønne:
+1. `npm test`: SATS-parseren mod gemte, trimmede svar fra sats.dk (`scraper/fixtures/sats/`) med præcist forventede Centre og Tilbud, sanity-reglerne og nat-jobbet end-to-end med en falsk database (normal kørsel, sanity-fejl, kæde-fejl, forsvundet 1/2/3 nætter).
+2. Live-kørsel uden skrivning, der laver en rapport.
+3. Stikprøve-bevis i `docs/verifikation-sats.md`: tre tilfældige Centre, hvor scraperens tal sammenlignes med de priser og den adresse, en besøgende ser på siden. Køres igen, hver gang parseren ændres.
 
 ## Skærme
 Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, Spørg Ronnie, Favoritter og Profil). Centerdetalje og Filtre åbnes som stack oven på fanerne, og Om os åbnes fra Profil.
