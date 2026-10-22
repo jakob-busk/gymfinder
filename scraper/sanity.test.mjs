@@ -135,9 +135,130 @@ describe('Tilbud', () => {
       'Kampagnepris 549 er ikke lavere end Standardpris 549',
     ]);
     assert.deepEqual(offerProblems({ ...validOffer, campaignPrice: -1 }), [
+      'Kampagnepris -1 kr/md ligger uden for 0–2000 kr/md',
+    ]);
+    assert.deepEqual(offerProblems({ ...validOffer, campaignPrice: 'gratis' }), [
       'Kampagnepris er ikke et gyldigt tal',
     ]);
     assert.deepEqual(offerProblems({ ...validOffer, campaignPrice: null }), []);
+  });
+
+  test('Kampagnepris skal ligge mellem 0 og 2.000 kr/md', () => {
+    const expensive = withPrice(2500, { campaignPrice: 2001 });
+    assert.deepEqual(offerProblems(expensive), [
+      'Standardpris (single) 2500 kr/md ligger uden for 50–2000 kr/md',
+      'Kampagnepris 2001 kr/md ligger uden for 0–2000 kr/md',
+    ]);
+    // 0 kr er en gyldig kampagne, og 2.000 kr er lige på grænsen.
+    assert.deepEqual(offerProblems({ ...validOffer, campaignPrice: 0 }), []);
+    assert.deepEqual(offerProblems(withPrice(2000, { campaignPrice: 1999 })), []);
+  });
+
+  test('Kampagnepris pr. Aldersgruppe tjekkes mod hver sin Standardpris', () => {
+    const ok = withPrice({ under30: 429, over30: 479 }, {
+      campaignPrice: { under30: 321.75, over30: 359.25 },
+    });
+    assert.deepEqual(offerProblems(ok), []);
+    // 30+-kampagnen (450) er lavere end 30+-prisen, selvom den er over under 30-prisen (429).
+    const overLowest = withPrice({ under30: 429, over30: 479 }, {
+      campaignPrice: { under30: 321.75, over30: 450 },
+    });
+    assert.deepEqual(offerProblems(overLowest), []);
+    const notLower = withPrice({ under30: 429, over30: 479 }, {
+      campaignPrice: { under30: 429, over30: 2100 },
+    });
+    assert.deepEqual(offerProblems(notLower), [
+      'Kampagnepris (over30) 2100 kr/md ligger uden for 0–2000 kr/md',
+    ]);
+    const equal = withPrice({ under30: 429, over30: 479 }, {
+      campaignPrice: { under30: 429, over30: 300 },
+    });
+    assert.deepEqual(offerProblems(equal), [
+      'Kampagnepris (under30) 429 er ikke lavere end Standardpris 429',
+    ]);
+    assert.deepEqual(offerProblems({ ...validOffer, campaignPrice: { under30: 100 } }), [
+      'Kampagnepris mangler for over30',
+    ]);
+  });
+
+  test('Kampagnepris må højst ændre sig ±50 % på én nat, hvis den fandtes i går', () => {
+    const offer = (campaignPrice) => withPrice(549, { campaignPrice });
+    assert.deepEqual(offerProblems(offer(150), offer(100)), []);
+    assert.deepEqual(offerProblems(offer(151), offer(100)), [
+      'Kampagnepris ændret 51 % på én nat (100 → 151 kr/md)',
+    ]);
+    assert.deepEqual(offerProblems(offer(49), offer(100)), [
+      'Kampagnepris ændret -51 % på én nat (100 → 49 kr/md)',
+    ]);
+    // Ingen falske alarmer: en ny kampagne, en kampagne der slutter, og en gratis kampagne i går.
+    assert.deepEqual(offerProblems(offer(99), offer(null)), []);
+    assert.deepEqual(offerProblems(offer(null), offer(100)), []);
+    assert.deepEqual(offerProblems(offer(99), offer(0)), []);
+    // Fra ét tal til pr. Aldersgruppe sammenlignes hver Aldersgruppe med tallet.
+    assert.deepEqual(offerProblems(offer({ under30: 120, over30: 140 }), offer(100)), []);
+    assert.deepEqual(offerProblems(offer({ under30: 120, over30: 160 }), offer(100)), [
+      'Kampagnepris (over30) ændret 60 % på én nat (100 → 160 kr/md)',
+    ]);
+  });
+
+  test('Makkerpris skal ligge mellem 50 og 2.000 kr/md', () => {
+    assert.deepEqual(offerProblems({ ...validOffer, partnerPrice: 50 }), []);
+    assert.deepEqual(offerProblems({ ...validOffer, partnerPrice: 2000 }), []);
+    assert.deepEqual(offerProblems({ ...validOffer, partnerPrice: 49 }), [
+      'Makkerpris 49 kr/md ligger uden for 50–2000 kr/md',
+    ]);
+    const tooHigh = { ...validOffer, partnerPrice: { under30: 280, over30: 2001 } };
+    assert.deepEqual(offerProblems(tooHigh), [
+      'Makkerpris (over30) 2001 kr/md ligger uden for 50–2000 kr/md',
+    ]);
+    assert.deepEqual(offerProblems({ ...validOffer, partnerPrice: { over30: 300 } }), [
+      'Makkerpris mangler for under30',
+    ]);
+    assert.deepEqual(offerProblems({ ...validOffer, partnerPrice: null }), []);
+  });
+
+  test('Makkerpris må højst ændre sig ±50 % på én nat', () => {
+    const offer = (partnerPrice) => ({ ...validOffer, partnerPrice });
+    assert.deepEqual(offerProblems(offer(300), offer(200)), []);
+    assert.deepEqual(offerProblems(offer(100), offer(200)), []);
+    assert.deepEqual(offerProblems(offer(301), offer(200)), [
+      'Makkerpris ændret 51 % på én nat (200 → 301 kr/md)',
+    ]);
+    // Ingen falske alarmer for en ny Makkerpris eller en, der forsvinder.
+    assert.deepEqual(offerProblems(offer(300), offer(null)), []);
+    assert.deepEqual(offerProblems(offer(null), offer(300)), []);
+    assert.deepEqual(
+      offerProblems(offer({ under30: 280, over30: 300 }), offer({ under30: 280, over30: 300 })),
+      [],
+    );
+  });
+
+  test('Makkerprisens kampagne skal ligge mellem 0 og 2.000 kr/md og være lavere', () => {
+    const offer = (partnerCampaignPrice) => ({
+      ...validOffer,
+      partnerPrice: 300,
+      partnerCampaignPrice,
+      partnerCampaignMonths: 2,
+    });
+    assert.deepEqual(offerProblems(offer(0)), []);
+    assert.deepEqual(offerProblems(offer(-5)), [
+      'Makkerprisens kampagne -5 kr/md ligger uden for 0–2000 kr/md',
+    ]);
+    assert.deepEqual(offerProblems(offer(300)), [
+      'Makkerprisens kampagne 300 er ikke lavere end Makkerpris 300',
+    ]);
+  });
+
+  test('et gyldigt Tilbud med alle prisfelter giver ingen falske alarmer', () => {
+    const offer = withPrice({ under30: 360, over30: 400 }, {
+      campaignPrice: { under30: 189, over30: 209 },
+      partnerPrice: { under30: 280, over30: 300 },
+      partnerCampaignPrice: 50,
+      partnerCampaignMonths: 2,
+      partnerSignupFee: 80,
+    });
+    assert.deepEqual(offerProblems(offer), []);
+    assert.deepEqual(offerProblems(offer, offer), []);
   });
 
   test('prisen må højst ændre sig ±50 % på én nat', () => {

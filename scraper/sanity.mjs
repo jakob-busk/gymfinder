@@ -4,7 +4,10 @@
 
 export const PRICE_RANGE = { min: 50, max: 2000 };
 
-// Højst ±50 % ændring af Standardprisen fra én nat til den næste.
+// Kampagnepriser må gerne være 0 kr (fx "træn gratis til 1. december").
+export const CAMPAIGN_PRICE_RANGE = { min: 0, max: 2000 };
+
+// Højst ±50 % ændring af Standardpris, Kampagnepris og Makkerpris fra én nat til den næste.
 export const MAX_NIGHTLY_CHANGE = 0.5;
 
 // Kæden springes over, hvis mere end 20 % af dens Tilbud og Centre fejler.
@@ -43,11 +46,84 @@ export function isInDenmark({ latitude, longitude }) {
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
 
-// Standardpris er et tal eller { under30, over30 }; giver Aldersgruppernes priser som liste.
+// En pris er et tal eller { under30, over30 }; giver Aldersgruppernes priser som objekt.
 function standardPrices(standardPrice) {
   if (isNumber(standardPrice)) return { single: standardPrice };
   if (standardPrice && typeof standardPrice === 'object') return standardPrice;
   return {};
+}
+
+const AGE_GROUPS = ['under30', 'over30'];
+const formatRange = ({ min, max }) => `${min}–${max} kr/md`;
+
+// Prisen for en Aldersgruppe: { single } gælder alle.
+const priceFor = (prices, ageGroup) => prices[ageGroup] ?? prices.single;
+
+// Tjekker en pris (tal eller { under30, over30 }): et tal pr. Aldersgruppe inden for `range`.
+// Er prisen pr. Aldersgruppe, skal begge være der.
+function priceProblems(label, value, range) {
+  const problems = [];
+  const prices = standardPrices(value);
+  if (Object.keys(prices).length === 0) return [`${label} er ikke et gyldigt tal`];
+  if (!isNumber(value)) {
+    for (const ageGroup of AGE_GROUPS) {
+      if (!(ageGroup in prices)) problems.push(`${label} mangler for ${ageGroup}`);
+    }
+  }
+  for (const [ageGroup, price] of Object.entries(prices)) {
+    const name = ageGroup === 'single' ? label : `${label} (${ageGroup})`;
+    if (!isNumber(price)) {
+      problems.push(`${name} er ikke et gyldigt tal`);
+    } else if (price < range.min || price > range.max) {
+      problems.push(`${name} ${price} kr/md ligger uden for ${formatRange(range)}`);
+    }
+  }
+  return problems;
+}
+
+// Højst ±50 % ændring fra sidste nat pr. Aldersgruppe. En gammel pris uden Aldersgrupper
+// sammenlignes med begge nye priser og omvendt. Ingen pris i går (eller 0 kr) = intet at
+// sammenligne med.
+function nightlyChangeProblems(label, value, previousValue) {
+  if (value == null || previousValue == null) return [];
+  const before = standardPrices(previousValue);
+  const problems = [];
+  for (const [ageGroup, price] of Object.entries(standardPrices(value))) {
+    const old =
+      ageGroup === 'single'
+        ? (before.single ?? before.over30)
+        : (before[ageGroup] ?? before.single ?? before.over30);
+    if (!isNumber(price) || !isNumber(old) || old === 0) continue;
+    const change = (price - old) / old;
+    if (Math.abs(change) > MAX_NIGHTLY_CHANGE) {
+      const name = ageGroup === 'single' ? label : `${label} (${ageGroup})`;
+      problems.push(
+        `${name} ændret ${Math.round(change * 100)} % på én nat (${old} → ${price} kr/md)`,
+      );
+    }
+  }
+  return problems;
+}
+
+// En kampagnepris skal være lavere end prisen, den er kampagne for, i hver Aldersgruppe.
+function notLowerProblems(label, value, baseLabel, base) {
+  const campaign = standardPrices(value);
+  const prices = standardPrices(base);
+  if (isNumber(value)) {
+    const lowest = Math.min(...Object.values(prices).filter(isNumber));
+    return value < lowest ? [] : [`${label} ${value} er ikke lavere end ${baseLabel} ${lowest}`];
+  }
+  const problems = [];
+  for (const ageGroup of AGE_GROUPS) {
+    const price = campaign[ageGroup];
+    const basePrice = priceFor(prices, ageGroup);
+    if (isNumber(price) && isNumber(basePrice) && !(price < basePrice)) {
+      problems.push(
+        `${label} (${ageGroup}) ${price} er ikke lavere end ${baseLabel} ${basePrice}`,
+      );
+    }
+  }
+  return problems;
 }
 
 export function centerProblems(center) {
@@ -96,30 +172,54 @@ export function offerProblems(offer, previous) {
   }
 
   if (offer?.campaignPrice != null) {
-    const lowest = Math.min(...Object.values(prices).filter(isNumber));
-    if (!isNumber(offer.campaignPrice) || offer.campaignPrice < 0) {
-      problems.push('Kampagnepris er ikke et gyldigt tal');
-    } else if (!(offer.campaignPrice < lowest)) {
+    const campaignIssues = priceProblems('Kampagnepris', offer.campaignPrice, CAMPAIGN_PRICE_RANGE);
+    problems.push(...campaignIssues);
+    if (campaignIssues.length === 0) {
       problems.push(
-        `Kampagnepris ${offer.campaignPrice} er ikke lavere end Standardpris ${lowest}`,
+        ...notLowerProblems(
+          'Kampagnepris',
+          offer.campaignPrice,
+          'Standardpris',
+          offer.standardPrice,
+        ),
       );
     }
   }
 
-  if (previous?.standardPrice != null) {
-    const before = standardPrices(previous.standardPrice);
-    for (const [ageGroup, price] of priceEntries) {
-      // Gammel pris uden Aldersgrupper sammenlignes med begge nye priser og omvendt.
-      const old = before[ageGroup] ?? before.single ?? before.over30;
-      if (!isNumber(price) || !isNumber(old) || old === 0) continue;
-      const change = (price - old) / old;
-      if (Math.abs(change) > MAX_NIGHTLY_CHANGE) {
-        problems.push(
-          `Standardpris (${ageGroup}) ændret ${Math.round(change * 100)} % på én nat ` +
-            `(${old} → ${price} kr/md)`,
-        );
-      }
+  if (offer?.partnerPrice != null) {
+    problems.push(...priceProblems('Makkerpris', offer.partnerPrice, PRICE_RANGE));
+  }
+
+  if (offer?.partnerCampaignPrice != null) {
+    const partnerCampaignIssues = priceProblems(
+      'Makkerprisens kampagne',
+      offer.partnerCampaignPrice,
+      CAMPAIGN_PRICE_RANGE,
+    );
+    problems.push(...partnerCampaignIssues);
+    if (partnerCampaignIssues.length === 0 && offer.partnerPrice != null) {
+      problems.push(
+        ...notLowerProblems(
+          'Makkerprisens kampagne',
+          offer.partnerCampaignPrice,
+          'Makkerpris',
+          offer.partnerPrice,
+        ),
+      );
     }
+  }
+
+  const partnerSignupFee = offer?.partnerSignupFee;
+  if (partnerSignupFee != null && (!isNumber(partnerSignupFee) || partnerSignupFee < 0)) {
+    problems.push('Oprettelsesgebyr for Træn med en makker er ikke et gyldigt tal');
+  }
+
+  if (previous) {
+    problems.push(
+      ...nightlyChangeProblems('Standardpris', offer?.standardPrice, previous.standardPrice),
+      ...nightlyChangeProblems('Kampagnepris', offer?.campaignPrice, previous.campaignPrice),
+      ...nightlyChangeProblems('Makkerpris', offer?.partnerPrice, previous.partnerPrice),
+    );
   }
 
   return problems;

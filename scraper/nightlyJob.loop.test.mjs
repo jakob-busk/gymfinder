@@ -302,7 +302,7 @@ describe('LOOP sanity- og kædefejl', () => {
       {
         centerId: 'loop-220',
         offerId: 'loop-220-voksen',
-        problems: ['Standardpris (single) ændret 104 % på én nat (289 → 589 kr/md)'],
+        problems: ['Standardpris ændret 104 % på én nat (289 → 589 kr/md)'],
       },
     ]);
     const data = db.snapshot();
