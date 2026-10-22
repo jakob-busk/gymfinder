@@ -70,6 +70,21 @@ npm test
 
 Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil) og Centerdetaljens visningslogik i `data/centerDetail.js` (månedsudregning mod Matchnings Ærlig årspris, 30-års-advarsel, gebyrer, Makkerpris og tilmeldingslink).
 
+Spørg Ronnie testes uden netværk og uden nøgle: hvilke Centre Ronnie kender, system-prompten med personlig Ærlig årspris, at hele samtalen sendes med, læsning af svaret `{ tekst, centerIds }` og fejltekster (`data/ronnie.js`, `data/ronniePrompt.js`), og kaldet med en falsk `fetch` (`services/Ronnie.js`). Selve samtalen med Ronnie testes manuelt.
+
+## Spørg Ronnie
+**Ansvarlig:** Bastian
+
+Ronnie kalder OpenAI (`gpt-4o-mini`) direkte fra appen (`services/Ronnie.js`).
+
+**Opsætning.** Opret en API-nøgle på platform.openai.com, og sæt den i `.env` som `EXPO_PUBLIC_OPENAI_API_KEY` (se `.env.example`). Genstart Expo med `npx expo start -c`. Nøglen ligger aldrig i git. Uden nøgle viser Spørg Ronnie en besked i stedet for chatten, og resten af appen virker som normalt.
+
+**Forbrugsgrænse.** `EXPO_PUBLIC_*`-værdier bliver bygget ind i appen, så nøglen kan findes af den, der har appen. Giv derfor OpenAI-projektet en lav månedlig forbrugsgrænse (Settings → Limits, fx 5 USD), og brug en nøgle, der kun har adgang til det projekt. Når grænsen er nået, siger Ronnie, at han har fået for mange spørgsmål.
+
+**Hvad Ronnie ved.** System-prompten (`data/ronniePrompt.js`) indeholder de 20 nærmeste Centre, der matcher dine Filtre, med din personlige Ærlig årspris for hvert Tilbud fra Matchning, den billigste mulighed for dig (fx Kampagnepris eller Studierabat), Oprettelsesgebyr, Admingebyr, Binding og faciliteter. Spørger man fra Centerdetalje, kommer det Center altid med. Ronnie regner ikke selv priser ud.
+
+**Svarformat.** Ronnie svarer med struktureret JSON, `{ tekst, centerIds }`, og `centerIds` må kun være id'er fra prompten. Hvert id bliver til en "Se [center] →"-knap. Hele samtalen sendes med i hvert kald.
+
 ## Natlig scraper
 **Ansvarlig:** Jakob
 
@@ -111,12 +126,12 @@ Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, S
 - **Onboarding** (`screens/Onboarding/`, kun første gang): velkomst med Ronnie → adresse (geokodes) eller "Brug min placering" → fødselsdato → Rabatprofil → Nuværende medlemskab (egen månedspris og evt. Kæde, eller "Ingen") → Præferencer → gem din profil (konto) eller fortsæt anonymt. Fra velkomsten kan man logge ind med en eksisterende konto i stedet. Adresse og fødselsdato er krævet; resten kan springes over. Afslås adgang til placering, skriver man bare adressen
 
 - **Find**: kort med din egen pin (blå) og en pin pr. Center, og en scrollbar liste over præcis de samme Centre nedenunder. Begge viser resultatet fra Matchning, så kun Centre inden for maks. afstand og dine Filtre vises, og sorteringen (Ærlig årspris, Kvartalspris, pris høj→lav eller afstand) gælder listen. Det Anbefalede Center har en orange pin og et ANBEFALET-mærke. Tryk på en pin viser Kæde, Ærlig årspris, Distance, nøgleord (fx sauna) og "Se mere", der åbner Centerdetalje. Matcher intet, viser Ronnie forslag til at løsne Filtrene. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata. Kortet (`react-native-maps`) kræver ingen API-nøgle i Expo Go
-- **Spørg Ronnie**: chat med Ronnie (pladsholder med Ronnie indtil videre)
+- **Spørg Ronnie**: chat med Ronnie (se [Spørg Ronnie](#spørg-ronnie)). Før første besked vises færdige forslag. Ronnie anbefaler kun Centre fra GymFinder og sammenligner på din Ærlig årspris. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner, som åbner Centerdetalje. Han husker samtalen, så man kan stille opfølgende spørgsmål. Fejl (ingen forbindelse, forbrugsgrænse nået) vises med en forståelig tekst og "Prøv igen"
 - **Favoritter**: gemte Centre og Prisalarmer (pladsholder)
 - **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre. Under Konto kan man gemme sin profil, logge ind eller logge ud
 - **Om os**: kort om GymFinder, åbnes fra Profil
 - **Log ind** (`screens/LoginScreen.js`): log ind med e-mail og adgangskode, fx på en ny telefon. Åbnes fra velkomsten og fra Profil
-- **Centerdetalje**: adresse, Distance, Kæde og faciliteter (Ja/Nej/Ikke oplyst) og alle Centrets Tilbud, også dem dine Filtre ville skjule. Hvert Tilbud viser din Ærlig årspris og Kvartalspris, hvilken mulighed der er billigst for dig (Kampagnepris, en Rabat eller Makkerpris), Oprettelsesgebyr, Admingebyr, Binding og prisudregningen måned for måned, der giver præcis den samme Ærlig årspris som Matchning. Fylder du 30 inden for et år, og stiger prisen derfor, står det med måned. Spar mere-forslag vises, når de kan betale sig, og brugere i Træn med en makker ser Makkerpris pr. person og kædens krav. "Gå til tilmelding" åbner kædens side med et henvisningslink (`utm_source=gymfinder`)
+- **Centerdetalje**: adresse, Distance, Kæde og faciliteter (Ja/Nej/Ikke oplyst) og alle Centrets Tilbud, også dem dine Filtre ville skjule. Hvert Tilbud viser din Ærlig årspris og Kvartalspris, hvilken mulighed der er billigst for dig (Kampagnepris, en Rabat eller Makkerpris), Oprettelsesgebyr, Admingebyr, Binding og prisudregningen måned for måned, der giver præcis den samme Ærlig årspris som Matchning. Fylder du 30 inden for et år, og stiger prisen derfor, står det med måned. Spar mere-forslag vises, når de kan betale sig, og brugere i Træn med en makker ser Makkerpris pr. person og kædens krav. "Gå til tilmelding" åbner kædens side med et henvisningslink (`utm_source=gymfinder`). "Spørg Ronnie om dette center" åbner chatten med et færdigt spørgsmål om Centret
 - **Filtre**: sortering (Ærlig årspris, Kvartalspris, pris høj→lav, afstand) og Filtre til Find: sauna, holdtræning, døgnåbent, adgang til flere centre, ingen Binding, maskiner og maks. afstand. Udgangspunktet er dine Præferencer. Centre, der med sikkerhed ikke opfylder et Filter, skjules; er det ukendt, vises Centret med "Ikke oplyst" (ⓘ) i listen og på pinnen. Filtre og sortering gemmes på telefonen og huskes efter genstart, og Nulstil går tilbage til Præferencerne
 
 Fagord som Ærlig årspris, Kvartalspris, Makkerpris, Træn med en makker, Admingebyr, Binding, Ikke oplyst og Spar mere-forslag har en ⓘ, der åbner en forklaring. Alle forklaringer står ét sted, i `data/explanations.js`, og vises af `components/InfoButton.js`. Ronnie-maskotten ligger i `assets/ronnie.png` med gennemsigtig baggrund.
