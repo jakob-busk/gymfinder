@@ -126,5 +126,5 @@ export async function fetchOffers() {
 ## 12. Test
 
 - Matchning (filtrering, Anbefalet, Ærlig årspris) testes med Jest via `jest-expo`; testfiler hedder `<modul>.test.js` ved siden af modulet. Kør med `npm test`.
-- Scraperen testes med Nodes indbyggede `node:test` + `node:assert/strict`; kør med `node --test scraper/`.
+- Scraperen testes med Nodes indbyggede `node:test` + `node:assert/strict`; kør med `npm test` i `scraper/`.
 - Hold logik, der skal testes, i rene funktioner uden React- eller Firebase-afhængigheder.

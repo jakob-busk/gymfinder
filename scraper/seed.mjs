@@ -6,9 +6,15 @@
 // Idempotent: hver Kæde, hvert Center og hvert Centers Tilbud overskrives på sin egen sti i én
 // samlet opdatering, så scriptet kan køres igen med samme resultat. Andre Kæder og brugerdata
 // røres ikke.
-import { CHAINS, CENTERS } from '../data/const.js';
+//
+// Kæder, som den natlige scraper har overtaget (chains/index.mjs), springes over, så seed aldrig
+// overskriver rigtige priser med håndindtastede.
+import { CHAINS as ALL_CHAINS, CENTERS as ALL_CENTERS } from '../data/const.js';
 import { buildSeedUpdate } from '../data/centerData.js';
+import { SCRAPED_CHAIN_IDS } from './chains/index.mjs';
 
+const CHAINS = ALL_CHAINS.filter((chain) => !SCRAPED_CHAIN_IDS.includes(chain.id));
+const CENTERS = ALL_CENTERS.filter((center) => !SCRAPED_CHAIN_IDS.includes(center.chainId));
 const update = buildSeedUpdate({ chains: CHAINS, centers: CENTERS });
 
 if (process.argv.includes('--dry-run')) {
