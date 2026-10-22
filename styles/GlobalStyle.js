@@ -23,6 +23,9 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
     marginBottom: 12,
   },
+  paragraph: {
+    marginTop: 12,
+  },
   sectionLabel: {
     fontSize: 16,
     fontWeight: 'bold',
