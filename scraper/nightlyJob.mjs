@@ -297,7 +297,8 @@ function offerRow({ center, offer, standardPrice, campaignPrice, campaignMonths,
 
 const KIND_LABELS = { favorite: 'Favorit', currentMembership: 'Nuværende medlemskab' };
 
-function priceAlertLines(priceAlerts) {
+// Prisalarm-delen af rapporten som Markdown-linjer (også brugt af demo-scriptet).
+export function priceAlertLines(priceAlerts) {
   const lines = [
     '## Prisalarmer (push)',
     '',
