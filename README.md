@@ -39,6 +39,8 @@ Ved første opstart oprettes en anonym bruger. Firebase gemmer den i AsyncStorag
 | `Users/<uid>` | Brugerens egne data |
 | `Users/<uid>/profile` | Profil: adresse og placering, fødselsdato, Rabatprofil, Nuværende medlemskab, Præferencer og hvornår onboarding blev gennemført |
 | `Users/<uid>/favorites/<centerId>` | Favorit: hvornår den blev gemt, Ærlig årspris da brugeren sidst fik den at vide (grundlag for prisfald) og evt. Prisalarm med tærskel |
+| `Users/<uid>/currentMembershipAlert` | Prisalarm på Nuværende medlemskab: tærskel, hvornår den blev slået til, og den laveste Ærlig årspris brugeren har fået besked om |
+| `Users/<uid>/pushToken` | Telefonens Expo push-token til Prisalarmer |
 
 **Profil uden Firebase.** Profilen gemmes altid også i AsyncStorage. Uden Firebase-nøgler (eller uden forbindelse) bruges den lokale kopi, så appen husker brugeren efter genstart alligevel. Om onboarding er gennemført, caches i AsyncStorage, så den ikke vises igen på telefonen. Oversættelsen af profilen til og fra databasen ligger i `data/userProfile.js`.
 
@@ -71,7 +73,7 @@ Matchning (`data/matchning.js`: Ærlig årspris, Kvartalspris, Rabatter, Filtre,
 
 npm test
 
-Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil) og Centerdetaljens visningslogik i `data/centerDetail.js` (månedsudregning mod Matchnings Ærlig årspris, 30-års-advarsel, gebyrer, Makkerpris og tilmeldingslink). Favoritter testes i `data/favorites.js` (pris der følges, rækkefølge og formen i databasen) og `services/Favorites.js` (gemt under uid, følger kontoen, lokal kopi uden Firebase, log ud).
+Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil) og Centerdetaljens visningslogik i `data/centerDetail.js` (månedsudregning mod Matchnings Ærlig årspris, 30-års-advarsel, gebyrer, Makkerpris og tilmeldingslink). Favoritter testes i `data/favorites.js` (pris der følges, rækkefølge og formen i databasen) og `services/Favorites.js` (gemt under uid, følger kontoen, lokal kopi uden Firebase, log ud). Prisalarmer testes i `data/priceAlerts.js` (tærskel, fald under/over tærsklen, uden tærskel, Kampagnepris, Nuværende medlemskab inden for maks. afstand, ingen gentagne beskeder og beskedens tekst) og `services/PriceAlerts.js` (alarm og push-token under uid, lokal kopi uden Firebase, log ud). Selve notifikationerne testes manuelt på en telefon.
 
 Spørg Ronnie testes uden netværk og uden nøgle: hvilke Centre Ronnie kender, system-prompten med personlig Ærlig årspris, at hele samtalen sendes med, læsning af svaret `{ tekst, centerIds }` og fejltekster (`data/ronnie.js`, `data/ronniePrompt.js`), og kaldet med en falsk `fetch` (`services/Ronnie.js`). Selve samtalen med Ronnie testes manuelt.
 
@@ -87,6 +89,38 @@ Ronnie kalder OpenAI (`gpt-4o-mini`) direkte fra appen (`services/Ronnie.js`).
 **Hvad Ronnie ved.** System-prompten (`data/ronniePrompt.js`) indeholder de 20 nærmeste Centre, der matcher dine Filtre, med din personlige Ærlig årspris for hvert Tilbud fra Matchning, den billigste mulighed for dig (fx Kampagnepris eller Studierabat), Oprettelsesgebyr, Admingebyr, Binding og faciliteter. Spørger man fra Centerdetalje, kommer det Center altid med. Ronnie regner ikke selv priser ud.
 
 **Svarformat.** Ronnie svarer med struktureret JSON, `{ tekst, centerIds }`, og `centerIds` må kun være id'er fra prompten. Hvert id bliver til en "Se [center] →"-knap. Hele samtalen sendes med i hvert kald.
+
+## Prisalarmer og push
+**Ansvarlig:** Bastian
+
+En Prisalarm kan slås til på hver Favorit og på Nuværende medlemskab (Favoritter-skærmen) med en valgfri tærskel i kr/md. Tærsklen er forudfyldt med 50 kr/md, og et tomt felt betyder ethvert fald. Første gang en alarm slås til, spørger appen om lov til notifikationer, henter et Expo push-token og gemmer det på brugeren. Alarmerne virker også for anonyme brugere, og Favoritter-skærmen viser en note om, at de forsvinder, hvis appen slettes.
+
+**Hvornår en alarm er opfyldt** (`data/priceAlerts.js`, ren JavaScript, som nat-jobbet også kan importere):
+- *Favorit:* Besparelse = den gemte Ærlig årspris (`honestYearlyPrice` på Favoritten) minus den aktuelle. Om faldet skyldes en Kampagnepris eller en lavere Standardpris, er ligegyldigt.
+- *Nuværende medlemskab:* Besparelse = brugerens månedspris minus Ærlig årspris for det billigste Center inden for brugerens maks. afstand (Præferencer). Der gives kun besked igen, når et Tilbud er billigere end det, der sidst gav besked (`notifiedHonestYearlyPrice`).
+- Alarmen udløses, når Besparelsen er mindst tærsklen. Uden tærskel er det enhver Besparelse på mindst 1 kr/md, så ørebeløb fra afrunding ikke tæller.
+- Efter en besked gemmes den nye pris (`honestYearlyPrice` på Favoritten eller `notifiedHonestYearlyPrice`), så samme fald ikke giver besked to gange. Nat-jobbet skal gøre det samme efter en push.
+
+**Datastruktur til nat-jobbet.** Alt ligger under `Users/<uid>` og læses med firebase-admin:
+
+```
+Users/<uid>/
+  profile/currentMembership     { monthlyPrice, chainId? }   Nuværende medlemskab (uden = ingen)
+  profile/discountProfile, birthDate, location, preferences/maxDistanceKm
+  favorites/<centerId>          { addedAt, honestYearlyPrice?, priceAlert?: { thresholdPerMonth? } }
+                                priceAlert udeladt = ingen alarm; thresholdPerMonth udeladt = ethvert fald
+  currentMembershipAlert        { enabledAt, thresholdPerMonth?, notifiedHonestYearlyPrice? }
+                                udeladt = ingen alarm på Nuværende medlemskab
+  pushToken                     { expoPushToken: "ExponentPushToken[...]", platform, updatedAt }
+```
+
+Databasen gemmer ikke `null`, så et udeladt felt betyder `null`. Brug `fromStoredFavorites` og `fromStoredCurrentMembershipAlert` til at læse, `favoriteAlertTriggers` og `currentMembershipAlertTrigger` til at finde opfyldte alarmer, og `priceAlertMessage` til beskeden. Push-beskeden skal have `data: { centerId }` (gerne også `kind`), så et tryk åbner Centerdetalje. Svarer Expo Push Service med `DeviceNotRegistered`, slettes `Users/<uid>/pushToken`. Log ud fjerner også telefonens token fra kontoen.
+
+**Sikkerhedsnet i appen.** Når appen åbnes eller kommer i forgrunden, tjekkes alarmerne mod de aktuelle priser, og en opfyldt alarm vises som lokal notifikation (`usePriceAlertCheck` i `services/Notifications.js`). Tryk på en notifikation, lokal eller push, åbner Centerdetalje, også når appen startes af trykket.
+
+**Opsætning af push.** Expo push-tokenet kræver et EAS-projekt (gratis): kør `npx eas init` med en Expo-konto, så havner `extra.eas.projectId` i `app.json`, eller sæt `EXPO_PUBLIC_EAS_PROJECT_ID` i `.env` (se `.env.example`). Uden id gemmes alarmerne stadig, og sikkerhedsnettet virker, men der hentes intet token.
+
+**Expo Go på Android.** Remote push virker ikke i Expo Go på Android, og ældre udgaver af `expo-notifications` crasher allerede ved import dér. Appen bruger `expo-notifications` ~57.0.23 og indlæser slet ikke modulet i Expo Go på Android. Alarmerne gemmes stadig, og en opfyldt alarm vises som en besked i appen, når den åbnes. Push testes på en iPhone med Expo Go (fysisk telefon, ikke simulator).
 
 ## Natlig scraper
 **Ansvarlig:** Jakob
@@ -130,7 +164,7 @@ Navigation: første gang vises onboarding. Derefter fire faner i bunden (Find, S
 
 - **Find**: kort med din egen pin (blå) og en pin pr. Center, og en scrollbar liste over præcis de samme Centre nedenunder. Begge viser resultatet fra Matchning, så kun Centre inden for maks. afstand og dine Filtre vises, og sorteringen (Ærlig årspris, Kvartalspris, pris høj→lav eller afstand) gælder listen. Det Anbefalede Center har en orange pin og et ANBEFALET-mærke. Tryk på en pin viser Kæde, Ærlig årspris, Distance, nøgleord (fx sauna) og "Se mere", der åbner Centerdetalje. Matcher intet, viser Ronnie forslag til at løsne Filtrene. Data hentes fra Firebase, ellers vises håndindtastede eksempeldata. Kortet (`react-native-maps`) kræver ingen API-nøgle i Expo Go
 - **Spørg Ronnie**: chat med Ronnie (se [Spørg Ronnie](#spørg-ronnie)). Før første besked vises færdige forslag. Ronnie anbefaler kun Centre fra GymFinder og sammenligner på din Ærlig årspris. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner, som åbner Centerdetalje. Han husker samtalen, så man kan stille opfølgende spørgsmål. Fejl (ingen forbindelse, forbrugsgrænse nået) vises med en forståelig tekst og "Prøv igen"
-- **Favoritter**: ♥ på et Center i listen på Find eller på Centerdetalje gør det til Favorit (tryk igen for at fjerne). Favoritter-skærmen viser hver Favorit med den aktuelle laveste Ærlig årspris blandt de Tilbud, du kan bruge dér, og hvor meget den er faldet eller steget, siden du gemte den. Tryk åbner Centerdetalje, og Fjern sletter Favoritten. Favoritterne følger kontoen og huskes efter genstart. Prisalarmer kommer senere
+- **Favoritter**: ♥ på et Center i listen på Find eller på Centerdetalje gør det til Favorit (tryk igen for at fjerne). Favoritter-skærmen viser hver Favorit med den aktuelle laveste Ærlig årspris blandt de Tilbud, du kan bruge dér, og hvor meget den er faldet eller steget, siden du gemte den. Tryk åbner Centerdetalje, og Fjern sletter Favoritten. Favoritterne følger kontoen og huskes efter genstart. Øverst står Nuværende medlemskab, og både den og hver Favorit kan få en Prisalarm med valgfri tærskel (se [Prisalarmer og push](#prisalarmer-og-push))
 - **Profil**: ret alt fra onboarding (adresse, fødselsdato, Rabatprofil, Nuværende medlemskab og Præferencer). Ændringer slår straks igennem på Find og gemmes automatisk. Præferencerne er udgangspunktet for Filtre. Under Konto kan man gemme sin profil, logge ind eller logge ud
 - **Om os**: kort om GymFinder, åbnes fra Profil
 - **Log ind** (`screens/LoginScreen.js`): log ind med e-mail og adgangskode, fx på en ny telefon. Åbnes fra velkomsten og fra Profil
@@ -146,7 +180,7 @@ Hver skærmfil har en `// Ansvarlig: <navn>`-kommentar øverst.
 |---|---|
 | Jakob | Onboarding (`screens/Onboarding/`), Profil (`screens/ProfileScreen.js`), Om os (`screens/AboutScreen.js`), Log ind (`screens/LoginScreen.js`), scraper og nat-job |
 | Christian | Find (`screens/FindScreen.js`), Filtre (`screens/FiltersScreen.js`), Centerdetalje (`screens/CenterDetailScreen.js`) |
-| Bastian | Spørg Ronnie (`screens/AskRonnieScreen.js`), Favoritter/Alarmer (`screens/FavoritesScreen.js`) |
+| Bastian | Spørg Ronnie (`screens/AskRonnieScreen.js`), Favoritter/Alarmer (`screens/FavoritesScreen.js`), Prisalarmer og push-registrering (`data/priceAlerts.js`, `services/PriceAlerts.js`, `services/Notifications.js`) |
 
 ## Teknologi
 Som nævnt i rapport, har jeg brugt Matt Pocock's **/grill-with-docs** skill i samarbejde med Claude Code til at planlægge app'ens opsætning (https://github.com/mattpocock/skills/blob/main/docs/engineering/grill-with-docs.md). Brugen og det endelige beslutningstræ er dokumenteret i rapporten.
