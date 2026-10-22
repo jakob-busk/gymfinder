@@ -7,6 +7,7 @@ import ButtonComponent from '../components/ButtonComponent';
 import InfoButton from '../components/InfoButton';
 import OfferPriceCard from '../components/OfferPriceCard';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
+import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { openSignupPage } from '../services/Signup';
@@ -14,8 +15,8 @@ import { openSignupPage } from '../services/Signup';
 // Centerdetalje: adresse, Distance, faciliteter og Kæde, og alle Centrets Tilbud med brugerens
 // Ærlig årspris, Kvartalspris og prisudregning måned for måned. Priserne kommer fra Matchning,
 // så de er de samme som på Find. Viser også 30-års-advarsel, Spar mere-forslag, Makkerpris og
-// "Gå til tilmelding".
-export default function CenterDetailScreen({ route }) {
+// "Gå til tilmelding" og "Spørg Ronnie om dette center".
+export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
   const { centers, chains, loading } = useCenterData();
@@ -59,6 +60,15 @@ export default function CenterDetailScreen({ route }) {
     } catch (error) {
       Alert.alert('Kunne ikke åbne tilmeldingen', error.message);
     }
+  };
+
+  // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
+  // sættes ind, hvis man spørger om samme Center igen.
+  const handleAskRonnie = () => {
+    navigation.navigate('Faner', {
+      screen: 'Spørg Ronnie',
+      params: { question: centerQuestion(center.name), centerId: center.id, askedAt: Date.now() },
+    });
   };
 
   return (
@@ -136,11 +146,11 @@ export default function CenterDetailScreen({ route }) {
         />
       ))}
 
-      {/* "Spørg Ronnie om dette center" kommer ved tilmeldingen, når chatten er bygget. */}
       <ButtonComponent title="Gå til tilmelding" type="primary" onPress={handleSignup} />
       <Text style={[GlobalStyle.mapLegend, GlobalStyle.paragraph]}>
         Du tilmelder dig på {chain?.name ?? 'kædens'} egen side.
       </Text>
+      <ButtonComponent title="Spørg Ronnie om dette center" onPress={handleAskRonnie} />
     </ScrollView>
   );
 }
