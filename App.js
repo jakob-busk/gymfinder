@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -12,6 +12,7 @@ import AskRonnieScreen from './screens/AskRonnieScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AboutScreen from './screens/AboutScreen';
+import LoginScreen from './screens/LoginScreen';
 import CenterDetailScreen from './screens/CenterDetailScreen';
 import FiltersScreen from './screens/FiltersScreen';
 import WelcomeScreen from './screens/Onboarding/WelcomeScreen';
@@ -22,7 +23,7 @@ import CurrentMembershipScreen from './screens/Onboarding/CurrentMembershipScree
 import PreferencesScreen from './screens/Onboarding/PreferencesScreen';
 import FinishScreen from './screens/Onboarding/FinishScreen';
 import { UserContext } from './data/UserContext';
-import { startAnonymousSession } from './services/Auth';
+import { accountsAvailable, useAuthSession } from './services/Auth';
 import { useUserProfile } from './services/UserProfile';
 import GlobalStyle, { colors } from './styles/GlobalStyle';
 
@@ -39,7 +40,8 @@ const TAB_ICONS = {
 
 const stackHeader = { headerTintColor: colors.primary, headerBackTitle: 'Tilbage' };
 
-// Profil-fanen er en stack, så Om os åbnes oven på Profil og fanebjælken bliver stående.
+// Profil-fanen er en stack, så Om os og Log ind åbnes oven på Profil, og fanebjælken bliver
+// stående.
 function ProfileTab() {
   return (
     <ProfileStack.Navigator screenOptions={stackHeader}>
@@ -49,6 +51,7 @@ function ProfileTab() {
         options={{ headerShown: false }}
       />
       <ProfileStack.Screen name="Om os" component={AboutScreen} />
+      <ProfileStack.Screen name="Log ind" component={LoginScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -74,11 +77,13 @@ function Tabs() {
 }
 
 // Onboarding første gang: velkomst med Ronnie → adresse → fødselsdato → Rabatprofil →
-// Nuværende medlemskab → Præferencer → afslut som anonym.
+// Nuværende medlemskab → Præferencer → gem profil eller fortsæt anonymt. Fra velkomsten kan en
+// bruger med konto logge ind i stedet.
 function onboardingScreens() {
   return (
     <>
       <RootStack.Screen name="Velkomst" component={WelcomeScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="Log ind" component={LoginScreen} />
       <RootStack.Screen name="Adresse" component={AddressScreen} />
       <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
       <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
@@ -112,17 +117,8 @@ function appScreens() {
 // Brugerens profil deles med alle skærme via UserContext og gemmes automatisk.
 export default function App() {
   // Firebase-brugeren (anonym ved første opstart). null, hvis Firebase ikke er sat op.
-  const [authUser, setAuthUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
-
-  useEffect(
-    () =>
-      startAnonymousSession((firebaseUser) => {
-        setAuthUser(firebaseUser);
-        setAuthReady(true);
-      }),
-    [],
-  );
+  // Ved log ind skifter uid'et, og profilen for kontoen hentes.
+  const { authUser, account, authReady, createAccount, logIn, logOut } = useAuthSession();
 
   const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile({
     authReady,
@@ -130,8 +126,18 @@ export default function App() {
   });
 
   const userContext = useMemo(
-    () => ({ user, setUser, authUser, completeOnboarding }),
-    [user, setUser, authUser, completeOnboarding],
+    () => ({
+      user,
+      setUser,
+      authUser,
+      completeOnboarding,
+      account,
+      accountsAvailable,
+      createAccount,
+      logIn,
+      logOut,
+    }),
+    [user, setUser, authUser, completeOnboarding, account, createAccount, logIn, logOut],
   );
 
   if (loading) {

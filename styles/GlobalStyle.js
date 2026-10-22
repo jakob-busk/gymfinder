@@ -271,6 +271,20 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
   },
+  // Konto: knapper under formularen og afsnittet på Profil.
+  accountActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  accountBox: {
+    backgroundColor: colors.inputBackground,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 24,
+  },
 });
 
 export { colors };

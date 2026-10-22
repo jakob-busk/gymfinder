@@ -1,27 +1,98 @@
 // Ansvarlig: Jakob
 import { useContext } from 'react';
-import { Text, View, ScrollView } from 'react-native';
+import { Alert, Text, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
+import AccountForm from '../components/AccountForm';
 import AddressField from '../components/AddressField';
 import BirthDateField from '../components/BirthDateField';
 import DiscountProfilePicker from '../components/DiscountProfilePicker';
 import CurrentMembershipEditor from '../components/CurrentMembershipEditor';
 import PreferencesEditor from '../components/PreferencesEditor';
 import { UserContext } from '../data/UserContext';
+import { accountErrorMessage } from '../data/account';
 import { useCenterData } from '../services/CenterData';
 
 // Profil: brugeren kan rette alt fra onboarding: adresse, fødselsdato, Rabatprofil,
 // Nuværende medlemskab og Præferencer. Ændringer slår straks igennem i Matchning på Find og
 // gemmes automatisk (Users/<uid>/profile i Firebase og lokalt). Om os nås herfra.
+// Under Konto kan en anonym bruger gemme sin profil eller logge ind, og en bruger med konto kan
+// logge ud.
 export default function ProfileScreen({ navigation }) {
-  const { user, setUser, authUser } = useContext(UserContext);
+  const { user, setUser, account, accountsAvailable, createAccount, logOut } =
+    useContext(UserContext);
   const { chains } = useCenterData();
 
   const updateField = (field, value) => {
     setUser((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCreateAccount = async (form) => {
+    await createAccount(form);
+    Alert.alert('Din profil er gemt', 'Du kan nu logge ind med din e-mail på en anden telefon.');
+  };
+
+  const handleLogOut = () => {
+    Alert.alert(
+      'Log ud?',
+      'Dine oplysninger fjernes fra denne telefon, men ligger stadig på din konto. Du kan ' +
+        'logge ind igen når som helst.',
+      [
+        { text: 'Annuller', style: 'cancel' },
+        {
+          text: 'Log ud',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logOut();
+            } catch (error) {
+              Alert.alert('Kunne ikke logge ud', accountErrorMessage(error));
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const renderAccount = () => {
+    if (!accountsAvailable || !account) {
+      return (
+        <Text style={GlobalStyle.stepIntro}>Dine oplysninger gemmes kun på denne telefon.</Text>
+      );
+    }
+
+    if (!account.isAnonymous) {
+      const accountLabel = account.name ? `${account.name} (${account.email})` : account.email;
+      return (
+        <View style={GlobalStyle.accountBox}>
+          <Text style={GlobalStyle.stepIntro}>
+            Du er logget ind som {accountLabel}.
+            Dine oplysninger, Favoritter og Prisalarmer følger din konto.
+          </Text>
+          <View style={GlobalStyle.accountActions}>
+            <ButtonComponent title="Log ud" onPress={handleLogOut} />
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={GlobalStyle.accountBox}>
+        <Text style={GlobalStyle.stepIntro}>
+          Du bruger GymFinder anonymt, så dine oplysninger er knyttet til denne telefon. Gem din
+          profil, så følger alt med, også Favoritter og Prisalarmer, hvis du skifter telefon.
+        </Text>
+        <AccountForm mode="create" onSubmit={handleCreateAccount} />
+        <View style={GlobalStyle.accountActions}>
+          <ButtonComponent
+            title="Jeg har allerede en konto"
+            onPress={() => navigation.navigate('Log ind')}
+          />
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -67,12 +138,7 @@ export default function ProfileScreen({ navigation }) {
         />
 
         <Text style={GlobalStyle.sectionLabel}>Konto</Text>
-        <Text style={GlobalStyle.stepIntro}>
-          {authUser
-            ? `Du bruger GymFinder anonymt (id ${authUser.uid.slice(0, 8)}…). Dine oplysninger ` +
-              'er knyttet til denne telefon.'
-            : 'Dine oplysninger gemmes kun på denne telefon.'}
-        </Text>
+        {renderAccount()}
       </ScrollView>
     </SafeAreaView>
   );
