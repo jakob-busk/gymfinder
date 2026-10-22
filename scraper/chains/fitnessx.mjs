@@ -400,7 +400,8 @@ const cheapestPartner = (partners) => {
 // Læser Centrets Tilbud ud fra sj_ajax_object. `guid` er Centrets GUID (fra siden selv eller
 // centerlisten). Resultat: { offers: [Tilbud-udkast], warnings }.
 // Et Tilbud-udkast: { key, name, category, reformer, special, centerCount, standardPrice,
-//   campaign: { price, endDate, text } | null, signupFee, adminFee, partner | null }.
+//   campaign: { price, endDate, text } | null, signupFee, adminFee, partner | null,
+//   partnerOnly? } (partnerOnly = findes kun med Træningsven).
 // Træningsven-medlemskaber uden et almindeligt Tilbud at høre til (fx Hjørrings Kategori 5, som
 // kun findes med Træningsven) bliver selvstændige Tilbud, hvor Standardprisen er prisen for to.
 export function offersForCenter(ajaxObject, guid) {
@@ -442,11 +443,12 @@ export function offersForCenter(ajaxObject, guid) {
       reformer: partner.reformer,
       special: partner.special,
       centerCount: partner.centerCount,
-      standardPrice: partner.total,
+      standardPrice: { ...partner.total },
       campaign: null,
       signupFee: partner.signupFee,
       adminFee: partner.adminFee,
       partner,
+      partnerOnly: true,
     });
   }
 
