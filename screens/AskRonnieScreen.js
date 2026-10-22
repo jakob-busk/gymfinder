@@ -18,12 +18,14 @@ import { RONNIE_SUGGESTIONS, ronnieErrorMessage, ronnieMatches } from '../data/r
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
+import { geocodeAddress } from '../services/Location';
 import { askRonnie, ronnieAvailable } from '../services/Ronnie';
 
 // Spørg Ronnie: chat med Ronnie, der kun anbefaler Centre fra GymFinder og sammenligner på
 // brugerens Ærlig årspris. Ronnie kender de 20 nærmeste Centre, der matcher brugerens Filtre
-// (plus det Center, man spørger om fra Centerdetalje). Hele samtalen sendes med hver gang, så
-// han husker den. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner.
+// (plus det Center, man spørger om fra Centerdetalje). Spørger man om et andet sted i landet, slår
+// han stedet op og får de nærmeste Centre dér. Hele samtalen sendes med hver gang, så han husker
+// den. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner.
 export default function AskRonnieScreen({ navigation, route }) {
   const { user } = useContext(UserContext);
   const centerData = useCenterData();
@@ -72,7 +74,15 @@ export default function AskRonnieScreen({ navigation, route }) {
     setError(null);
     setSending(true);
     try {
-      const reply = await askRonnie({ conversation, matches, user });
+      const lookupInput = {
+        geocode: geocodeAddress,
+        centers: centerData.centers,
+        chains: centerData.chains,
+        user,
+        filters,
+        today: new Date(),
+      };
+      const reply = await askRonnie({ conversation, matches, user, lookupInput });
       setMessages([...conversation, withId(reply)]);
     } catch (sendError) {
       console.error('Spørg Ronnie fejlede:', sendError);
@@ -166,7 +176,8 @@ export default function AskRonnieScreen({ navigation, route }) {
               <RonnieMascot size="small" />
               <Text style={GlobalStyle.centeredText}>
                 Hej, jeg er Ronnie! Skriv, hvad du leder efter, fx &quot;billigt med sauna uden
-                binding&quot;. Jeg sammenligner Centrene tæt på dig på din Ærlige årspris.
+                binding&quot;. Jeg sammenligner Centrene tæt på dig på din Ærlige årspris, og jeg kan
+                også slå Centre op andre steder i landet, fx ved dit sommerhus.
               </Text>
               <View style={GlobalStyle.choiceList}>
                 {RONNIE_SUGGESTIONS.map((suggestion) => (

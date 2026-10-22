@@ -73,7 +73,7 @@ npm test
 
 Visningslogikken på Find (kortudsnit, nøgleord på pins og forslag til at løsne Filtre i `data/findView.js`) testes også med Jest. Det samme gør Filtre og sortering (`data/filterSettings.js` og `services/FilterSettings.js`: udgangspunkt i Præferencer, huskes efter genstart og Nulstil) og Centerdetaljens visningslogik i `data/centerDetail.js` (månedsudregning mod Matchnings Ærlig årspris, 30-års-advarsel, gebyrer, Makkerpris og tilmeldingslink). Favoritter testes i `data/favorites.js` (pris der følges, rækkefølge og formen i databasen) og `services/Favorites.js` (gemt under uid, følger kontoen, lokal kopi uden Firebase, log ud).
 
-Spørg Ronnie testes uden netværk og uden nøgle: hvilke Centre Ronnie kender, system-prompten med personlig Ærlig årspris, at hele samtalen sendes med, læsning af svaret `{ tekst, centerIds }` og fejltekster (`data/ronnie.js`, `data/ronniePrompt.js`), og kaldet med en falsk `fetch` (`services/Ronnie.js`). Selve samtalen med Ronnie testes manuelt.
+Spørg Ronnie testes uden netværk og uden nøgle: hvilke Centre Ronnie kender, system-prompten med personlig Ærlig årspris, at hele samtalen sendes med, læsning af svaret `{ tekst, centerIds }` og fejltekster (`data/ronnie.js`, `data/ronniePrompt.js`), opslag af Centre andre steder med en falsk geokoder (`data/ronnieLookup.js`: nærmeste Centre ved stedet, ukendt sted, uden for Danmark, fejlet opslag), og kaldet med en falsk `fetch` (`services/Ronnie.js`, også værktøjskald, opfølgning efter et opslag og højst 2 opslagsrunder). Selve samtalen med Ronnie testes manuelt.
 
 ## Spørg Ronnie
 **Ansvarlig:** Bastian
@@ -87,6 +87,8 @@ Ronnie kalder OpenAI (`gpt-4o-mini`) direkte fra appen (`services/Ronnie.js`).
 **Hvad Ronnie ved.** System-prompten (`data/ronniePrompt.js`) indeholder de 20 nærmeste Centre, der matcher dine Filtre, med din personlige Ærlig årspris for hvert Tilbud fra Matchning, den billigste mulighed for dig (fx Kampagnepris eller Studierabat), Oprettelsesgebyr, Admingebyr, Binding og faciliteter. Spørger man fra Centerdetalje, kommer det Center altid med. Ronnie regner ikke selv priser ud.
 
 **Svarformat.** Ronnie svarer med struktureret JSON, `{ tekst, centerIds }`, og `centerIds` må kun være id'er fra prompten. Hvert id bliver til en "Se [center] →"-knap. Hele samtalen sendes med i hvert kald.
+
+**Andre steder i landet.** Spørger man om et andet sted (fx "Jeg har sommerhus i Hornbæk"), kalder Ronnie værktøjet `find_centre_naer_sted` med stednavnet (`data/ronnieLookup.js`). Appen slår stedet op med telefonens geokoder (samme som adressen i onboarding, ingen API-nøgle) og sender de op til 10 nærmeste Centre inden for 25 km, der matcher dine Filtre, med din personlige Ærlig årspris og afstanden fra stedet tilbage til Ronnie. Han svarer ud fra dem, og "Se [center] →" virker også for de fundne Centre. Kan stedet ikke findes, ligger det uden for Danmark, eller fejler opslaget, får Ronnie besked om det og siger det pænt. Opslaget huskes i samtalen, så man kan stille opfølgende spørgsmål.
 
 ## Natlig scraper
 **Ansvarlig:** Jakob
