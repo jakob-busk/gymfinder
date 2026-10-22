@@ -8,11 +8,16 @@
 // - Et Tilbud eller Center, der ikke længere findes på hjemmesiden, beholdes med sit "sidst set"
 //   (lastSeen) og tæller missingNights op. Efter 3 nætter i træk fjernes det.
 // - Hvert gyldigt Tilbud får et punkt i prishistorikken pr. dag.
+// - Efter scraping sendes push for opfyldte Prisalarmer, regnet på nattens nye priser og kun for
+//   Kæder, der blev opdateret (se priceAlertPush.mjs). Brugernes nye priser og slettede tokens
+//   skrives i samme opdatering som centerdata.
 //
-// Databasen sendes ind udefra ({ ref(path) → { get(), update() } } som i firebase-admin), så
-// jobbet kan testes med en falsk database.
+// Databasen og push-afsenderen sendes ind udefra ({ ref(path) → { get(), update() } } som i
+// firebase-admin, og { send, getReceipts } som i expoPush.mjs), så jobbet kan testes med en falsk
+// database og en falsk push-afsender.
 
-import { CENTER_DATA_PATHS } from '../data/centerData.js';
+import { CENTER_DATA_PATHS, fromDatabase } from '../data/centerData.js';
+import { PUSH_TICKETS_PATH, USERS_PATH, runPriceAlerts } from './priceAlertPush.mjs';
 import { centerProblems, chainSkipReason, offerProblems } from './sanity.mjs';
 
 export const PRICE_HISTORY_PATH = 'PriceHistory';
@@ -44,6 +49,24 @@ const sameJson = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? nul
 async function readNode(db, path) {
   const snapshot = await db.ref(path).get();
   return snapshot.val() ?? {};
+}
+
+// Lægger en multi-path-opdatering oven på en kopi af data, som databasen ville gøre (null
+// sletter). Bruges til at regne Prisalarmer på nattens nye priser, før noget er skrevet.
+export function applyUpdate(tree, update) {
+  const result = structuredClone(tree);
+  for (const [path, value] of Object.entries(update)) {
+    const keys = path.split('/').filter(Boolean);
+    const last = keys.pop();
+    let node = result;
+    for (const key of keys) {
+      if (node[key] == null || typeof node[key] !== 'object') node[key] = {};
+      node = node[key];
+    }
+    if (value === null) delete node[last];
+    else node[last] = structuredClone(value);
+  }
+  return result;
 }
 
 // Forsvundet Center eller Tilbud: tæl en nat mere, og fjern det efter 3 nætter.
@@ -183,16 +206,21 @@ function processChain({ chainId, result, previous, today, update }) {
 }
 
 // scrapers: [{ chainId, scrape: async () => ({ chain, centers, readErrors, warnings }) }]
-// today: 'YYYY-MM-DD' (dansk dato). dryRun: læs, men skriv ikke.
+// today: 'YYYY-MM-DD' (dansk dato). dryRun: læs, men skriv ikke, og send ingen push.
+// pushClient: Expo-afsenderen (expoPush.mjs). Uden den sendes ingen push, men rapporten viser,
+// hvilke Prisalarmer der er opfyldt.
 // db må være null ved en tør kørsel uden databaseadgang; så regnes databasen som tom.
 // Resultat: { ok, update, report }. ok er false, hvis mindst én Kæde blev sprunget over.
-export async function runNightlyJob({ db, scrapers, today, dryRun = false }) {
+export async function runNightlyJob({ db, scrapers, today, dryRun = false, pushClient = null }) {
   const previous = db
     ? {
+        chains: await readNode(db, CHAINS),
         centers: await readNode(db, CENTERS),
         offers: await readNode(db, OFFERS),
+        users: await readNode(db, USERS_PATH),
+        pushTickets: await readNode(db, PUSH_TICKETS_PATH),
       }
-    : { centers: {}, offers: {} };
+    : { chains: {}, centers: {}, offers: {}, users: {}, pushTickets: {} };
 
   const update = {};
   const chains = [];
@@ -221,12 +249,38 @@ export async function runNightlyJob({ db, scrapers, today, dryRun = false }) {
     chains.push(processChain({ chainId, result, previous, today, update }));
   }
 
+  // Prisalarmer regnes på nattens data (gamle data + opdateringen), men kun Kæder, der blev
+  // skrevet, kan udløse dem.
+  const after = applyUpdate(
+    { [CHAINS]: previous.chains, [CENTERS]: previous.centers, [OFFERS]: previous.offers },
+    update,
+  );
+  const centerData = fromDatabase({
+    chains: after[CHAINS],
+    centers: after[CENTERS],
+    offers: after[OFFERS],
+  });
+  const priceAlerts = await runPriceAlerts({
+    users: previous.users,
+    chains: centerData.chains,
+    centers: centerData.centers,
+    updatedChainIds: chains.filter((chain) => chain.status === 'written').map((c) => c.chainId),
+    today,
+    pushClient: dryRun ? null : pushClient,
+    pendingTickets: previous.pushTickets,
+  });
+  Object.assign(update, priceAlerts.update);
+
   if (!dryRun && db && Object.keys(update).length > 0) {
     await db.ref().update(update);
   }
 
   const ok = chains.every((chain) => chain.status === 'written');
-  return { ok, update, report: { date: today, dryRun, chains } };
+  return {
+    ok,
+    update,
+    report: { date: today, dryRun, chains, priceAlerts: priceAlerts.report },
+  };
 }
 
 const show = (value) => (value == null ? '?' : String(value));
@@ -241,8 +295,32 @@ function offerRow({ center, offer, standardPrice, campaignPrice, campaignMonths,
   return `| ${center} | ${offer} | ${price} | ${campaign} | ${show(rest.signupFee)} | ${binding} |`;
 }
 
+const KIND_LABELS = { favorite: 'Favorit', currentMembership: 'Nuværende medlemskab' };
+
+function priceAlertLines(priceAlerts) {
+  const lines = [
+    '## Prisalarmer (push)',
+    '',
+    `- Sendt: ${priceAlerts.sent.length}`,
+    `- Fejlet: ${priceAlerts.failed.length}`,
+    `- Ikke sendt: ${priceAlerts.notSent.length}`,
+    `- Push-tokens slettet (DeviceNotRegistered): ${priceAlerts.tokensRemoved}`,
+  ];
+  const row = (alert) =>
+    `${KIND_LABELS[alert.kind] ?? alert.kind} ${alert.centerId}: ` +
+    `${Math.round(alert.honestYearlyPrice)} kr/md, spar ${Math.round(alert.savingPerMonth)} kr/md`;
+  for (const alert of priceAlerts.sent) lines.push(`- Sendt: ${row(alert)}`);
+  for (const alert of priceAlerts.failed) lines.push(`- Fejlet: ${row(alert)} (${alert.error})`);
+  for (const alert of priceAlerts.notSent) {
+    lines.push(`- Ikke sendt: ${row(alert)} (${alert.reason})`);
+  }
+  for (const error of priceAlerts.errors) lines.push(`- Fejl: ${error}`);
+  lines.push('');
+  return lines;
+}
+
 // Rapporten som Markdown, til loggen og GitHub Actions' job-oversigt.
-export function formatReport({ date, dryRun, chains }) {
+export function formatReport({ date, dryRun, chains, priceAlerts }) {
   const lines = [`# Scraper-rapport ${date}${dryRun ? ' (tør kørsel, intet skrevet)' : ''}`, ''];
 
   for (const chain of chains) {
@@ -286,5 +364,6 @@ export function formatReport({ date, dryRun, chains }) {
     }
   }
 
+  if (priceAlerts) lines.push(...priceAlertLines(priceAlerts));
   return lines.join('\n');
 }
