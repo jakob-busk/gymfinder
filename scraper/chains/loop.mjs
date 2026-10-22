@@ -247,14 +247,27 @@ function offerNameFor(group) {
 // abonnement. Makkerprisen er prisen pr. person for to, inkl. husstandens ene Admingebyr:
 // (589 + 10) / 2 = 299,50 kr pr. 30 dage. Matchning lægger Tilbuddets Admingebyr oven i
 // Makkerprisen, så partnerPrice er pr. person uden det: 299,50 − 10 = 289,50.
-// Familiens kampagne (fx 100 kr. for hele husstanden resten af året) regnes ikke med, fordi
-// Makkerprisen i Matchning er den samme hele året.
-function partnerFieldsFor(familyGroup) {
+// Familiens kampagne (fx 100 kr. for hele husstanden resten af året) læses som Tilbuddets egen
+// kampagne og omregnes på samme måde: 100 kr fordelt på 2 perioder = 50 kr pr. periode for
+// husstanden, dvs. (50 + 10) / 2 − 10 = 20 kr pr. person. Oprettelsesgebyret deles også på to.
+const perPerson = (householdPrice, adminFee) => roundKr((householdPrice + adminFee) / 2 - adminFee);
+
+function partnerFieldsFor(familyGroup, { today, warnings, where }) {
   const householdPrice = toNumber(familyGroup.price);
   const adminFee = toNumber(familyGroup.admin_fee) ?? 0;
   if (householdPrice == null) return {};
+
+  const { campaign, warning } = parseCampaign(familyGroup, today);
+  if (warning) warnings.push(`${where}: familiens kampagne kunne ikke læses (${warning})`);
+  const signupFee = toNumber(familyGroup.signup_fee);
+
   return {
-    partnerPrice: roundKr((householdPrice + adminFee) / 2 - adminFee),
+    partnerPrice: perPerson(householdPrice, adminFee),
+    ...(campaign && {
+      partnerCampaignPrice: Math.max(perPerson(campaign.price, adminFee), 0),
+      partnerCampaignMonths: campaign.months,
+    }),
+    ...(signupFee != null && { partnerSignupFee: roundKr(signupFee / 2) }),
     partnerRequirement:
       `I skal bo i samme husstand og deler ét familiemedlemskab til ${householdPrice} kr ` +
       `+ ${adminFee} kr i Admingebyr pr. 30 dage.`,
@@ -283,7 +296,9 @@ function buildOffer({ center, loopId, group, family, today, warnings }) {
     // LOOP har ingen Binding; man kan opsige med løbende periode plus 30 dage.
     bindingMonths: 0,
     billingIntervalDays: toNumber(group.days) ?? undefined,
-    ...(family ? partnerFieldsFor(family) : { partnerPrice: null }),
+    ...(family
+      ? partnerFieldsFor(family, { today, warnings, where: `${center.name} / ${name}` })
+      : { partnerPrice: null }),
     signupUrl: signupUrlFor({ loopId, subscription: group.name.trim() }),
   };
 }
