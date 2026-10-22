@@ -85,7 +85,12 @@ export function createHttpClient({
     if (cookie) headers.Cookie = cookie;
 
     const body = new URLSearchParams(fields).toString();
-    const response = await fetchImpl(url.href, { method: 'POST', headers, body, redirect: 'manual' });
+    const response = await fetchImpl(url.href, {
+      method: 'POST',
+      headers,
+      body,
+      redirect: 'manual',
+    });
     storeCookies(url, response);
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${url.href}`);
     return response.text();

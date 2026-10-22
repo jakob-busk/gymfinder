@@ -231,7 +231,7 @@ const isFamily = (group) => (toNumber(group.family_members) ?? 0) > 0;
 // Navnet uden "familie" og tegnsætning, så et familiemedlemskab kan parres med det
 // almindelige abonnement: "kampagne: 100 kr resten af året - familie" ↔ "Kampagne: 100 kr.
 // resten af året", "ALL IN FAMILY (DS, LOOP & HOLD)" ↔ "ALL IN (DS, LOOP & HOLD)".
-const pairingKey = (name) =>
+export const familyPairingKey = (name) =>
   name
     .toLowerCase()
     .replace(/\bfamil(ie|y)\b/g, ' ')
@@ -298,9 +298,8 @@ function offersFor(center, loopId, groups, today, warnings) {
   const offers = [];
   const usedFamilies = new Set();
   for (const group of singles) {
-    const family = families.find(
-      (candidate) => pairingKey(candidate.name ?? '') === pairingKey(group.name ?? ''),
-    );
+    const key = familyPairingKey(group.name ?? '');
+    const family = families.find((candidate) => familyPairingKey(candidate.name ?? '') === key);
     if (family) usedFamilies.add(family);
     const offer = buildOffer({ center, loopId, group, family, today, warnings });
     if (offers.some((existing) => existing.id === offer.id)) {
