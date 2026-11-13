@@ -49,16 +49,22 @@ export function formatPrice(amount, per = 'md.') {
   return `${formatKr(amount)} pr. ${per}`;
 }
 
-// Abonnementstypen, som den vises: "Landsdækkende" eller "Lokalt Center". Data skriver
-// "Lokal center", som ikke ændres her (Matchning og nat-jobbet bruger værdien).
-const SUBSCRIPTION_TYPE_LABELS = { 'Lokal center': 'Lokalt Center', Landsdækkende: 'Landsdækkende' };
+// Første bogstav stort, til ord fra appens ordliste, der står alene eller først (fx et mærke).
+export function capitalize(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+// Abonnementstypen med appens ord: "lokalt center" eller "landsdækkende" (småt; står den først,
+// gøres første bogstav stort med capitalize). Data skriver "Lokal center", som ikke ændres her
+// (Matchning og nat-jobbet bruger værdien). Ukendte typer vises, som de står.
+const SUBSCRIPTION_TYPE_LABELS = { 'Lokal center': 'lokalt center', Landsdækkende: 'landsdækkende' };
 
 export function subscriptionTypeLabel(subscriptionType) {
   if (!subscriptionType) return null;
   return SUBSCRIPTION_TYPE_LABELS[subscriptionType] ?? subscriptionType;
 }
 
-// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: "for Basis", og "· med Studierabat",
+// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: "for Basis", og "· med studierabat",
 // når en Rabat (eller Makkerpris) er regnet med i Ærlig årspris.
 export function offerBasisText(pricedOffer) {
   const option = pricedOffer.yearlyOption;
@@ -81,14 +87,15 @@ export function matchCenter({ center, chains, user, today }) {
   return centers[0] ?? null;
 }
 
+// Slags pris for en måned på kvitteringen. Står alene under månedens tekst, så stort begyndelsesbogstav.
 function kindLabel(period, pricedOffer, ageMatters) {
   if (period.kind === 'campaign') return 'Kampagnepris';
   if (period.kind === 'partnerCampaign') return 'Makkerpris (kampagne)';
   if (period.kind === 'discount' || period.kind === 'partner') {
-    return pricedOffer.yearlyOption.label;
+    return capitalize(pricedOffer.yearlyOption.label);
   }
-  if (!ageMatters) return 'Standardpris';
-  return period.ageGroup === 'over30' ? 'Standardpris (30+)' : 'Standardpris (under 30)';
+  if (!ageMatters) return 'Normalpris';
+  return period.ageGroup === 'over30' ? 'Normalpris (30+)' : 'Normalpris (under 30)';
 }
 
 // Prisudregningen bag Ærlig årspris, én række pr. betaling i det første år.
@@ -130,7 +137,7 @@ export function priceBreakdown(pricedOffer) {
 }
 
 // Linjerne på kvitteringen på Centerdetalje: måneder i træk med samme pris og samme slags pris
-// samles på én linje, fx "Måned 2–12 · Standardpris · 11 × 279 kr.". En betaling, der kun delvist
+// samles på én linje, fx "Måned 2–12 · Normalpris · 11 × 279 kr.". En betaling, der kun delvist
 // falder inden for året (ved betaling pr. 30 dage), står altid alene.
 // rows er priceBreakdown(...).rows. Returnerer [{ key, label, kindLabel, total, count, share }].
 export function receiptLines(rows) {
@@ -228,35 +235,29 @@ export function partnerInfo(user, pricedOffer) {
   };
 }
 
-// Faciliteter og maskiner som Ja / Nej / Ikke oplyst.
+// Faciliteter og maskiner som Ja / Nej / Ikke oplyst. Navnet står alene i rækken, så det får stort
+// begyndelsesbogstav (fx "Sauna").
 export function facilityRows(center) {
   const rows = FACILITY_FILTERS.map((facility) => {
     const value = center?.facilities?.[facility];
     let text = 'Ikke oplyst';
     if (value === true) text = 'Ja';
     else if (value === false) text = 'Nej';
-    return { key: facility, label: NOT_STATED_LABELS[facility], value: text };
+    return { key: facility, label: capitalize(NOT_STATED_LABELS[facility]), value: text };
   });
 
   const machines = center?.machines;
   rows.push({
     key: 'machines',
-    label: NOT_STATED_LABELS.machines,
+    label: capitalize(NOT_STATED_LABELS.machines),
     value: machines == null ? 'Ikke oplyst' : machines.join(', ') || 'Ingen',
   });
   return rows;
 }
 
-// Abonnementstyperne i tabellen "Om centret", med appens ord og i fast rækkefølge.
-const ABOUT_SUBSCRIPTION_TYPES = { 'Lokal center': 'lokalt center', Landsdækkende: 'landsdækkende' };
-
-function capitalize(text) {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 // Centrets Abonnementstyper (fra alle dets Tilbud) uden dubletter: "Lokalt center, landsdækkende".
 function subscriptionTypesText(offers) {
-  const known = Object.keys(ABOUT_SUBSCRIPTION_TYPES);
+  const known = Object.keys(SUBSCRIPTION_TYPE_LABELS);
   const types = [
     ...new Set(offers.map((priced) => priced.offer.subscriptionType).filter(Boolean)),
   ].sort((a, b) => {
@@ -264,7 +265,7 @@ function subscriptionTypesText(offers) {
     return rank(a) - rank(b);
   });
   if (types.length === 0) return 'Ikke oplyst';
-  return capitalize(types.map((type) => ABOUT_SUBSCRIPTION_TYPES[type] ?? type).join(', '));
+  return capitalize(types.map(subscriptionTypeLabel).join(', '));
 }
 
 // Tabellen "Om centret" på Centerdetalje: adresse, Abonnementstyper, Binding for det valgte

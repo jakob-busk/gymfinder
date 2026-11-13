@@ -152,7 +152,7 @@ describe('Forespørgsel til OpenAI', () => {
         {
           navn: 'Basis',
           aerligAarsprisKrPrMd: 170,
-          billigsteMulighed: 'Studierabat',
+          billigsteMulighed: 'studierabat',
           oprettelsesgebyrKr: 120,
           admingebyrKr: 10,
           binding: 'Ingen',

@@ -21,7 +21,7 @@ export default function InfoButton({ term, onInk = false }) {
         onPress={() => setVisible(true)}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel={`Hvad betyder ${explanation.title}?`}
+        accessibilityLabel={`Hvad betyder "${explanation.title}"?`}
       >
         <Ionicons
           name="information-circle-outline"

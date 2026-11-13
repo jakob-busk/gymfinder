@@ -66,7 +66,7 @@ export default function CenterDetailScreen({ navigation, route }) {
     return (
       <View style={GlobalStyle.container}>
         <Text style={GlobalStyle.emptyText}>
-          {center ? 'Centret har ingen Tilbud lige nu.' : 'Centret blev ikke fundet.'}
+          {center ? 'Centret har ingen abonnementer lige nu.' : 'Centret blev ikke fundet.'}
         </Text>
         <View style={GlobalStyle.emptyState}>
           <ButtonComponent
@@ -260,7 +260,7 @@ export default function CenterDetailScreen({ navigation, route }) {
 
       {/* Ronnie står nederst, langt fra prisen: han er aldrig med ved priser. */}
       <ButtonComponent
-        title="Spørg Ronnie om dette Center"
+        title="Spørg Ronnie om dette center"
         type="text"
         ronnie
         onPress={handleAskRonnie}

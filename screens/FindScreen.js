@@ -65,8 +65,8 @@ export default function FindScreen({ navigation }) {
   const filterLabel = filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre';
   // Mens der hentes, står der ikke "0 Centre", men at Centrene er på vej.
   const legendText = loading
-    ? 'Henter Centre …'
-    : `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
+    ? 'Henter centre …'
+    : `${centers.length} ${centers.length === 1 ? 'center' : 'centre'}` +
       (filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : '');
 
   // Mens Centrene hentes, eller når ingen matcher: Ronnie i stedet for listen.
@@ -74,7 +74,7 @@ export default function FindScreen({ navigation }) {
     if (loading) {
       return (
         <View style={GlobalStyle.paragraph}>
-          <RonnieHint pose="sveder/løfter">Ronnie finder Centre tæt på dig …</RonnieHint>
+          <RonnieHint pose="sveder/løfter">Ronnie finder centre tæt på dig …</RonnieHint>
           <ActivityIndicator />
         </View>
       );
@@ -88,7 +88,7 @@ export default function FindScreen({ navigation }) {
         <View style={GlobalStyle.emptyState}>
           <RonnieMascot size="small" pose="trækker på skuldrene" />
           <Text style={GlobalStyle.centeredText}>
-            Ronnie kunne ikke finde nogen Centre, der matcher dine Filtre. Prøv at løsne dem:
+            Ronnie kunne ikke finde nogen centre, der passer til dine filtre. Prøv at løsne dem:
           </Text>
           {suggestions.map((suggestion) => (
             <Text key={suggestion} style={GlobalStyle.suggestionText}>
@@ -97,7 +97,7 @@ export default function FindScreen({ navigation }) {
           ))}
           <View style={GlobalStyle.paragraph}>
             <ButtonComponent
-              title="Ret Filtre"
+              title="Ret filtre"
               type="primary"
               onPress={() => navigation.navigate('Filtre')}
             />
@@ -169,7 +169,7 @@ export default function FindScreen({ navigation }) {
           style={GlobalStyle.filterPills}
           onPress={() => navigation.navigate('Filtre')}
           accessibilityRole="button"
-          accessibilityLabel={`Aktive Filtre: ${filterLabels.join(', ')}. Åbner Filtre.`}
+          accessibilityLabel={`Aktive filtre: ${filterLabels.join(', ')}. Åbner filtre.`}
         >
           {filterLabels.map((label) => (
             <View key={label} style={GlobalStyle.filterPill}>

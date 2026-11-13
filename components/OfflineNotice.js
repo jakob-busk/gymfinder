@@ -14,7 +14,7 @@ export default function OfflineNotice({ onRetry }) {
         <Text style={GlobalStyle.warningTitle}>Ingen forbindelse</Text>
       </View>
       <Text style={GlobalStyle.bodyText}>
-        GymFinder kunne ikke hente Centre og priser. Tjek, at telefonen er på nettet, og prøv igen.
+        GymFinder kunne ikke hente centre og priser. Tjek, at telefonen er på nettet, og prøv igen.
       </Text>
       <View style={GlobalStyle.paragraph}>
         <ButtonComponent title="Prøv igen" type="primary" onPress={onRetry} />

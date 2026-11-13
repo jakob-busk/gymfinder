@@ -57,7 +57,7 @@ describe('mapRegion', () => {
 describe('centerKeywords', () => {
   test('viser kun faciliteter, Centret med sikkerhed har', () => {
     const center = { facilities: { sauna: true, groupClasses: null, open24h: true } };
-    expect(centerKeywords(center)).toEqual(['Sauna', 'Døgnåbent']);
+    expect(centerKeywords(center)).toEqual(['sauna', 'døgnåbent']);
   });
 
   test('giver ingen nøgleord, når faciliteterne er ukendte eller mangler', () => {
@@ -213,10 +213,10 @@ describe('loosenFilterSuggestions', () => {
     };
     expect(loosenFilterSuggestions(filters)).toEqual([
       'Øg maks. afstand (nu 5 km)',
-      'Slå Sauna fra',
-      'Slå Døgnåbent fra',
-      'Slå Landsdækkende fra',
-      'Tillad Binding',
+      'Slå sauna fra',
+      'Slå døgnåbent fra',
+      'Slå landsdækkende fra',
+      'Tillad binding',
       'Fjern krav om maskiner (Romaskine)',
     ]);
   });
@@ -224,8 +224,8 @@ describe('loosenFilterSuggestions', () => {
   test('uden brugerens placering foreslås en adresse i stedet for større afstand', () => {
     const filters = { maxDistanceKm: 15, sauna: true };
     expect(loosenFilterSuggestions(filters, { hasLocation: false })).toEqual([
-      'Angiv din adresse på Profil, så afstanden til Centrene kan beregnes',
-      'Slå Sauna fra',
+      'Angiv din adresse på Profil, så afstanden til centrene kan beregnes',
+      'Slå sauna fra',
     ]);
   });
 
@@ -244,8 +244,8 @@ describe('discountProfileText', () => {
   });
 
   test('siger det, når Rabatprofilen er tom', () => {
-    expect(discountProfileText([])).toBe('Priser uden Rabat');
-    expect(discountProfileText(undefined)).toBe('Priser uden Rabat');
+    expect(discountProfileText([])).toBe('Priser uden rabat');
+    expect(discountProfileText(undefined)).toBe('Priser uden rabat');
   });
 });
 

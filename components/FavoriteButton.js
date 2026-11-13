@@ -39,7 +39,7 @@ export default function FavoriteButton({ center, chain, onInk = false }) {
       await favorites.toggleFavorite(center.id, price);
     } catch (error) {
       console.error('Gem Favorit fejlede:', error);
-      Alert.alert('Kunne ikke gemme Favorit', TRY_AGAIN_MESSAGE);
+      Alert.alert('Kunne ikke gemme favorit', TRY_AGAIN_MESSAGE);
     }
   };
 
@@ -50,7 +50,7 @@ export default function FavoriteButton({ center, chain, onInk = false }) {
       style={[GlobalStyle.favoriteButton, onInk && GlobalStyle.favoriteButtonOnInk]}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      accessibilityLabel={active ? 'Fjern fra Favoritter' : 'Gem som Favorit'}
+      accessibilityLabel={active ? 'Fjern fra favoritter' : 'Gem som favorit'}
     >
       <Animated.View style={{ transform: [{ scale: beat }] }}>
         <Ionicons name={active ? 'heart' : 'heart-outline'} size={21} color={colors.favorite} />

@@ -43,7 +43,7 @@ export default function FiltersScreen({ navigation }) {
         today: new Date(),
       }).centers.length;
   const showLabel =
-    count == null ? 'Vis resultater' : `Vis ${count} ${count === 1 ? 'Center' : 'Centre'}`;
+    count == null ? 'Vis resultater' : `Vis ${count} ${count === 1 ? 'center' : 'centre'}`;
 
   return (
     <SafeAreaView style={GlobalStyle.screen} edges={['bottom']}>
@@ -52,13 +52,13 @@ export default function FiltersScreen({ navigation }) {
 
         <Text style={GlobalStyle.mutedText}>
           {isCustom
-            ? 'Du har rettet Filtrene. Nulstil for at bruge dine Præferencer fra Profil igen.'
-            : 'Udgangspunktet er dine Præferencer fra Profil.'}
+            ? 'Du har rettet filtrene. Nulstil for at bruge dine ønsker fra Profil igen.'
+            : 'Udgangspunktet er dine ønsker fra Profil.'}
         </Text>
         <View style={[GlobalStyle.inlineRow, GlobalStyle.paragraph]}>
           <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
-            Centre, der med sikkerhed ikke opfylder dine Filtre, skjules. Er det ukendt, vises de
-            med "Ikke oplyst". Maks. afstand gælder altid.
+            Centre, der med sikkerhed ikke opfylder dine filtre, skjules. Er det ukendt, vises de
+            med "ikke oplyst". Maks. afstand gælder altid.
           </Text>
           <InfoButton term="notStated" />
         </View>

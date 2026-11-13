@@ -1,6 +1,7 @@
 // Find: ren visningslogik til kort og liste (kortudsnit, nøgleord på pins og forslag til at
 // løsne Filtre). Ren JavaScript uden React Native eller Expo, så den kan testes direkte.
 
+import { capitalize } from './centerDetail.js';
 import { DISCOUNT_GROUPS, FACILITY_FILTERS, NOT_STATED_LABELS } from './matchning.js';
 
 // Rådhuspladsen i København. Bruges, når brugeren ikke har nogen placering.
@@ -49,7 +50,8 @@ export function otherCentersLabel(count, chain) {
   return count === 1 ? `1 andet center i ${name}` : `${count} andre centre i ${name}`;
 }
 
-// Nøgleord til pin-boksen: de faciliteter Centret med sikkerhed har (fx Sauna, Holdtræning).
+// Nøgleord til pin-boksen: de faciliteter Centret med sikkerhed har, med småt, fordi de står
+// midt i en linje ("2,1 km fra dig · sauna, holdtræning").
 export function centerKeywords(center) {
   return FACILITY_FILTERS.filter((facility) => center?.facilities?.[facility] === true).map(
     (facility) => NOT_STATED_LABELS[facility],
@@ -71,7 +73,7 @@ const TAG_SUFFIX = { wanted: ', ønsket', notStated: ', ikke oplyst', other: '' 
 // Faciliteter, Centret ikke har (eller ikke vides at have) uden at være ønsket, får intet mærke.
 // Inden for hver status står faciliteterne i samme rækkefølge som facilities. limit er, hvor
 // mange der vises; resten er hidden ("+N mere"). facilities og labels kan udvides, så flere
-// faciliteter ikke kræver en ny funktion.
+// faciliteter ikke kræver en ny funktion. Mærker har stort begyndelsesbogstav (fx "Sauna").
 export function facilityTags(
   center,
   filters,
@@ -87,7 +89,7 @@ export function facilityTags(
     else if (wanted && value == null) status = 'notStated';
     else if (!wanted && value === true) status = 'other';
     if (!status) continue;
-    const label = labels[key] ?? key;
+    const label = capitalize(labels[key] ?? key);
     tags.push({ key, label, status, accessibilityLabel: label + TAG_SUFFIX[status] });
   }
   // Array.prototype.sort er stabil, så faciliteternes rækkefølge bevares inden for en status.
@@ -105,11 +107,11 @@ export function notStatedWithoutFacilities(notStated) {
 }
 
 const FILTER_SUGGESTIONS = {
-  sauna: 'Slå Sauna fra',
-  groupClasses: 'Slå Holdtræning fra',
-  open24h: 'Slå Døgnåbent fra',
-  multiCenterAccess: 'Slå Landsdækkende fra',
-  noBinding: 'Tillad Binding',
+  sauna: 'Slå sauna fra',
+  groupClasses: 'Slå holdtræning fra',
+  open24h: 'Slå døgnåbent fra',
+  multiCenterAccess: 'Slå landsdækkende fra',
+  noBinding: 'Tillad binding',
 };
 
 // Forslag til at løsne de aktive Filtre, når intet Center matcher (tom-tilstand med Ronnie).
@@ -123,7 +125,7 @@ export function loosenFilterSuggestions(filters, { hasLocation = true } = {}) {
     suggestions.push(
       hasLocation
         ? `Øg maks. afstand (nu ${active.maxDistanceKm} km)`
-        : 'Angiv din adresse på Profil, så afstanden til Centrene kan beregnes',
+        : 'Angiv din adresse på Profil, så afstanden til centrene kan beregnes',
     );
   }
   for (const [key, text] of Object.entries(FILTER_SUGGESTIONS)) {
@@ -136,12 +138,12 @@ export function loosenFilterSuggestions(filters, { hasLocation = true } = {}) {
 }
 
 // Linjen øverst på Find, der viser, hvilken Rabatprofil priserne er regnet med:
-// "Priser regnet med: Studerende" eller "Priser uden Rabat", når Rabatprofilen er tom.
+// "Priser regnet med: Studerende" eller "Priser uden rabat", når Rabatprofilen er tom.
 export function discountProfileText(discountProfile) {
   const labels = (discountProfile ?? [])
     .map((group) => DISCOUNT_GROUPS[group]?.label)
     .filter(Boolean);
-  return labels.length > 0 ? `Priser regnet med: ${labels.join(', ')}` : 'Priser uden Rabat';
+  return labels.length > 0 ? `Priser regnet med: ${labels.join(', ')}` : 'Priser uden rabat';
 }
 
 // Beskeden på Find, når der vises eksempeldata i stedet for de rigtige priser, med grunden.
@@ -161,7 +163,7 @@ export function sampleDataNotice({ configured, failed }) {
     );
   }
   return (
-    'Viser eksempeldata, fordi der endnu ikke er hentet priser fra Kæderne. Priserne er derfor ' +
+    'Viser eksempeldata, fordi der endnu ikke er hentet priser fra kæderne. Priserne er derfor ' +
     'ikke de rigtige.'
   );
 }
