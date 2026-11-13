@@ -13,7 +13,7 @@ import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
-// Filtre og sortering til Find: sauna, holdtræning, døgnåbent, adgang til flere centre
+// Filtre og sortering til Find: sauna, holdtræning, døgnåbent, Landsdækkende
 // (Abonnementstype), ingen Binding, maskiner og maks. afstand. Udgangspunktet er brugerens
 // Præferencer. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
 // til Præferencerne. Find læser de samme gemte Filtre, så kort og liste følger med.

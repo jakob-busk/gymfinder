@@ -46,7 +46,7 @@ const FILTER_SUGGESTIONS = {
   sauna: 'Slå Sauna fra',
   groupClasses: 'Slå Holdtræning fra',
   open24h: 'Slå Døgnåbent fra',
-  multiCenterAccess: 'Slå "Adgang til flere centre" fra',
+  multiCenterAccess: 'Slå Landsdækkende fra',
   noBinding: 'Tillad Binding',
 };
 

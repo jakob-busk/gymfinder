@@ -322,14 +322,15 @@ export function distanceKm(from, to) {
 
 export const FACILITY_FILTERS = ['sauna', 'groupClasses', 'open24h'];
 
-// Navne til "Ikke oplyst"-mærker i UI.
+// Navne til "Ikke oplyst"-mærker i UI. Abonnementstype-Filteret hedder "Landsdækkende" i UI,
+// så mærket bruger samme ord.
 export const NOT_STATED_LABELS = {
   sauna: 'Sauna',
   groupClasses: 'Holdtræning',
   open24h: 'Døgnåbent',
   machines: 'Maskiner',
   binding: 'Binding',
-  subscriptionType: 'Abonnementstype',
+  subscriptionType: 'Landsdækkende',
 };
 
 function checkCenter(center, filters) {
