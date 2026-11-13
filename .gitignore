@@ -47,3 +47,6 @@ yarn-error.*
 
 # task worktrees (/bcj-new-task)
 .worktrees/
+
+# Claude Codes midlertidige agent-worktrees
+.claude/worktrees/
