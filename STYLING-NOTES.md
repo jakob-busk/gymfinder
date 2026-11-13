@@ -162,16 +162,16 @@ så B's commits har deres egne hashes. `npm test` og nat-jobbets tests er grønn
 | L16 | `1fa2ded` | B | Det kørende bånd på Velkomst er fjernet | `Marquee.js` slettet |
 | L17 | `e5ed8f2` | A | Eksempeldata-beskeden siger hvorfor og har "Prøv igen"; tomt Center har "Tilbage til Find" | `sampleDataNotice` |
 | L17 | `dbaffa9` | B | Forklaringer ved spærrede knapper og fagord; sortering kun på Find; "Om GymFinder" | Intet kontaktafsnit på Om GymFinder (fjernet efter fletningen efter ønske) |
-| F1 | `e1dc280` | A | "Fjernet fra Favoritter · Fortryd" i 5 sek.; gendanner Prisalarm og startpris | "Fjern" på Favoritter spørger ikke længere ja/nej; global `UndoToast` i App.js |
+| F1 | `e1dc280` | A | **Rullet tilbage i `445dde3`.** Var: "Fjernet fra Favoritter · Fortryd" | Brugeren vil ikke have Fortryd; ♥ fjerner med det samme, "Fjern" spørger ja/nej igen |
 | F2 | `8708188` | A | Timeout på centerdata (8 sek.) og "Ingen forbindelse" med "Prøv igen" | Timeouten har ingen automatisk test |
 | F3 | `41ac484` | B | Tomt eller ugyldigt prisfelt nulstiller Nuværende medlemskab og siger det | |
 | F4 | `34775a6` | B | "Spring over" nulstiller ikke længere valg | Vises kun, så længe intet er valgt |
 | F5 | `4f8c782` | B | Viser om profilen er gemt på kontoen eller kun på telefonen | `saveStatus` fra `useUserProfile` |
-| F6 | `8a7fa86` | B | "Filtre nulstillet · Fortryd" og "Ny samtale" i Spørg Ronnie | Egen Fortryd-række i Filtre (ikke `UndoToast`) |
+| F6 | `8a7fa86` | B | "Ny samtale" i Spørg Ronnie; et færdigt spørgsmål overskriver ikke feltet | **Delvist rullet tilbage i `7f53f07`:** Fortryd efter Nulstil i Filtre er fjernet; Nulstil nulstiller med det samme |
 | F7 | `99cc033` | B | Prisalarmen husker den sidste tærskel | Kun mens kortet er åbent |
 
-Fletningen havde ingen tekstkonflikter. Ved overlap er begge sider beholdt: `App.js` har både den
-globale Fortryd-besked og B's topbjælke i onboarding, `components/Reveal.js` bruger B's kortere
+Fletningen havde ingen tekstkonflikter. Ved overlap er begge sider beholdt: `App.js` havde både den
+globale Fortryd-besked (senere fjernet med F1) og B's topbjælke i onboarding, `components/Reveal.js` bruger B's kortere
 varighed også på del A's skærme, og `data/findView.js` har både B's "Slå Landsdækkende fra" og del
 A's Rabatprofil- og eksempeldata-tekster.
 
@@ -215,7 +215,7 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1712 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+Før (variant 2): 1407. Efter: 1663 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
 ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne fra del A og B; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
@@ -232,5 +232,5 @@ ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne fr
   forskyder kun de første 3 elementer med 50 ms; knapperne på Velkomst animeres ikke.
 - Animationer er kun bundlet på web, ikke afprøvet på fysisk enhed.
 - `expo-linear-gradient` er stadig installeret, men bruges ikke.
-- Der er to Fortryd-mønstre: den globale `UndoToast` (Favoritter) og en Fortryd-række over knapperne
-  i Filtre (del B). De kunne samles til ét.
+- "Fjern" på Favoritter bruger `Alert.alert` med to knapper, som ikke vises på web
+  (react-native-web). Del B's `components/confirm.js` (`window.confirm` på web) kunne bruges dér.
