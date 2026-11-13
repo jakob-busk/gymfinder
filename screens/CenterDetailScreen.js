@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
+import ChainLogo from '../components/ChainLogo';
 import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferReceipt from '../components/OfferReceipt';
@@ -115,9 +116,13 @@ export default function CenterDetailScreen({ navigation, route }) {
         </Text>
         <FavoriteButton center={center} chain={chain} />
       </View>
-      <Text style={GlobalStyle.detailHeroMeta}>
-        {[chain?.name, center.address, distance].filter(Boolean).join(' · ')}
-      </Text>
+      {/* Kædens logo står i stedet for navnet, foran adresse og afstand. */}
+      <View style={[GlobalStyle.chainRow, GlobalStyle.detailHeroMetaRow]}>
+        <ChainLogo chain={chain} />
+        <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
+          {[center.address, distance].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
 
       {offers.length > 1 && (
         <ScrollView

@@ -84,6 +84,23 @@ Et trin lettere end første udgave af 7, så det føles roligt, men stadig har T
 - Indlæste skrifter: Fredoka 500/600 og Nunito 400/600/700. Fjernet: `@expo-google-fonts/bricolage-grotesque`
   og `@expo-google-fonts/inter`. Tilføjet: `@expo-google-fonts/fredoka` og `@expo-google-fonts/nunito`.
 
+## Kædelogoer
+
+- Logoerne (`assets/chains/puregym.png`, `sats.png`, `loop.png`, `fitnessx.png`, sorte på
+  gennemsigtig baggrund) står i stedet for Kædens navn i `CenterCard` (Find), Favoritter,
+  `CenterPinInfo` og linjen under navnet på Centerdetalje. Navnet er `accessibilityLabel`. Sætninger,
+  der nævner Kæden ("Åbner … på {Kæde}s egen side", kvitteringen, Ronnie, Nuværende medlemskab),
+  bruger stadig navnet som tekst.
+- `components/ChainLogo.js` slår op på Kædens id (samme id som i `scraper/chains`). Kæder uden logo
+  får navnet som tekst i pillen.
+- Udseende: lyst logo (`#F7F1E8` via `tintColor`) på en blæk-pille, 26 px høj for alle Kæder, 10 px
+  luft i siderne. På blæk-blokken får pillen en svag lys kant (`#A8A193` ved 45 %), så den kan ses.
+- Optiske højder: PureGym 16 px, SATS 12 px, Fitness X 11 px, Loop 9 px.
+- `tintColor` virker på web: react-native-web 0.21 laver et SVG-filter (`url(#tint-…)`), når
+  `tintColor` står i Image-stilen. Det er tjekket i kildekoden og den eksporterede bundle, men ikke
+  set i en browser.
+- **Logoerne er Kædernes varemærker.** Brugsretten skal afklares med Kæderne før en udgivelse.
+
 ## Regel: ingen versaltekst
 
 Ingen tekst står i versaler med spærring (det opleves som et "AI-design-spor"). Etiketter, mærker,
@@ -132,8 +149,8 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1508 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
-ikonrække og pin-prikker; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
+Før (variant 2): 1407. Efter: 1541 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+ikonrække, pin-prikker og kædelogo-pillen; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
 

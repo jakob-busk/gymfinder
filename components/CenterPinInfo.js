@@ -2,10 +2,11 @@ import { Pressable, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import ChainLogo from './ChainLogo';
 import NotStatedRow from './NotStatedRow';
 import { centerKeywords } from '../data/findView';
 
-// Boksen der vises på kortet, når man trykker på en Center-pin: Kæde, Ærlig årspris (stort tal),
+// Boksen der vises på kortet, når man trykker på en Center-pin: Kædens logo, Ærlig årspris (stort tal),
 // Distance, nøgleord og "Ikke oplyst" for aktive Filtre, hvor det er ukendt.
 // onShowDetails åbner Centerdetalje, onClose lukker boksen.
 export default function CenterPinInfo({ match, isRecommended, onShowDetails, onClose }) {
@@ -15,7 +16,11 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
   return (
     <View style={GlobalStyle.pinInfo}>
       <View style={GlobalStyle.cardHeader}>
-        <Text style={GlobalStyle.cardTitle}>{chain?.name ?? center.name}</Text>
+        {chain ? (
+          <ChainLogo chain={chain} />
+        ) : (
+          <Text style={GlobalStyle.cardTitle}>{center.name}</Text>
+        )}
         {isRecommended && (
           <View style={GlobalStyle.badge}>
             <Text style={GlobalStyle.badgeText}>Anbefalet</Text>

@@ -446,6 +446,37 @@ const GlobalStyle = StyleSheet.create({
     letterSpacing: -0.2,
     color: colors.text,
   },
+  // Kædens logo: lyst logo på en lille blæk-pille, samme højde for alle Kæder (se ChainLogo).
+  chainPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 26,
+    paddingHorizontal: 10,
+    borderRadius: shape.pill,
+    backgroundColor: colors.ink,
+  },
+  // På blæk-blokken får pillen en svag lys kant, så den stadig kan ses som en pille.
+  chainPillOnInk: {
+    borderWidth: 1,
+    borderColor: 'rgba(168, 161, 147, 0.45)',
+  },
+  chainLogo: {
+    tintColor: colors.onInk,
+  },
+  chainPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    color: colors.onInk,
+  },
+  // Kædens logo og afstanden på én linje under navnet.
+  chainRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+  },
   // Tekst i den mørke blok.
   textOnInk: {
     color: colors.onInk,
@@ -1218,10 +1249,8 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     lineHeight: 20,
   },
-  detailHeroMeta: {
-    fontFamily: fonts.body,
-    color: colors.muted,
-    lineHeight: 20,
+  // Centerdetalje: Kædens logo, adresse og afstand under navnet.
+  detailHeroMetaRow: {
     marginBottom: 20,
   },
   feeRow: {
@@ -1379,6 +1408,10 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
+  },
+  favoriteChain: {
+    marginTop: 4,
+    marginBottom: 6,
   },
   favoriteInfo: {
     flex: 1,

@@ -2,6 +2,7 @@ import { View, Text, Pressable } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import ChainLogo from './ChainLogo';
 import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
@@ -17,12 +18,7 @@ const kr = (amount) => `${Math.round(amount)} kr`;
 // i stedet for ens kort. index er pladsen i listen; kortene toner ind forskudt efter den.
 export default function CenterCard({ match, isRecommended, onShowDetails, index = 0 }) {
   const { center, chain, bestOffer } = match;
-  const details = [
-    chain?.name,
-    match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const distance = match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null;
   const ink = isRecommended;
 
   return (
@@ -45,7 +41,13 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
             accessibilityRole="button"
           >
             <Text style={[GlobalStyle.cardTitle, ink && GlobalStyle.textOnInk]}>{center.name}</Text>
-            <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>{details}</Text>
+            {/* Kædens logo står i stedet for navnet, med afstanden ved siden af. */}
+            <View style={GlobalStyle.chainRow}>
+              <ChainLogo chain={chain} onInk={ink} />
+              {distance && (
+                <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>{distance}</Text>
+              )}
+            </View>
           </Pressable>
           <FavoriteButton center={center} chain={chain} onInk={ink} />
         </View>
