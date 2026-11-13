@@ -17,7 +17,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
     <View style={GlobalStyle.pinInfo}>
       <View style={GlobalStyle.cardHeader}>
         <View style={GlobalStyle.fill}>
-          <CenterTitle chain={chain} name={center.name} />
+          <CenterTitle chain={chain} name={center.name} size="compact" />
         </View>
         {isRecommended && (
           <View style={GlobalStyle.badge}>

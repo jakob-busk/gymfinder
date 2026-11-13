@@ -97,11 +97,24 @@ Et trin lettere end første udgave af 7, så det føles roligt, men stadig har T
   afstand). Bruges i `CenterCard`, Favoritter, `CenterPinInfo` og på Centerdetalje. Skærmlæsere hører
   "Kæde, Centernavn" én gang; logo og pin er skjult (`aria-hidden`), og på kortet på Find har
   titel-knappen selv den tekst.
+- **Navnet uden Kæde:** ved siden af logoet står Centrets navn uden Kædens navn foran ("Fitness X
+  Lyngby" → "Lyngby", "LOOP Viborg" → "Viborg"). Ren funktion `centerDisplayName` i
+  `data/centerDisplayName.js` (med test); LOOP har aliaset "LOOP", da Centrene ikke hedder "LOOP
+  Fitness …". Har Kæden intet logo, eller bliver navnet tomt, står det fulde navn. Kun visningen
+  ændres; sætninger, der nævner Centret, bruger det fulde navn.
+- **Afstemte størrelser** (pillens højde = navnets linjehøjde, ens luft på 6 px):
+
+  | Variant | Navn | Linjehøjde / pille | Pin | Logo: PureGym / SATS / Fitness X / Loop |
+  |---|---|---|---|---|
+  | Boksen på kortet | Fredoka 500, 16 px | 20 px | 14 px | 12 / 9 / 8 / 7 px |
+  | Kort (Find, Favoritter) | Fredoka 500, 18 px | 22 px | 16 px | 14 / 10 / 9 / 8 px |
+  | Centerdetalje | Fredoka 600, 24 px | 28 px | 20 px | 17 / 13 / 12 / 10 px |
 - `components/ChainLogo.js` slår op på Kædens id (samme id som i `scraper/chains`). Kæder uden logo
   får navnet som tekst i pillen.
-- Udseende: lyst logo (`#F7F1E8` via `tintColor`) på en blæk-pille, 26 px høj for alle Kæder, 10 px
-  luft i siderne. På blæk-blokken får pillen en svag lys kant (`#A8A193` ved 45 %), så den kan ses.
-- Optiske højder: PureGym 16 px, SATS 12 px, Fitness X 11 px, Loop 9 px.
+- Udseende: lyst logo (`#F7F1E8` via `tintColor`) på en blæk-pille med samme højde for alle
+  Kæder. På blæk-blokken får pillen en svag lys kant (`#A8A193` ved 45 %), så den kan ses.
+- Optiske grundhøjder i en 26 px pille: PureGym 16 px, SATS 12 px, Fitness X 11 px, Loop 9 px;
+  de skaleres med pillens højde.
 - `tintColor` virker på web: react-native-web 0.21 laver et SVG-filter (`url(#tint-…)`), når
   `tintColor` står i Image-stilen. Det er tjekket i kildekoden og den eksporterede bundle, men ikke
   set i en browser.
@@ -155,7 +168,7 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1556 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+Før (variant 2): 1407. Efter: 1592 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
 ikonrække, pin-prikker, kædelogo-pillen og titellinjen; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder

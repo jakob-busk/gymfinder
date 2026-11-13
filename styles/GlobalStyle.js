@@ -452,10 +452,25 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 26,
-    paddingHorizontal: 10,
     borderRadius: shape.pill,
     backgroundColor: colors.ink,
+  },
+  // Pillens højde er titlens linjehøjde; sideluften er ca. 0,38 × højden.
+  chainPillCompact: {
+    height: 20,
+    paddingHorizontal: 8,
+  },
+  chainPillCard: {
+    height: 22,
+    paddingHorizontal: 8,
+  },
+  chainPillScreen: {
+    height: 28,
+    paddingHorizontal: 11,
+  },
+  chainPillDefault: {
+    height: 26,
+    paddingHorizontal: 10,
   },
   // På blæk-blokken får pillen en svag lys kant, så den stadig kan ses som en pille.
   chainPillOnInk: {
@@ -472,6 +487,8 @@ const GlobalStyle = StyleSheet.create({
   },
   // Et Centers titel: logo-pille og pin står i en "forspand" med samme højde som navnets første
   // linje, så de står på linje med den; navnet brydes under sig selv (se CenterTitle).
+  // Navnet er roligt (Fredoka 500 på kort, 600 på Centerdetalje), så pille, pin og navn føles
+  // som én linje og ikke som en stor overskrift med pynt foran. Luften mellem delene er ens (6 px).
   centerTitle: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -480,17 +497,36 @@ const GlobalStyle = StyleSheet.create({
   centerTitleLead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+  },
+  centerTitleLeadCompact: {
+    height: 20,
   },
   centerTitleLeadCard: {
-    height: 24,
+    height: 22,
   },
   centerTitleLeadScreen: {
-    height: 31,
+    height: 28,
   },
   centerTitleName: {
     flex: 1,
-    marginBottom: 0,
+    color: colors.text,
+  },
+  centerTitleCompact: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  centerTitleCard: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  centerTitleScreen: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: -0.2,
   },
   // Tekst i den mørke blok.
   textOnInk: {
