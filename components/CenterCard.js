@@ -8,11 +8,16 @@ import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
 import Reveal from './Reveal';
-import { formatDistance, formatNumber, formatPrice } from '../data/centerDetail';
+import {
+  formatDistance,
+  formatNumber,
+  formatPrice,
+  offerBasisText,
+} from '../data/centerDetail';
 import { openSignupPage } from '../services/Signup';
 
 // Kort for ét Center i listen: titel (logo, pin, navn), afstand, Ærlig årspris for det billigste
-// Tilbud for brugeren som et stort tal og "Tilmeld". Hele kortet åbner Centerdetalje (pilen til
+// Tilbud for brugeren som et stort tal med Tilbuddets navn (og Rabat) og "Tilmeld {Tilbud}". Hele kortet åbner Centerdetalje (pilen til
 // højre viser det); ♥ gør Centret til Favorit. Detaljer som de første 3 mdr. står på
 // Centerdetalje, så kortet holdes kort. Det Anbefalede Center er en mørk blok med prisen i lyst
 // blæk, så listen får en rytme i stedet for ens kort. index er pladsen i listen; kortene toner ind
@@ -85,6 +90,10 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
             </View>
           </View>
         </View>
+        {/* Hvilket Tilbud prisen og Tilmeld gælder, og om en Rabat er regnet med. */}
+        <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
+          {offerBasisText(bestOffer)}
+        </Text>
         <NotStatedRow notStated={match.notStated} onInk={ink} />
         {match.savingPerMonth != null && match.savingPerMonth > 0 && (
           <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
@@ -95,7 +104,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
 
         <View style={GlobalStyle.cardActions}>
           <ButtonComponent
-            title="Tilmeld"
+            title={`Tilmeld ${bestOffer.offer.name}`}
             type="primary"
             size="small"
             icon="open-outline"

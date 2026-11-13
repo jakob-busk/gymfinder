@@ -49,6 +49,14 @@ export function formatPrice(amount, per = 'md.') {
   return `${formatKr(amount)} pr. ${per}`;
 }
 
+// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: "for Basis", og "· med Studierabat",
+// når en Rabat (eller Makkerpris) er regnet med i Ærlig årspris.
+export function offerBasisText(pricedOffer) {
+  const option = pricedOffer.yearlyOption;
+  const discount = option?.discountGroup ? ` · med ${option.label}` : '';
+  return `for ${pricedOffer.offer.name}${discount}`;
+}
+
 // Matchning for ét Center uden Filtre, så Centerdetalje viser alle Centrets Tilbud, også dem
 // brugerens Filtre ellers ville skjule på Find. Returnerer en CenterMatch eller null.
 export function matchCenter({ center, chains, user, today }) {

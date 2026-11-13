@@ -6,6 +6,7 @@ import {
   formatNumber,
   formatPrice,
   matchCenter,
+  offerBasisText,
   offerSignupUrl,
   partnerInfo,
   priceBreakdown,
@@ -381,6 +382,15 @@ describe('signupLink', () => {
   test('uden link på Tilbuddet bruges Centrets', () => {
     expect(offerSignupUrl(bestOfferFor())).toBeNull();
     expect(signupLink(center(), CHAIN, bestOfferFor())).toMatch(/^https:\/\/kaede\.dk\/tilmeld\?/);
+  });
+});
+
+describe('offerBasisText', () => {
+  test('siger, hvilket Tilbud prisen gælder, og hvilken Rabat der er regnet med', () => {
+    expect(offerBasisText(bestOfferFor())).toBe('for Basis');
+    expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }))).toBe(
+      'for Basis · med Studierabat',
+    );
   });
 });
 
