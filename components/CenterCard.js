@@ -2,7 +2,7 @@ import { View, Text, Pressable } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
-import ChainLogo from './ChainLogo';
+import CenterTitle, { centerTitleLabel } from './CenterTitle';
 import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
@@ -35,20 +35,19 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
           )}
         </View>
         <View style={GlobalStyle.cardHeader}>
-          <Pressable
-            style={GlobalStyle.cardTitleArea}
-            onPress={onShowDetails}
-            accessibilityRole="button"
-          >
-            <Text style={[GlobalStyle.cardTitle, ink && GlobalStyle.textOnInk]}>{center.name}</Text>
-            {/* Kædens logo står i stedet for navnet, med afstanden ved siden af. */}
-            <View style={GlobalStyle.chainRow}>
-              <ChainLogo chain={chain} onInk={ink} />
-              {distance && (
-                <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>{distance}</Text>
-              )}
-            </View>
-          </Pressable>
+          <View style={GlobalStyle.cardTitleArea}>
+            {/* Titlen (logo, pin, navn) kan trykkes; skærmlæseren hører "Kæde, Centernavn". */}
+            <Pressable
+              onPress={onShowDetails}
+              accessibilityRole="button"
+              accessibilityLabel={centerTitleLabel(chain, center.name)}
+            >
+              <CenterTitle chain={chain} name={center.name} onInk={ink} labelled={false} />
+            </Pressable>
+            {distance && (
+              <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>{distance}</Text>
+            )}
+          </View>
           <FavoriteButton center={center} chain={chain} onInk={ink} />
         </View>
 

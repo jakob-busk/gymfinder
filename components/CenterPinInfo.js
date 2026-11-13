@@ -2,11 +2,11 @@ import { Pressable, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
-import ChainLogo from './ChainLogo';
+import CenterTitle from './CenterTitle';
 import NotStatedRow from './NotStatedRow';
 import { centerKeywords } from '../data/findView';
 
-// Boksen der vises på kortet, når man trykker på en Center-pin: Kædens logo, Ærlig årspris (stort tal),
+// Boksen der vises på kortet, når man trykker på en Center-pin: titel (logo, pin, navn), Ærlig årspris (stort tal),
 // Distance, nøgleord og "Ikke oplyst" for aktive Filtre, hvor det er ukendt.
 // onShowDetails åbner Centerdetalje, onClose lukker boksen.
 export default function CenterPinInfo({ match, isRecommended, onShowDetails, onClose }) {
@@ -16,18 +16,15 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
   return (
     <View style={GlobalStyle.pinInfo}>
       <View style={GlobalStyle.cardHeader}>
-        {chain ? (
-          <ChainLogo chain={chain} />
-        ) : (
-          <Text style={GlobalStyle.cardTitle}>{center.name}</Text>
-        )}
+        <View style={GlobalStyle.fill}>
+          <CenterTitle chain={chain} name={center.name} />
+        </View>
         {isRecommended && (
           <View style={GlobalStyle.badge}>
             <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
           </View>
         )}
       </View>
-      <Text style={GlobalStyle.distanceText}>{center.name}</Text>
       <View style={GlobalStyle.cardPriceRow}>
         <Text style={GlobalStyle.bigPrice}>{Math.round(match.honestYearlyPrice)}</Text>
         <View style={GlobalStyle.cardPriceUnitBox}>

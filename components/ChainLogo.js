@@ -13,11 +13,11 @@ const LOGOS = {
   loop: { source: require('../assets/chains/loop.png'), ratio: 955 / 120, height: 9 },
 };
 
-// Kædens logo i lys farve på en lille blæk-pille, der står i stedet for Kædens navn. Pillen har
-// samme højde for alle Kæder; kun logoet i den varierer. Logoet farves i appen med tintColor
-// (virker også på web, hvor react-native-web bruger et SVG-filter). Navnet læses op af
-// skærmlæsere, og findes der ikke et logo, står navnet som tekst i pillen. onInk giver pillen
-// en lys kant, så den ikke forsvinder på blæk-blokken.
+// Kædens logo i lys farve på en lille blæk-pille, forrest i et Centers titel (se CenterTitle).
+// Pillen har samme højde for alle Kæder; kun logoet i den varierer. Logoet farves i appen med
+// tintColor (virker også på web, hvor react-native-web bruger et SVG-filter). Navnet læses op af
+// skærmlæsere, og findes der ikke et logo, står navnet som tekst i pillen. onInk giver pillen en
+// lys kant, så den ikke forsvinder på blæk-blokken.
 export default function ChainLogo({ chain, onInk = false }) {
   if (!chain) return null;
   const logo = LOGOS[chain.id];

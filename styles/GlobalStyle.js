@@ -470,12 +470,27 @@ const GlobalStyle = StyleSheet.create({
     fontSize: 12,
     color: colors.onInk,
   },
-  // Kædens logo og afstanden på én linje under navnet.
-  chainRow: {
+  // Et Centers titel: logo-pille og pin står i en "forspand" med samme højde som navnets første
+  // linje, så de står på linje med den; navnet brydes under sig selv (se CenterTitle).
+  centerTitle: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  centerTitleLead: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
+  },
+  centerTitleLeadCard: {
+    height: 24,
+  },
+  centerTitleLeadScreen: {
+    height: 31,
+  },
+  centerTitleName: {
+    flex: 1,
+    marginBottom: 0,
   },
   // Tekst i den mørke blok.
   textOnInk: {
@@ -1249,8 +1264,12 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     lineHeight: 20,
   },
-  // Centerdetalje: Kædens logo, adresse og afstand under navnet.
-  detailHeroMetaRow: {
+  // Centerdetalje: adresse og afstand under titlen.
+  detailHeroMeta: {
+    fontFamily: fonts.body,
+    color: colors.muted,
+    lineHeight: 20,
+    marginTop: 8,
     marginBottom: 20,
   },
   feeRow: {
@@ -1408,10 +1427,6 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-  },
-  favoriteChain: {
-    marginTop: 4,
-    marginBottom: 6,
   },
   favoriteInfo: {
     flex: 1,

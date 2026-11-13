@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
-import ChainLogo from '../components/ChainLogo';
+import CenterTitle from '../components/CenterTitle';
 import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferReceipt from '../components/OfferReceipt';
@@ -111,18 +111,15 @@ export default function CenterDetailScreen({ navigation, route }) {
   return (
     <ScrollView style={GlobalStyle.screen} contentContainerStyle={GlobalStyle.stepContent}>
       <View style={GlobalStyle.titleRow}>
-        <Text style={[GlobalStyle.title, GlobalStyle.shrinkText, GlobalStyle.screenHeaderTitle]}>
-          {center.name}
-        </Text>
+        <View style={GlobalStyle.fill}>
+          <CenterTitle chain={chain} name={center.name} size="screen" />
+        </View>
         <FavoriteButton center={center} chain={chain} />
       </View>
-      {/* Kædens logo står i stedet for navnet, foran adresse og afstand. */}
-      <View style={[GlobalStyle.chainRow, GlobalStyle.detailHeroMetaRow]}>
-        <ChainLogo chain={chain} />
-        <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
-          {[center.address, distance].filter(Boolean).join(' · ')}
-        </Text>
-      </View>
+      {/* Kædens logo står i titlen, så her står kun adresse og afstand. */}
+      <Text style={GlobalStyle.detailHeroMeta}>
+        {[center.address, distance].filter(Boolean).join(' · ')}
+      </Text>
 
       {offers.length > 1 && (
         <ScrollView

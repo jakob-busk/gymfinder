@@ -87,10 +87,16 @@ Et trin lettere end første udgave af 7, så det føles roligt, men stadig har T
 ## Kædelogoer
 
 - Logoerne (`assets/chains/puregym.png`, `sats.png`, `loop.png`, `fitnessx.png`, sorte på
-  gennemsigtig baggrund) står i stedet for Kædens navn i `CenterCard` (Find), Favoritter,
-  `CenterPinInfo` og linjen under navnet på Centerdetalje. Navnet er `accessibilityLabel`. Sætninger,
+  gennemsigtig baggrund) står i stedet for Kædens navn, forrest i Centrets titel (se nedenfor). Sætninger,
   der nævner Kæden ("Åbner … på {Kæde}s egen side", kvitteringen, Ronnie, Nuværende medlemskab),
   bruger stadig navnet som tekst.
+- **Titellinjen** for et Center er én linje i `components/CenterTitle.js`: [logo-pille] [pin
+  (`location-sharp`, blæk på lyst, `onInk` på blæk-blokken)] [Centrets navn]. Pille og pin står i et
+  forspand med samme højde som navnets første linje, så de står på linje med det; bryder navnet,
+  brydes det under sig selv. Afstanden står på en dæmpet linje under (på Centerdetalje: adresse ·
+  afstand). Bruges i `CenterCard`, Favoritter, `CenterPinInfo` og på Centerdetalje. Skærmlæsere hører
+  "Kæde, Centernavn" én gang; logo og pin er skjult (`aria-hidden`), og på kortet på Find har
+  titel-knappen selv den tekst.
 - `components/ChainLogo.js` slår op på Kædens id (samme id som i `scraper/chains`). Kæder uden logo
   får navnet som tekst i pillen.
 - Udseende: lyst logo (`#F7F1E8` via `tintColor`) på en blæk-pille, 26 px høj for alle Kæder, 10 px
@@ -149,8 +155,8 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1541 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
-ikonrække, pin-prikker og kædelogo-pillen; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
+Før (variant 2): 1407. Efter: 1556 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+ikonrække, pin-prikker, kædelogo-pillen og titellinjen; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
 

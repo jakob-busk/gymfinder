@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
-import ChainLogo from '../components/ChainLogo';
+import CenterTitle from '../components/CenterTitle';
 import InfoButton from '../components/InfoButton';
 import PriceAlertEditor from '../components/PriceAlertEditor';
 import Reveal from '../components/Reveal';
@@ -128,12 +128,7 @@ export default function FavoritesScreen({ navigation }) {
             onPress={() => showDetails(row.centerId)}
             accessibilityRole="button"
           >
-            <Text style={GlobalStyle.cardTitle}>{row.center?.name ?? 'Ukendt Center'}</Text>
-            {row.chain && (
-              <View style={GlobalStyle.favoriteChain}>
-                <ChainLogo chain={row.chain} />
-              </View>
-            )}
+            <CenterTitle chain={row.chain} name={row.center?.name ?? 'Ukendt Center'} />
             {row.match ? (
               <>
                 <View style={GlobalStyle.cardPriceRow}>
