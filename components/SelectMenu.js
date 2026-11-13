@@ -62,7 +62,7 @@ export default function SelectMenu({
                   accessibilityState={{ selected: active }}
                 >
                   <Text style={GlobalStyle.sheetOptionText}>{option.label}</Text>
-                  {active && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  {active && <Ionicons name="checkmark" size={20} color={colors.text} />}
                 </Pressable>
               );
             })}

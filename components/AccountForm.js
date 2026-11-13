@@ -92,7 +92,7 @@ export default function AccountForm({
       {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
 
       <View style={GlobalStyle.accountActions}>
-        {busy && <ActivityIndicator color={colors.primary} />}
+        {busy && <ActivityIndicator color={colors.text} />}
         <ButtonComponent
           title={submitLabel ?? (isCreate ? 'Gem din profil' : 'Log ind')}
           type={submitType}
