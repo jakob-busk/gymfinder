@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 
 // En række i en gruppe, som i telefonens Indstillinger: ikon, navn, den nuværende værdi under og
-// en pil. Hele rækken kan trykkes. Uden onPress vises ingen pil.
+// en pil frem. Hele rækken kan trykkes. Uden onPress vises ingen pil.
 export default function SettingsRow({ icon, label, value, onPress, danger = false }) {
   return (
     <Pressable
@@ -15,7 +15,7 @@ export default function SettingsRow({ icon, label, value, onPress, danger = fals
     >
       {icon && (
         <View style={GlobalStyle.settingsIcon}>
-          <Ionicons name={icon} size={17} color={danger ? colors.error : colors.muted} />
+          <Ionicons name={icon} size={17} color={danger ? colors.error : colors.text} />
         </View>
       )}
       <View style={GlobalStyle.settingsText}>
@@ -28,7 +28,7 @@ export default function SettingsRow({ icon, label, value, onPress, danger = fals
           </Text>
         )}
       </View>
-      {onPress && <Ionicons name="chevron-forward" size={18} color={colors.borderStrong} />}
+      {onPress && <Ionicons name="arrow-forward" size={18} color={colors.text} />}
     </Pressable>
   );
 }

@@ -1,13 +1,18 @@
 import {
   facilityRows,
   feeSummary,
+  formatDistance,
   formatKr,
+  formatNumber,
+  formatPrice,
   matchCenter,
+  offerBasisText,
   offerSignupUrl,
   partnerInfo,
   priceBreakdown,
   receiptLines,
   signupLink,
+  subscriptionTypeLabel,
   turns30Notice,
 } from './centerDetail';
 
@@ -159,7 +164,7 @@ describe('priceBreakdown', () => {
       total: 314,
     });
     // 60 + 2 * 114 + 10 * 314 = 3.428 kr. 3.428 / 12 = 285,67 kr/md.
-    expect(breakdown.perPeriod).toBe('md');
+    expect(breakdown.perPeriod).toBe('md.');
     expect(breakdown.signupFee).toBe(60);
     expect(breakdown.paymentsTotal).toBe(3368);
     expect(breakdown.yearTotal).toBe(3428);
@@ -233,8 +238,8 @@ describe('turns30Notice', () => {
 describe('feeSummary', () => {
   test('viser Oprettelsesgebyr, Admingebyr og Binding', () => {
     expect(feeSummary(bestOfferFor({ signupFee: 299, adminFee: 15, bindingMonths: 6 }))).toEqual({
-      signupFee: '299 kr',
-      adminFee: '15 kr pr. md',
+      signupFee: '299 kr.',
+      adminFee: '15 kr. pr. md.',
       binding: '6 mdr.',
     });
   });
@@ -381,11 +386,38 @@ describe('signupLink', () => {
   });
 });
 
-describe('formatKr', () => {
-  test('bruger dansk tegnsætning og dropper ,00', () => {
-    expect(formatKr(1234)).toBe('1.234 kr');
-    expect(formatKr(224.5)).toBe('224,50 kr');
-    expect(formatKr(0)).toBe('0 kr');
+describe('offerBasisText', () => {
+  test('siger, hvilket Tilbud prisen gælder, og hvilken Rabat der er regnet med', () => {
+    expect(offerBasisText(bestOfferFor())).toBe('for Basis');
+    expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }))).toBe(
+      'for Basis · med Studierabat',
+    );
+  });
+});
+
+describe('prisformat', () => {
+  test('formatKr bruger dansk tegnsætning, dropper ,00 og skriver kr.', () => {
+    expect(formatKr(1234)).toBe('1.234 kr.');
+    expect(formatKr(224.5)).toBe('224,50 kr.');
+    expect(formatKr(0)).toBe('0 kr.');
+    expect(formatKr(-51)).toBe('-51 kr.');
+  });
+
+  test('formatPrice skriver perioden efter "pr."', () => {
+    expect(formatPrice(249)).toBe('249 kr. pr. md.');
+    expect(formatPrice(3000, 'år')).toBe('3.000 kr. pr. år');
+    expect(formatPrice(99.5, '30 dage')).toBe('99,50 kr. pr. 30 dage');
+  });
+
+  test('formatDistance skriver afstanden med decimalkomma', () => {
+    expect(formatDistance(2.4)).toBe('2,4 km');
+    expect(formatDistance(12)).toBe('12,0 km');
+    expect(formatDistance(0.04)).toBe('0,0 km');
+  });
+
+  test('formatNumber giver kun tallet, til de store pristal', () => {
+    expect(formatNumber(1249)).toBe('1.249');
+    expect(formatNumber(285.67)).toBe('285,67');
   });
 });
 
@@ -414,5 +446,13 @@ describe('receiptLines', () => {
     expect(lines[0]).toMatchObject({ label: 'Betaling 1–12', count: 12, total: 240 });
     expect(lines[1]).toMatchObject({ label: 'Betaling 13', count: 1 });
     expect(lines[1].share).toBeCloseTo(1 / 6, 4);
+  });
+});
+
+describe('subscriptionTypeLabel', () => {
+  test('viser Abonnementstypen som "Landsdækkende" eller "Lokalt Center"', () => {
+    expect(subscriptionTypeLabel('Lokal center')).toBe('Lokalt Center');
+    expect(subscriptionTypeLabel('Landsdækkende')).toBe('Landsdækkende');
+    expect(subscriptionTypeLabel(null)).toBeNull();
   });
 });

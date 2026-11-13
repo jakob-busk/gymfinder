@@ -7,6 +7,7 @@ describe('Forklaringer til ⓘ-infoboksen', () => {
     expect(titles.sort()).toEqual(
       [
         'Admingebyr',
+        'Anbefalet',
         'Binding',
         'Ikke oplyst',
         'Kvartalspris',

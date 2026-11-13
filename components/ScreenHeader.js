@@ -1,14 +1,14 @@
 import { Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
-import GlobalStyle, { colors } from '../styles/GlobalStyle';
+import GlobalStyle from '../styles/GlobalStyle';
 import BrandLogo from './BrandLogo';
+import Reveal from './Reveal';
 
-// Toppen af en fane-skærm: titel (eller logoet) og evt. noget til højre, med en tynd neonlinje
-// fra pink til cyan under.
+// Toppen af en fane-skærm: stor titel (eller logoet) og evt. noget til højre, med en tynd
+// blæklinje under som på en avisside. Titlen glider ind, når skærmen åbnes.
 export default function ScreenHeader({ title, logo = false, right }) {
   return (
-    <View style={GlobalStyle.screenHeader}>
+    <Reveal distance={14} style={GlobalStyle.screenHeader}>
       <View style={GlobalStyle.titleRow}>
         {logo ? (
           <BrandLogo />
@@ -17,12 +17,7 @@ export default function ScreenHeader({ title, logo = false, right }) {
         )}
         {right}
       </View>
-      <LinearGradient
-        colors={[colors.primary, colors.accent]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={GlobalStyle.neonLine}
-      />
-    </View>
+      <View style={GlobalStyle.headerRule} />
+    </Reveal>
   );
 }

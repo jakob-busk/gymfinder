@@ -182,19 +182,29 @@ export function ronnieErrorFromResponse(status, body) {
 }
 
 const ERROR_MESSAGES = {
-  missingKey:
-    'Ronnie er ikke sat op på denne telefon endnu. Der mangler en OpenAI-nøgle (se README).',
+  missingKey: 'Ronnie kan ikke svare på denne telefon lige nu.',
   network: 'Ronnie kan ikke få forbindelse lige nu. Tjek din internetforbindelse, og prøv igen.',
-  invalidKey: 'Ronnie kunne ikke logge ind hos OpenAI. Nøglen er ugyldig eller udløbet.',
+  invalidKey: 'Ronnie kan ikke svare lige nu. Prøv igen senere.',
   rateLimit: 'Ronnie har fået for mange spørgsmål på kort tid. Vent lidt, og prøv igen.',
   server: 'Ronnie kunne ikke svare lige nu. Prøv igen om lidt.',
   badReply: 'Ronnie svarede ikke ordentligt. Prøv at stille spørgsmålet igen.',
 };
 
+// Hvad der skal rettes, når Ronnie ikke virker. Skrives kun i konsollen, aldrig i appen.
+const SETUP_HINTS = {
+  missingKey: 'EXPO_PUBLIC_OPENAI_API_KEY mangler i .env (se README).',
+  invalidKey: 'OpenAI afviste nøglen (ugyldig eller udløbet).',
+};
+
 // Venlig dansk fejltekst til brugeren. Ukendte fejl (fx "Network request failed") regnes som
-// forbindelsesfejl, da det er den typiske årsag.
+// forbindelsesfejl, da det er den typiske årsag. Tekniske detaljer skrives i konsollen.
 export function ronnieErrorMessage(error) {
-  return ERROR_MESSAGES[error?.code] ?? ERROR_MESSAGES.network;
+  const code = error?.code;
+  if (code && code !== 'network' && code !== 'rateLimit') {
+    const detail = [SETUP_HINTS[code], error?.message].filter(Boolean).join(' ');
+    console.warn(`[Ronnie] ${code}${detail ? `: ${detail}` : ''}`);
+  }
+  return ERROR_MESSAGES[code] ?? ERROR_MESSAGES.network;
 }
 
 // Er OpenAI-nøglen fra .env udfyldt? Pladsholderen fra .env.example (<...>) tæller som tom.

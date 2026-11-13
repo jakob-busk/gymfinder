@@ -1,4 +1,9 @@
-import { DEFAULT_SORT, activeFilterCount, resolveFilterSettings } from './filterSettings';
+import {
+  DEFAULT_SORT,
+  activeFilterCount,
+  activeFilterLabels,
+  resolveFilterSettings,
+} from './filterSettings';
 import { EMPTY_PREFERENCES } from './userProfile';
 
 // Adfærdstests for hvilke Filtre og hvilken sortering Find bruger.
@@ -60,5 +65,17 @@ describe('activeFilterCount', () => {
         machines: ['Bænkpres', 'Squat rack'],
       }),
     ).toBe(4);
+  });
+});
+
+describe('activeFilterLabels', () => {
+  test('giver korte navne til de aktive Filtre og maskinerne', () => {
+    const filters = { ...EMPTY_PREFERENCES, sauna: true, noBinding: true, machines: ['Bænkpres'] };
+    expect(activeFilterLabels(filters)).toEqual(['Sauna', 'Ingen binding', 'Bænkpres']);
+  });
+
+  test('er tom uden aktive Filtre', () => {
+    expect(activeFilterLabels(EMPTY_PREFERENCES)).toEqual([]);
+    expect(activeFilterLabels(null)).toEqual([]);
   });
 });

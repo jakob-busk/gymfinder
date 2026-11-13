@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import {
-  DarkTheme,
+  DefaultTheme,
   NavigationContainer,
   createNavigationContainerRef,
 } from '@react-navigation/native';
@@ -9,7 +9,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 
 import FindScreen from './screens/FindScreen';
@@ -39,6 +38,7 @@ import {
 import { useCurrentMembershipAlert } from './services/PriceAlerts';
 import { useUserProfile } from './services/UserProfile';
 import ProfileEditScreen from './screens/ProfileEditScreen';
+import TabIcon from './components/TabIcon';
 import GlobalStyle, { colors, fonts } from './styles/GlobalStyle';
 import { APP_FONTS } from './styles/fonts';
 
@@ -59,25 +59,26 @@ const TAB_ICONS = {
   Profil: 'person',
 };
 
-// Topbjælken på stack-skærme: mørk, titel i Audiowide og pink tilbage-pil.
+// Topbjælken på stack-skærme: kalkpapir uden skygge, titel i plakatskrift og sort tilbage-pil.
 const stackHeader = {
   headerBackTitle: 'Tilbage',
-  headerTintColor: colors.primary,
+  headerTintColor: colors.text,
   headerStyle: { backgroundColor: colors.headerBackground },
-  headerTitleStyle: { fontFamily: fonts.display, color: colors.headerText },
+  headerTitleStyle: { fontFamily: fonts.display, color: colors.headerText, fontSize: 18 },
   headerShadowVisible: false,
   contentStyle: { backgroundColor: colors.background },
 };
 
-// React Navigations mørke tema med appens farver og skrift (fanebjælke, baggrunde).
+// React Navigations lyse tema med appens farver og skrift (fanebjælke, baggrunde).
 const navigationFont = (fontFamily) => ({ fontFamily, fontWeight: 'normal' });
 const navigationTheme = {
-  ...DarkTheme,
+  ...DefaultTheme,
+  dark: false,
   colors: {
-    ...DarkTheme.colors,
+    ...DefaultTheme.colors,
     primary: colors.primary,
     background: colors.background,
-    card: colors.surface,
+    card: colors.background,
     text: colors.text,
     border: colors.border,
   },
@@ -99,7 +100,11 @@ function ProfileTab() {
         component={ProfileScreen}
         options={{ headerShown: false }}
       />
-      <ProfileStack.Screen name="Om os" component={AboutScreen} />
+      <ProfileStack.Screen
+        name="Om os"
+        component={AboutScreen}
+        options={{ title: 'Om GymFinder' }}
+      />
       <ProfileStack.Screen name="Log ind" component={LoginScreen} />
       <ProfileStack.Screen name="Redigér profil" component={ProfileEditScreen} />
     </ProfileStack.Navigator>
@@ -114,16 +119,11 @@ function Tabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.tabActive,
         tabBarInactiveTintColor: colors.tabInactive,
-        tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.border },
-        tabBarLabelStyle: { fontFamily: fonts.semibold },
+        tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.borderStrong },
+        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
+        // Den aktive fane får en violet pille bag ikonet (se TabIcon).
         tabBarIcon: ({ color, size, focused }) => (
-          <Ionicons
-            name={TAB_ICONS[route.name]}
-            color={color}
-            size={size}
-            // Den aktive fane gløder.
-            style={focused ? GlobalStyle.tabIconGlow : null}
-          />
+          <TabIcon name={TAB_ICONS[route.name]} color={color} size={size} focused={focused} />
         ),
       })}
     >
@@ -137,7 +137,10 @@ function Tabs() {
 
 // Onboarding første gang: velkomst med Ronnie → adresse → fødselsdato → Rabatprofil →
 // Nuværende medlemskab → Præferencer → gem profil eller fortsæt anonymt. Fra velkomsten kan en
-// bruger med konto logge ind i stedet.
+// bruger med konto logge ind i stedet. Trinene har ingen titel i topbjælken (kun tilbage-pilen):
+// skærmen har selv en overskrift i hverdagssprog, og "Rabatprofil" eller "Klar" er fagord.
+const onboardingStepOptions = { headerTitle: '' };
+
 function onboardingScreens() {
   return (
     <>
@@ -147,16 +150,18 @@ function onboardingScreens() {
         options={{ headerShown: false }}
       />
       <RootStack.Screen name="Log ind" component={LoginScreen} />
-      <RootStack.Screen name="Adresse" component={AddressScreen} />
-      <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
-      <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
-      <RootStack.Screen
-        name="Medlemskab"
-        component={CurrentMembershipScreen}
-        options={{ title: 'Nuværende medlemskab' }}
-      />
-      <RootStack.Screen name="Præferencer" component={PreferencesScreen} />
-      <RootStack.Screen name="Klar" component={FinishScreen} />
+      <RootStack.Group screenOptions={onboardingStepOptions}>
+        <RootStack.Screen name="Adresse" component={AddressScreen} />
+        <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
+        <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
+        <RootStack.Screen
+          name="Medlemskab"
+          component={CurrentMembershipScreen}
+          options={{ title: 'Nuværende medlemskab' }}
+        />
+        <RootStack.Screen name="Præferencer" component={PreferencesScreen} />
+        <RootStack.Screen name="Klar" component={FinishScreen} />
+      </RootStack.Group>
     </>
   );
 }
@@ -183,13 +188,14 @@ export default function App() {
   // Ved log ind skifter uid'et, og profilen for kontoen hentes.
   const { authUser, account, authReady, createAccount, logIn, logOut } = useAuthSession();
 
-  // Appens skrifter (Inter, Audiowide og Monoton). Appen venter, til de er hentet.
+  // Appens skrifter (Nunito og Fredoka). Appen venter, til de er hentet.
   const [fontsLoaded, fontError] = useFonts(APP_FONTS);
 
   // Profil, Favoritter og Prisalarm venter alle på login og følger samme uid.
   const session = { authReady, uid: authUser?.uid ?? null };
 
-  const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile(session);
+  const { user, setUser, loading, showOnboarding, completeOnboarding, saveStatus } =
+    useUserProfile(session);
 
   // Favoritter gemmes under Users/<uid>/favorites.
   const favorites = useFavorites(session);
@@ -228,6 +234,7 @@ export default function App() {
       setUser,
       authUser,
       completeOnboarding,
+      profileSaveStatus: saveStatus,
       account,
       accountsAvailable,
       createAccount,
@@ -241,6 +248,7 @@ export default function App() {
       setUser,
       authUser,
       completeOnboarding,
+      saveStatus,
       account,
       createAccount,
       logIn,
@@ -254,7 +262,7 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <View style={GlobalStyle.loadingScreen}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.text} />
         </View>
       </SafeAreaProvider>
     );
@@ -272,7 +280,7 @@ export default function App() {
             {showOnboarding ? onboardingScreens() : appScreens()}
           </RootStack.Navigator>
         </NavigationContainer>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
       </UserContext.Provider>
     </SafeAreaProvider>
   );

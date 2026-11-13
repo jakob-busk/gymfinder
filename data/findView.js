@@ -1,7 +1,7 @@
 // Find: ren visningslogik til kort og liste (kortudsnit, nøgleord på pins og forslag til at
 // løsne Filtre). Ren JavaScript uden React Native eller Expo, så den kan testes direkte.
 
-import { FACILITY_FILTERS, NOT_STATED_LABELS } from './matchning.js';
+import { DISCOUNT_GROUPS, FACILITY_FILTERS, NOT_STATED_LABELS } from './matchning.js';
 
 // Rådhuspladsen i København. Bruges, når brugeren ikke har nogen placering.
 export const DEFAULT_LOCATION = { latitude: 55.6761, longitude: 12.5683 };
@@ -46,7 +46,7 @@ const FILTER_SUGGESTIONS = {
   sauna: 'Slå Sauna fra',
   groupClasses: 'Slå Holdtræning fra',
   open24h: 'Slå Døgnåbent fra',
-  multiCenterAccess: 'Slå "Adgang til flere centre" fra',
+  multiCenterAccess: 'Slå Landsdækkende fra',
   noBinding: 'Tillad Binding',
 };
 
@@ -71,4 +71,35 @@ export function loosenFilterSuggestions(filters, { hasLocation = true } = {}) {
     suggestions.push(`Fjern krav om maskiner (${active.machines.join(', ')})`);
   }
   return suggestions;
+}
+
+// Linjen øverst på Find, der viser, hvilken Rabatprofil priserne er regnet med:
+// "Priser regnet med: Studerende" eller "Priser uden Rabat", når Rabatprofilen er tom.
+export function discountProfileText(discountProfile) {
+  const labels = (discountProfile ?? [])
+    .map((group) => DISCOUNT_GROUPS[group]?.label)
+    .filter(Boolean);
+  return labels.length > 0 ? `Priser regnet med: ${labels.join(', ')}` : 'Priser uden Rabat';
+}
+
+// Beskeden på Find, når der vises eksempeldata i stedet for de rigtige priser, med grunden.
+// configured = appen har Firebase-nøgler; failed = databasen kunne ikke læses (så kan man prøve
+// igen). Ellers er databasen tom.
+export function sampleDataNotice({ configured, failed }) {
+  if (!configured) {
+    return (
+      'Viser eksempeldata, fordi appen ikke er forbundet til GymFinders database. Priserne er ' +
+      'derfor ikke de rigtige.'
+    );
+  }
+  if (failed) {
+    return (
+      'Viser eksempeldata, fordi GymFinders database ikke kunne læses lige nu. Priserne er ' +
+      'derfor ikke de rigtige.'
+    );
+  }
+  return (
+    'Viser eksempeldata, fordi der endnu ikke er hentet priser fra Kæderne. Priserne er derfor ' +
+    'ikke de rigtige.'
+  );
 }

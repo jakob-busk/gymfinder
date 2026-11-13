@@ -3,6 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
+import Reveal from '../components/Reveal';
 import ScreenHeader from '../components/ScreenHeader';
 import SettingsRow from '../components/SettingsRow';
 import { useProfileSections } from '../components/useProfileSections';
@@ -29,7 +30,7 @@ function SectionRows({ sections, onPress }) {
 // Profil: en liste som i telefonens Indstillinger med adresse, fødselsdato, Rabatprofil,
 // Nuværende medlemskab, Præferencer og Konto. Hver række viser det valgte og åbner Redigér profil
 // med kun den ene ting at rette. Ændringer slår straks igennem i Matchning på Find og gemmes
-// automatisk (Users/<uid>/profile i Firebase og lokalt). Om os nås herfra, og under udvikling kan
+// automatisk (Users/<uid>/profile i Firebase og lokalt). Om GymFinder nås herfra, og under udvikling kan
 // man starte forfra med onboarding.
 export default function ProfileScreen({ navigation }) {
   const { sections, handleStartOver, canStartOver } = useProfileSections(navigation);
@@ -45,20 +46,27 @@ export default function ProfileScreen({ navigation }) {
           Det her bruger vi til at regne din Ærlige årspris og finde Centre til dig.
         </Text>
 
-        <Text style={GlobalStyle.groupTitle}>Dine oplysninger</Text>
-        <SectionRows sections={details} onPress={edit} />
+        {/* Grupperne toner ind én efter én. */}
+        <Reveal index={1}>
+          <Text style={GlobalStyle.groupTitle}>Dine oplysninger</Text>
+          <SectionRows sections={details} onPress={edit} />
+        </Reveal>
 
-        <Text style={GlobalStyle.groupTitle}>Konto</Text>
-        <SectionRows sections={account} onPress={edit} />
+        <Reveal index={2}>
+          <Text style={GlobalStyle.groupTitle}>Konto</Text>
+          <SectionRows sections={account} onPress={edit} />
+        </Reveal>
 
-        <Text style={GlobalStyle.groupTitle}>Mere</Text>
-        <View style={GlobalStyle.group}>
-          <SettingsRow
-            icon="information-circle-outline"
-            label="Om GymFinder og Ronnie"
-            onPress={() => navigation.navigate('Om os')}
-          />
-        </View>
+        <Reveal index={3}>
+          <Text style={GlobalStyle.groupTitle}>Mere</Text>
+          <View style={GlobalStyle.group}>
+            <SettingsRow
+              icon="information-circle-outline"
+              label="Om GymFinder"
+              onPress={() => navigation.navigate('Om os')}
+            />
+          </View>
+        </Reveal>
 
         {/* Kun under udvikling (Expo Go): så onboarding kan testes igen. */}
         {__DEV__ && canStartOver && (

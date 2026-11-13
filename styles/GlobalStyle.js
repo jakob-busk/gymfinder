@@ -1,90 +1,145 @@
-import { Platform, StyleSheet } from 'react-native';
+import { Easing, Platform, StyleSheet } from 'react-native';
 
-// GymFinders udseende: "Neon nat". Mørke flader, pink til
-// handlinger, turkis/cyan til besparelser og Anbefalet, og glød kun på primærknap, aktiv fane,
-// Anbefalet-mærket og Ronnie. Aldrig neon bag priser.
+// GymFinders udseende: "Tribune, men venlig" (variant 7). Rytmen og bevægelsen fra Tribune: store
+// pristal, det Anbefalede Center som en mørk blæk-blok mellem lyse kort, løbenumre, felter som
+// blanket-linjer og lister, der toner ind forskudt. Varmen fra "Varm og venlig": creme papir,
+// rundere hjørner, Nunito og Fredoka og Ronnie på en lys cirkel med talebobler.
+// Farverne er creme/papir, blæk og violet, og ikke flere (plus dæmpet rød til fejl). Violet er kun
+// handling (knapper, ♥, logo-prik, aktiv fane, kontakter, din placering); alt andet er blæk. Godt nyt
+// (Anbefalet, besparelser, prisfald) får ingen ekstra farve, men vises med form og kontrast: den mørke
+// blæk-blok, lyse piller med blæk-kant og blæk på papir. Ingen af farverne ligner en Kædes (Fitness X
+// er orange, PureGym grøn/turkis, SATS rød/mørkeblå). Kun to flader (creme
+// og lyst papir), ingen skygger, aldrig ren sort eller hvid, og aldrig farve bag selve prisen.
+// Vægtene er rolige: Fredoka 600/500 til titler, Nunito 700 kun til pristal, ellers 600 og 400.
 const colors = {
-  background: '#0B0F24',
-  surface: '#161B3D',
-  surfaceRaised: '#1C2250',
-  inputBackground: '#1E2450',
-  text: '#ECEEFB',
-  muted: '#A3AAD1',
-  border: '#2E3570',
-  borderStrong: '#5B66B0',
-  backdrop: 'rgba(3, 5, 15, 0.7)',
-  primary: '#FF5CB8',
-  onPrimary: '#0B0F24',
-  primaryLight: '#3A1E4D',
-  accent: '#2EE6EA',
-  accentText: '#2EE6EA',
-  accentLight: '#12363F',
-  badgeBackground: '#2EE6EA',
-  badgeText: '#0B0F24',
-  error: '#FF7A88',
-  warning: '#F2C46D',
-  warningLight: '#2B2616',
+  background: '#FDF1E0',
+  surface: '#FFFCF7',
+  inputBackground: '#FFFCF7',
+  text: '#1B1915',
+  muted: '#6B6358',
+  border: 'rgba(27, 25, 21, 0.10)',
+  borderStrong: 'rgba(27, 25, 21, 0.24)',
+  backdrop: 'rgba(27, 25, 21, 0.45)',
+  // Blæk-blokken: det Anbefalede Center, aktive valg og brugerens chatbobler.
+  ink: '#1B1915',
+  onInk: '#F7F1E8',
+  onInkMuted: '#A8A193',
+  // Handling: dyb violet. Den lyse udgave er Ronnies cirkel og baggrund bag aktive ting.
+  primary: '#5B3CD6',
+  onPrimary: '#FFFCF7',
+  primaryLight: '#E7E0FB',
+  // Fejl er dæmpet rød. Advarsler har ingen egen farve; de står i blæk med et ikon og en kant.
+  error: '#B4382E',
   // ♥ på Centre, der er Favoritter (og dem, der kan blive det).
-  favorite: '#FF5CB8',
-  // Pins på kortet på Find: Anbefalet, de andre Centre og brugerens egen placering.
-  recommendedPin: '#2EE6EA',
-  centerPin: '#FF5CB8',
-  userPin: '#8FA0FF',
-  tabBar: '#0B0F24',
-  tabActive: '#FF5CB8',
-  tabInactive: '#6D76A8',
-  headerBackground: '#0B0F24',
-  headerText: '#ECEEFB',
-  glow: 'rgba(255, 92, 184, 0.6)',
-  accentGlow: 'rgba(46, 230, 234, 0.55)',
+  favorite: '#5B3CD6',
+  // Din egen placering på kortet er violet. Centrenes pins er blæk og papir (se mapPin*).
+  userPin: '#5B3CD6',
+  tabBar: '#FDF1E0',
+  tabActive: '#5B3CD6',
+  tabInactive: '#6B6358',
+  headerBackground: '#FDF1E0',
+  headerText: '#1B1915',
 };
 
-// Inter til al tekst, Audiowide til titler og Monoton til logoet.
+// To familier: Nunito til al tekst og alle priser (runde ender, men tal i lige kolonner) og
+// Fredoka til titler og logo. Et trin lettere end før, så det føles roligt: brødtekst 400,
+// fremhævninger, knapper og mærker 600, kun pristal i 700.
 const fonts = {
-  body: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  display: 'Audiowide_400Regular',
-  logo: 'Monoton_400Regular',
+  body: 'Nunito_400Regular',
+  medium: 'Nunito_400Regular',
+  semibold: 'Nunito_600SemiBold',
+  bold: 'Nunito_600SemiBold',
+  figure: 'Nunito_700Bold',
+  display: 'Fredoka_600SemiBold',
+  displayMedium: 'Fredoka_500Medium',
+  logo: 'Fredoka_600SemiBold',
 };
 
-const shape = { radius: 14, buttonRadius: 14, cardBorderWidth: 1, titleSize: 24 };
+// Store flader er bløde, knapper og mærker er piller, og kvitteringen er lidt skarpere som en bon.
+const shape = { radius: 24, blockRadius: 32, receiptRadius: 12, pill: 999, titleSize: 30 };
 
-// Neon-detaljerne: logoets farver og glød, linjen under titler, primærknappens gradient og
-// baggrundene bag Velkomst, app-ikon og splash.
+// Bevægelse: én blød "power4.out"-kurve til næsten alt, og en kurve med lidt fjeder til tryk.
+// Kun transform og opacity animeres, så det holder 60 fps. På web findes ingen native driver,
+// så dér kører animationerne i JS.
+const motion = {
+  native: Platform.OS !== 'web',
+  easeOut: Easing.bezier(0.16, 1, 0.3, 1),
+  easeInOut: Easing.bezier(0.76, 0, 0.24, 1),
+  micro: 150,
+  small: 260,
+  medium: 520,
+  // Ind-toning (Reveal, fremdrift i onboarding): kort, så indholdet kan bruges med det samme.
+  large: 340,
+  stagger: 50,
+  // Kun de første få elementer forskydes; resten kommer samtidig, så ingen venter.
+  maxStagger: 3,
+  pressScale: 0.96,
+};
+
+// Lys, neutral kortstil til Google Maps (Android) i creme og grå, så pins i blæk og violet
+// er det eneste med farve.
 const brand = {
-  logoGlow: 12,
-  lineOpacity: 0.85,
-  buttonGradient: ['#FF6FC1', '#E2409E'],
-  heroGradient: ['#0B0F24', '#1A1450', '#3A1452'],
-  iconGradient: ['#0B0F24', '#2A1452'],
-  // Mørk kortstil til Google Maps (Android). Apple Maps (iPhone) vises bare mørkt.
+  mapInterfaceStyle: 'light',
   mapStyle: [
-    { elementType: 'geometry', stylers: [{ color: '#11163A' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#A3AAD1' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#0B0F24' }] },
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#262D63' }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3A2F66' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#061A2E' }] },
+    { elementType: 'geometry', stylers: [{ color: '#F6EDE0' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#6B6358' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#FDF1E0' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFCF7' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#E8DFD2' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#DEDAD3' }] },
     { featureType: 'poi', stylers: [{ visibility: 'off' }] },
     { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   ],
 };
 
-// Glød: farvet skygge på iOS og web. Android viser ingen farvet skygge.
-function glow(color, radius = 12) {
-  return Platform.select({
-    web: { boxShadow: `0 0 ${radius}px ${color}` },
-    ios: {
-      shadowColor: color,
-      shadowOpacity: 1,
-      shadowRadius: radius / 2,
-      shadowOffset: { width: 0, height: 0 },
+// Store titler i Fredoka: tæt linjeafstand og kun let negativ spærring. Fredoka er bred og rund,
+// så Tribunes stramme spærring (-4,5 %) får bogstaverne til at klumpe; -1,5 % holder plakat-
+// følelsen. Linjehøjden er lidt over 1, fordi Fredoka har høje accenter (Æ, Ø, Å).
+const display = (size, tracking = -0.015) => ({
+  fontFamily: fonts.display,
+  fontSize: size,
+  lineHeight: Math.round(size * 1.04),
+  letterSpacing: size * tracking,
+  color: colors.text,
+});
+
+// Store pristal i Nunito Bold med tal i lige kolonner, så priser kan sammenlignes på et blik.
+const figure = (size, tracking = -0.03) => ({
+  fontFamily: fonts.figure,
+  fontSize: size,
+  lineHeight: Math.round(size * 1.02),
+  letterSpacing: size * tracking,
+  color: colors.text,
+  fontVariant: ['tabular-nums'],
+});
+
+// Små etiketter over sektioner, i mærker og ved felter. Ingen versaler og ingen bred spærring
+// (det ligner et skabelon-design); de skrives med stort begyndelsesbogstav og får hierarki med
+// vægt, størrelse og farve i stedet.
+const kicker = {
+  fontFamily: fonts.bold,
+  fontSize: 13,
+  color: colors.muted,
+};
+
+// Ronnies scene: cirklen ligger bag ham og er lidt mindre end billedet, så hænderne stikker ud over
+// kanten, som et klistermærke.
+function ronnieStage(width, height, circle) {
+  return {
+    stage: { width, height, alignItems: 'center', justifyContent: 'center' },
+    circle: {
+      position: 'absolute',
+      width: circle,
+      height: circle,
+      borderRadius: circle / 2,
+      top: (height - circle) / 2,
+      left: (width - circle) / 2,
     },
-    default: {},
-  });
+  };
 }
+const ronnieLargeScene = ronnieStage(240, 200, 186);
+const ronnieSmallScene = ronnieStage(150, 128, 116);
+const ronnieHintScene = ronnieStage(60, 60, 56);
 
 const GlobalStyle = StyleSheet.create({
   // Yderste lag på tab-skærme (SafeAreaView), så indhold ikke ligger under statuslinjen.
@@ -95,55 +150,61 @@ const GlobalStyle = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
   },
   // Almindelig brødtekst, så den får stilens skrift.
   bodyText: {
     fontFamily: fonts.body,
+    fontSize: 15,
     color: colors.text,
-    lineHeight: 21,
+    lineHeight: 23,
   },
-  // Toppen af fane-skærme (ScreenHeader) og logoet.
+  // Toppen af fane-skærme (ScreenHeader): stor titel og en tynd blæklinje under.
   screenHeader: {
-    marginBottom: 14,
+    marginBottom: 18,
   },
   screenHeaderTitle: {
     marginBottom: 0,
   },
-  neonLine: {
-    height: 2,
-    marginTop: 10,
-    borderRadius: 1,
-    opacity: brand.lineOpacity,
+  headerRule: {
+    height: 3,
+    borderRadius: 2,
+    marginTop: 12,
+    backgroundColor: colors.text,
   },
+  // Logoet: "GymFinder" i Fredoka med en lille violet prik, der pulserer svagt.
   logoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   logoText: {
     fontFamily: fonts.logo,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: brand.logoGlow,
-  },
-  logoFirst: {
-    color: colors.primary,
-    textShadowColor: colors.primary,
-  },
-  logoSecond: {
-    color: colors.accent,
-    textShadowColor: colors.accent,
+    color: colors.text,
   },
   logoSmall: {
-    fontSize: 22,
+    fontSize: 27,
+    lineHeight: 30,
+    letterSpacing: -0.4,
   },
   logoLarge: {
-    fontSize: 34,
+    fontSize: 32,
+    lineHeight: 35,
+    letterSpacing: -0.5,
+  },
+  logoDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+    marginLeft: 3,
+    marginBottom: 7,
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
+    gap: 12,
   },
   inlineRow: {
     flexDirection: 'row',
@@ -152,66 +213,92 @@ const GlobalStyle = StyleSheet.create({
   },
   centeredContent: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 28,
   },
   centeredText: {
     fontFamily: fonts.body,
     color: colors.text,
     textAlign: 'center',
+    lineHeight: 22,
     marginBottom: 12,
   },
-  // Ronnie i tre størrelser: stor (velkomst, afslutning), mellem (tomme skærme) og lille
-  // (avatar og ved hints).
+  // Ronnie i fem størrelser: stor (Velkomst, afslutning), lille (tomme skærme), ved en taleboble,
+  // avatar (ved Ronnies beskeder) og mini (i knapper). Billedet er 791 × 566, så højden er
+  // bredde / 1,4. Cirklen bag ham er altid lys violet.
   ronnieLarge: {
-    width: 220,
-    height: 158,
-    alignSelf: 'center',
-    marginBottom: 12,
+    width: 240,
+    height: 172,
   },
   ronnieSmall: {
-    width: 120,
-    height: 86,
-    alignSelf: 'center',
-    marginBottom: 8,
+    width: 150,
+    height: 107,
+  },
+  ronnieHintImage: {
+    width: 58,
+    height: 41,
   },
   ronnieTiny: {
-    width: 44,
-    height: 32,
+    width: 34,
+    height: 24,
   },
-  // Den aktive fane i fanebjælken gløder.
-  tabIconGlow: {
-    textShadowColor: colors.glow,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+  ronnieLargeStage: { ...ronnieLargeScene.stage, marginVertical: 8 },
+  ronnieLargeCircle: { ...ronnieLargeScene.circle, backgroundColor: colors.primaryLight },
+  ronnieSmallStage: { ...ronnieSmallScene.stage, marginVertical: 6 },
+  ronnieSmallCircle: { ...ronnieSmallScene.circle, backgroundColor: colors.primaryLight },
+  ronnieHintStage: ronnieHintScene.stage,
+  ronnieHintCircle: { ...ronnieHintScene.circle, backgroundColor: colors.primaryLight },
+  ronnieAvatarStage: {
+    backgroundColor: colors.primaryLight,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   centeredSelf: {
     alignSelf: 'center',
   },
-  ronnieGlow: Platform.select({
-    web: { filter: `drop-shadow(0 0 10px ${colors.glow})` },
-    ios: {
-      shadowColor: colors.glow,
-      shadowOpacity: 1,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 0 },
-    },
-    default: {},
-  }),
-  // Lille Ronnie med en kort replik (adresse, Rabatprofil, prisfald).
+  // Ronnie med en kort replik i en taleboble (adresse, Rabatprofil, prisfald, Find henter).
   ronnieHint: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.accentLight,
+    gap: 12,
+    marginBottom: 14,
+  },
+  ronnieHintBubble: {
+    flex: 1,
+    backgroundColor: colors.surface,
     borderRadius: shape.radius,
-    padding: 10,
-    marginBottom: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  // Taleboblens spids: en drejet firkant i boblens farve. Til venstre peger den mod Ronnie ved
+  // siden af, nedad peger den mod Ronnie under boblen.
+  bubbleTail: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: colors.surface,
+  },
+  bubbleTailLeft: {
+    left: -6,
+    top: '50%',
+    marginTop: -7,
+    transform: [{ rotate: '45deg' }],
+  },
+  bubbleTailDown: {
+    bottom: -6,
+    left: '50%',
+    marginLeft: -7,
+    transform: [{ rotate: '45deg' }],
   },
   ronnieHintText: {
-    flex: 1,
     fontFamily: fonts.medium,
+    fontSize: 15,
     color: colors.text,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   modalBackdrop: {
     flex: 1,
@@ -221,51 +308,45 @@ const GlobalStyle = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: colors.surface,
-    borderRadius: shape.radius,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 18,
-    gap: 12,
+    borderRadius: shape.blockRadius,
+    padding: 24,
+    gap: 14,
   },
   modalTitle: {
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    color: colors.text,
+    ...display(22, -0.01),
+    flexShrink: 1,
   },
   modalText: {
     fontFamily: fonts.body,
+    fontSize: 15,
     color: colors.text,
-    lineHeight: 21,
+    lineHeight: 23,
   },
   title: {
-    fontSize: shape.titleSize,
-    fontFamily: fonts.display,
-    color: colors.text,
-    marginBottom: 12,
+    ...display(shape.titleSize),
+    marginBottom: 14,
   },
   paragraph: {
     marginTop: 12,
   },
   spacedBelow: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionLabel: {
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    color: colors.text,
-    marginTop: 12,
-    marginBottom: 6,
+    ...display(20, -0.01),
+    marginTop: 28,
+    marginBottom: 10,
   },
   infoBox: {
     backgroundColor: colors.surface,
-    borderWidth: shape.cardBorderWidth,
-    borderColor: colors.border,
     borderRadius: shape.radius,
-    padding: 12,
+    padding: 18,
     marginBottom: 12,
   },
   infoTitle: {
-    fontFamily: fonts.bold,
+    fontFamily: fonts.displayMedium,
+    fontSize: 18,
+    letterSpacing: -0.1,
     color: colors.text,
     marginBottom: 4,
   },
@@ -275,55 +356,95 @@ const GlobalStyle = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
+  // Find: beskeden om eksempeldata med en lille "Prøv igen" under.
+  sampleNotice: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
   noticeText: {
     fontFamily: fonts.body,
+    fontSize: 13,
     color: colors.muted,
-    fontStyle: 'italic',
+    lineHeight: 19,
     marginBottom: 12,
   },
   emptyText: {
     fontFamily: fonts.body,
     color: colors.muted,
-    fontStyle: 'italic',
-    marginTop: 24,
+    lineHeight: 22,
+    marginTop: 20,
     textAlign: 'center',
   },
+  // Kort for ét Center: lyst papir, et løbenummer, navnet og prisen som et stort tal.
   card: {
     backgroundColor: colors.surface,
-    borderWidth: shape.cardBorderWidth,
-    borderColor: colors.border,
     borderRadius: shape.radius,
-    padding: 14,
+    padding: 20,
     marginBottom: 12,
+  },
+  // Det Anbefalede Center er en mørk blok, så det står ud uden at råbe.
+  cardHighlighted: {
+    backgroundColor: colors.ink,
+    borderRadius: shape.blockRadius,
+    paddingVertical: 20,
+    marginBottom: 16,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: 10,
     marginBottom: 4,
+  },
+  // Kortet trykkes en anelse ned, så man kan se, at hele kortet åbner Centerdetalje.
+  cardPressed: {
+    opacity: 0.85,
+  },
+  // Titlen og pilen til højre, der viser, at kortet kan åbnes.
+  cardTitleButton: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  cardChevron: {
+    marginTop: 1,
   },
   cardTitleArea: {
     flex: 1,
-    gap: 2,
+    gap: 4,
   },
   badgeInline: {
     alignSelf: 'flex-start',
-    marginBottom: 6,
   },
   cardPriceRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-    marginTop: 12,
+    alignItems: 'flex-end',
+    gap: 10,
+    marginTop: 18,
+    marginBottom: 6,
   },
   cardPrice: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    color: colors.text,
-    fontVariant: ['tabular-nums'],
+    ...figure(44, -0.03),
+    lineHeight: 45,
+  },
+  cardPriceUnitBox: {
+    paddingBottom: 6,
+    gap: 1,
   },
   cardPriceUnit: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
+  },
+  cardPriceCaption: {
     fontFamily: fonts.body,
+    fontSize: 12,
     color: colors.muted,
   },
   cardActions: {
@@ -331,26 +452,121 @@ const GlobalStyle = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     gap: 8,
-    marginTop: 12,
+    marginTop: 16,
   },
   cardTitle: {
-    fontSize: 18,
-    fontFamily: fonts.bold,
+    fontFamily: fonts.display,
+    fontSize: 21,
+    lineHeight: 24,
+    letterSpacing: -0.2,
     color: colors.text,
   },
-  // Anbefalet / Billigst her: turkis/cyan, fordi det handler om den bedste pris.
-  badge: {
-    backgroundColor: colors.badgeBackground,
-    borderRadius: shape.buttonRadius,
+  // Kædens logo: lyst logo på en lille blæk-pille, samme højde for alle Kæder (se ChainLogo).
+  chainPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: shape.pill,
+    backgroundColor: colors.ink,
+  },
+  // Pillens højde er titlens linjehøjde; sideluften er ca. 0,38 × højden.
+  chainPillCompact: {
+    height: 20,
+    paddingHorizontal: 8,
+  },
+  chainPillCard: {
+    height: 22,
+    paddingHorizontal: 8,
+  },
+  chainPillScreen: {
+    height: 28,
+    paddingHorizontal: 11,
+  },
+  chainPillDefault: {
+    height: 26,
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    ...glow(colors.accentGlow, 10),
+  },
+  // På blæk-blokken får pillen en svag lys kant, så den stadig kan ses som en pille.
+  chainPillOnInk: {
+    borderWidth: 1,
+    borderColor: 'rgba(168, 161, 147, 0.45)',
+  },
+  chainLogo: {
+    tintColor: colors.onInk,
+  },
+  chainPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    color: colors.onInk,
+  },
+  // Et Centers titel: logo-pille og pin står i en "forspand" med samme højde som navnets første
+  // linje, så de står på linje med den; navnet brydes under sig selv (se CenterTitle).
+  // Navnet er roligt (Fredoka 500 på kort, 600 på Centerdetalje), så pille, pin og navn føles
+  // som én linje og ikke som en stor overskrift med pynt foran. Luften mellem delene er ens (6 px).
+  centerTitle: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  centerTitleLead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  centerTitleLeadCompact: {
+    height: 20,
+  },
+  centerTitleLeadCard: {
+    height: 22,
+  },
+  centerTitleLeadScreen: {
+    height: 28,
+  },
+  centerTitleName: {
+    flex: 1,
+    color: colors.text,
+  },
+  centerTitleCompact: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  centerTitleCard: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  centerTitleScreen: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: -0.2,
+  },
+  // Tekst i den mørke blok.
+  textOnInk: {
+    color: colors.onInk,
+  },
+  mutedOnInk: {
+    color: colors.onInkMuted,
+  },
+  priceOnInk: {
+    color: colors.onInk,
+  },
+  // Anbefalet / Billigst her: lys pille med blæk-kant og blæk-tekst. Den samme pille virker både
+  // på blæk-blokken (lys mod mørk) og på lyst papir (kanten tegner den).
+  badge: {
+    backgroundColor: colors.onInk,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    borderRadius: shape.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   badgeText: {
-    color: colors.badgeText,
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    letterSpacing: 0.6,
+    ...kicker,
+    fontSize: 12,
+    color: colors.text,
   },
   // Priser står altid roligt: neutral farve og tal i lige kolonner.
   priceText: {
@@ -359,6 +575,9 @@ const GlobalStyle = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.text,
     fontVariant: ['tabular-nums'],
+  },
+  bigPrice: {
+    ...figure(34),
   },
   distanceText: {
     flexShrink: 1,
@@ -369,24 +588,35 @@ const GlobalStyle = StyleSheet.create({
   notStatedText: {
     flexShrink: 1,
     fontFamily: fonts.body,
+    fontSize: 13,
     color: colors.muted,
-    fontStyle: 'italic',
     marginBottom: 6,
   },
+  // Besparelse: en pille i cremefarve med blæk-kant og blæk-tekst, så det gode nyt kan ses på
+  // afstand uden en ekstra farve.
   savingText: {
+    alignSelf: 'flex-start',
     fontFamily: fonts.semibold,
-    color: colors.accentText,
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     marginBottom: 6,
   },
   link: {
     fontFamily: fonts.semibold,
-    color: colors.primary,
+    color: colors.text,
+    textDecorationLine: 'underline',
     marginBottom: 8,
   },
   detailsBox: {
-    backgroundColor: colors.inputBackground,
-    borderRadius: Math.max(shape.radius - 6, 6),
-    padding: 10,
+    backgroundColor: colors.background,
+    borderRadius: 18,
+    padding: 12,
     marginBottom: 10,
   },
   detailsHeading: {
@@ -394,68 +624,124 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
     marginTop: 6,
   },
-  // Velkomst: logo og tagline øverst, Ronnie i midten, tre punkter og knapperne nederst.
-  welcome: {
+  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin cirkel med en taleboble, tre nummererede
+  // punkter og knapperne nederst. Lidt mere luft mellem delene, nu hvor båndet er væk.
+  welcomeRoot: {
     flex: 1,
+    backgroundColor: colors.background,
+    overflow: 'hidden',
+  },
+  welcome: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     justifyContent: 'space-between',
+    gap: 24,
   },
   welcomeTop: {
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 24,
+    gap: 22,
+    marginTop: 12,
   },
   welcomeTagline: {
-    fontFamily: fonts.semibold,
+    ...display(34, -0.015),
+    lineHeight: 37,
+  },
+  // "bedst" i taglinen står omvendt: lys tekst på en blæk-markering.
+  welcomeHighlight: {
+    backgroundColor: colors.ink,
+    color: colors.onInk,
+    borderRadius: 10,
+  },
+  welcomeRonnie: {
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+    marginTop: -8,
+    marginRight: -8,
+  },
+  welcomeBubble: {
+    backgroundColor: colors.surface,
+    borderRadius: shape.radius,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    marginBottom: 4,
+  },
+  welcomeBubbleText: {
+    fontFamily: fonts.displayMedium,
     fontSize: 17,
     color: colors.text,
-    textAlign: 'center',
   },
   welcomePoints: {
-    gap: 10,
+    borderTopWidth: 1.5,
+    borderTopColor: colors.text,
   },
   welcomePoint: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'flex-start',
+    gap: 14,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderStrong,
+  },
+  welcomePointNumber: {
+    ...kicker,
+    color: colors.text,
+    marginTop: 1,
+    fontVariant: ['tabular-nums'],
   },
   welcomePointText: {
     flex: 1,
-    fontFamily: fonts.body,
+    fontFamily: fonts.medium,
+    fontSize: 15,
     color: colors.text,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   welcomeActions: {
-    gap: 10,
+    gap: 6,
   },
-  // Onboarding: et trin med titel og indhold, og knapperne nederst.
+  // Onboarding: et trin med fremdriftsbjælke, stor titel, indhold og knapperne nederst.
   stepContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 28,
   },
   stepCounter: {
-    fontFamily: fonts.medium,
-    color: colors.muted,
-    marginBottom: 4,
+    ...kicker,
+    marginBottom: 10,
+  },
+  stepProgress: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 18,
+  },
+  stepProgressTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+    overflow: 'hidden',
+  },
+  stepProgressFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.text,
   },
   stepIntro: {
     fontFamily: fonts.body,
+    fontSize: 15,
     color: colors.text,
-    lineHeight: 21,
-    marginBottom: 16,
+    lineHeight: 23,
+    marginBottom: 18,
   },
   stepFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    backgroundColor: colors.background,
   },
   choiceList: {
     gap: 10,
@@ -468,32 +754,32 @@ const GlobalStyle = StyleSheet.create({
     marginLeft: 4,
   },
   fieldLabel: {
-    fontFamily: fonts.medium,
+    ...kicker,
+    fontSize: 14,
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   errorText: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.medium,
     color: colors.error,
     marginBottom: 10,
   },
   confirmedText: {
-    fontFamily: fonts.body,
-    color: colors.accentText,
+    fontFamily: fonts.medium,
+    color: colors.text,
     marginBottom: 10,
   },
   // Adressefeltet: forslagene under feltet, mens brugeren skriver.
   addressSuggestions: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 8,
-    marginTop: -6,
-    marginBottom: 10,
+    borderRadius: 16,
+    marginTop: -4,
+    marginBottom: 12,
     backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
   addressSuggestion: {
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
@@ -512,37 +798,40 @@ const GlobalStyle = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.background,
   },
+  // Felter: papir med en blæklinje under, som en blanket, i stedet for en kasse. Hjørnerne
+  // foroven er bløde, så feltet ikke føles som et skema.
   input: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: Math.min(shape.radius, 10),
-    padding: 10,
-    marginBottom: 10,
+    borderBottomWidth: 1.5,
+    borderBottomColor: colors.text,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 14,
     backgroundColor: colors.inputBackground,
     color: colors.text,
-    fontFamily: fonts.body,
+    fontFamily: fonts.medium,
+    fontSize: 16,
   },
-  // Knapper: primær (den ene handling på skærmen), sekundær (rolig flade), tekst (som et link)
-  // og lille (i rækker og kort). Samme højde overalt, så de står pænt side om side.
+  // Knapper: primær (den ene handling på skærmen, violet pille), sekundær (blæk-omrids), tekst
+  // (understreget som et link) og ghost (rolig flade). Alle trykkes ind med en lille fjeder.
   buttonPrimary: {
     backgroundColor: colors.primary,
-    borderRadius: shape.buttonRadius,
-    minHeight: 46,
+    borderRadius: shape.pill,
+    minHeight: 50,
     justifyContent: 'center',
-    paddingVertical: 11,
-    paddingHorizontal: 20,
-    overflow: 'hidden',
-    ...glow(colors.glow, 14),
+    paddingVertical: 12,
+    paddingHorizontal: 24,
   },
   buttonSecondary: {
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: shape.buttonRadius,
-    minHeight: 46,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.text,
+    borderRadius: shape.pill,
+    minHeight: 50,
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingVertical: 11,
+    paddingHorizontal: 22,
   },
   buttonText: {
     minHeight: 40,
@@ -551,32 +840,26 @@ const GlobalStyle = StyleSheet.create({
     paddingHorizontal: 8,
   },
   buttonGhost: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: shape.buttonRadius,
-    minHeight: 40,
+    backgroundColor: colors.surface,
+    borderRadius: shape.pill,
+    minHeight: 42,
     justifyContent: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   buttonSmall: {
-    minHeight: 36,
+    minHeight: 38,
     paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   buttonFull: {
     alignSelf: 'stretch',
   },
-  buttonGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
   buttonDisabled: {
-    opacity: 0.45,
+    opacity: 0.35,
   },
   buttonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.7,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -586,9 +869,8 @@ const GlobalStyle = StyleSheet.create({
   },
   buttonTextPrimary: {
     color: colors.onPrimary,
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    letterSpacing: 0.2,
+    fontFamily: fonts.bold,
+    fontSize: 16,
     textAlign: 'center',
   },
   buttonTextSecondary: {
@@ -598,9 +880,10 @@ const GlobalStyle = StyleSheet.create({
     textAlign: 'center',
   },
   buttonTextText: {
-    color: colors.primary,
+    color: colors.text,
     fontFamily: fonts.semibold,
     fontSize: 15,
+    textDecorationLine: 'underline',
     textAlign: 'center',
   },
   buttonTextGhost: {
@@ -611,8 +894,16 @@ const GlobalStyle = StyleSheet.create({
   buttonTextSmall: {
     fontSize: 13,
   },
-  // Valg-kontroller: mærker man slår til og fra, et segment-valg, en række med en kontakt,
-  // et felt der åbner en liste (dropdown) og grupper af rækker som i Indstillinger.
+  // Knapper i den mørke blok: omrids og tekst i lys farve.
+  buttonOnInk: {
+    borderColor: colors.onInk,
+    backgroundColor: 'transparent',
+  },
+  buttonTextOnInk: {
+    color: colors.onInk,
+  },
+  // Valg-kontroller: mærker man slår til og fra, et segment-valg med en glidende markør, en række
+  // med en kontakt, et felt der åbner en liste (dropdown) og grupper af rækker som i Indstillinger.
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -623,69 +914,73 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: shape.pill,
+    paddingHorizontal: 15,
     paddingVertical: 8,
   },
   chipSelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
   },
   chipText: {
     fontFamily: fonts.medium,
-    color: colors.muted,
+    color: colors.text,
   },
   chipTextSelected: {
-    color: colors.text,
+    color: colors.onInk,
   },
   segmented: {
     flexDirection: 'row',
-    backgroundColor: colors.inputBackground,
-    borderRadius: shape.buttonRadius,
-    padding: 3,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: shape.pill,
+    padding: 4,
+    marginBottom: 14,
+  },
+  segmentIndicator: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: shape.pill,
+    backgroundColor: colors.ink,
   },
   segment: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
-    borderRadius: shape.buttonRadius - 3,
+    minHeight: 40,
+    borderRadius: shape.pill,
   },
-  segmentActive: {
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
+  segmentActive: {},
   segmentText: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semibold,
     color: colors.muted,
   },
   segmentTextActive: {
-    fontFamily: fonts.semibold,
-    color: colors.text,
+    color: colors.onInk,
   },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
   },
   toggleText: {
     flex: 1,
   },
   toggleLabel: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semibold,
     fontSize: 15,
     color: colors.text,
   },
   toggleDescription: {
     fontFamily: fonts.body,
     fontSize: 13,
+    lineHeight: 18,
     color: colors.muted,
     marginTop: 2,
   },
@@ -693,12 +988,10 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: shape.buttonRadius,
-    minHeight: 40,
-    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderRadius: shape.pill,
+    minHeight: 42,
+    paddingHorizontal: 16,
     paddingVertical: 8,
   },
   selectLabel: {
@@ -718,7 +1011,27 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 18,
+  },
+  // De aktive Filtre som små piller under Filtre-knappen på Find.
+  filterPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: -8,
+    marginBottom: 18,
+  },
+  filterPill: {
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: shape.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  filterPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
   },
   sheetBackdrop: {
     flex: 1,
@@ -727,96 +1040,88 @@ const GlobalStyle = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.surface,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 28,
+    borderTopLeftRadius: shape.blockRadius,
+    borderTopRightRadius: shape.blockRadius,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 32,
   },
   sheetHandle: {
     alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
+    width: 36,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: colors.borderStrong,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sheetTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.text,
-    marginBottom: 8,
+    ...display(24, -0.01),
+    marginBottom: 10,
   },
   sheetOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: colors.borderStrong,
   },
   sheetOptionText: {
     fontFamily: fonts.medium,
     fontSize: 16,
     color: colors.text,
   },
+  // Overskrift over en gruppe (fx Maks. afstand, Krav): lille Fredoka i blæk, ikke versaler.
   groupTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: colors.muted,
-    marginTop: 18,
-    marginBottom: 8,
-    marginLeft: 4,
+    fontFamily: fonts.displayMedium,
+    fontSize: 18,
+    color: colors.text,
+    marginTop: 26,
+    marginBottom: 10,
   },
   group: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: shape.radius,
     overflow: 'hidden',
   },
   groupPadded: {
-    padding: 14,
+    padding: 18,
   },
   groupSpaced: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   fill: {
     flex: 1,
   },
   hairline: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+    backgroundColor: colors.borderStrong,
   },
   groupDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: 14,
+    backgroundColor: colors.borderStrong,
+    marginLeft: 18,
   },
   settingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
+    gap: 14,
+    paddingVertical: 15,
+    paddingHorizontal: 18,
   },
   settingsIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
+    width: 34,
+    height: 34,
+    borderRadius: shape.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.background,
   },
   settingsText: {
     flex: 1,
   },
   settingsLabel: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semibold,
     fontSize: 15,
     color: colors.text,
   },
@@ -831,47 +1136,53 @@ const GlobalStyle = StyleSheet.create({
   },
   // Nederste del af et kort, adskilt med en tynd linje (fx Prisalarm på en Favorit).
   cardSection: {
-    marginHorizontal: -14,
-    marginBottom: -14,
-    marginTop: 10,
+    marginHorizontal: -20,
+    marginBottom: -20,
+    marginTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: colors.borderStrong,
   },
   cardSectionAction: {
     alignItems: 'flex-start',
-    paddingHorizontal: 6,
+    paddingHorizontal: 10,
     marginTop: -8,
-    paddingBottom: 4,
+    paddingBottom: 6,
   },
   stickyFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
     backgroundColor: colors.background,
+  },
+  // Find: linjen med Rabatprofilen øverst og "Ret" ved siden af.
+  discountLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
   },
   // Find: kort med pins og en boks for det valgte Center oven på kortet.
   mapBox: {
-    height: 260,
-    borderRadius: shape.radius,
+    height: 250,
+    borderRadius: shape.blockRadius,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 6,
+    marginBottom: 10,
+    backgroundColor: colors.surface,
   },
   map: {
     flex: 1,
   },
   // Kortet på web (localhost), hvor react-native-maps ikke virker.
   webMap: {
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
-    padding: 10,
-    gap: 8,
+    padding: 16,
+    gap: 10,
   },
   webMapScroll: {
     flexGrow: 0,
@@ -882,26 +1193,27 @@ const GlobalStyle = StyleSheet.create({
     gap: 6,
   },
   webMapPin: {
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: shape.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     maxWidth: 220,
   },
   webMapPinText: {
-    color: '#FFFFFF',
+    color: colors.onInk,
     fontFamily: fonts.semibold,
     fontSize: 12,
   },
+  webMapPinTextRecommended: {
+    color: colors.text,
+  },
   pinInfo: {
     position: 'absolute',
-    left: 8,
-    right: 8,
-    bottom: 8,
+    left: 10,
+    right: 10,
+    bottom: 10,
     backgroundColor: colors.surface,
     borderRadius: shape.radius,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: 16,
   },
   pinInfoActions: {
     flexDirection: 'row',
@@ -919,20 +1231,61 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    columnGap: 10,
+    columnGap: 12,
+    marginBottom: 6,
+  },
+  legendCount: {
+    ...kicker,
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 8,
   },
   legendDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
     marginBottom: 8,
+  },
+  // Pins: Anbefalet er en stor papirprik med tyk blæk-ring, de andre Centre er små blækprikker med
+  // en papirkant, så de kan ses på kortet. Bruges både på kortet (native) og i forklaringen.
+  mapPinRecommended: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 6,
+    borderColor: colors.ink,
+  },
+  mapPinCenter: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.ink,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  mapPinUser: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.userPin,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  // På web er Centrene piller: Anbefalet papir med blæk-kant, de andre blæk.
+  webMapPinRecommended: {
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.ink,
+  },
+  webMapPinCenter: {
+    backgroundColor: colors.ink,
+    borderWidth: 2,
+    borderColor: colors.ink,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   suggestionText: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.medium,
     color: colors.text,
     alignSelf: 'flex-start',
     marginBottom: 4,
@@ -948,15 +1301,13 @@ const GlobalStyle = StyleSheet.create({
   },
   accountBox: {
     backgroundColor: colors.surface,
-    borderWidth: shape.cardBorderWidth,
-    borderColor: colors.border,
     borderRadius: shape.radius,
-    padding: 12,
+    padding: 18,
     marginBottom: 24,
   },
   // Luft nederst i lange skærme, så det sidste ikke ligger helt nede ved kanten.
   scrollEnd: {
-    paddingBottom: 48,
+    paddingBottom: 56,
   },
   // Filtre: luft under knapperne nederst, så de ikke ligger helt nede ved kanten.
   filtersContent: {
@@ -966,9 +1317,19 @@ const GlobalStyle = StyleSheet.create({
   mutedText: {
     fontFamily: fonts.body,
     color: colors.muted,
+    lineHeight: 20,
   },
-  cardHighlighted: {
-    borderColor: colors.accent,
+  // Centerdetalje: prisen for det valgte Tilbud øverst.
+  detailPrice: {
+    marginBottom: 4,
+  },
+  // Centerdetalje: adresse og afstand under titlen.
+  detailHeroMeta: {
+    fontFamily: fonts.body,
+    color: colors.muted,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 20,
   },
   feeRow: {
     flexDirection: 'row',
@@ -989,33 +1350,32 @@ const GlobalStyle = StyleSheet.create({
   },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: colors.borderStrong,
+    borderTopColor: colors.text,
     marginTop: 4,
     paddingTop: 6,
   },
-  // Centerdetalje: Tilbuddene som faner og kvitteringen for det valgte Tilbud.
+  // Centerdetalje: Tilbuddene som piller og kvitteringen for det valgte Tilbud.
   offerTabs: {
     gap: 8,
-    paddingBottom: 12,
+    paddingBottom: 16,
   },
   offerTab: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
     borderRadius: shape.radius,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   offerTabActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+    borderColor: colors.ink,
+    backgroundColor: colors.ink,
   },
   offerTabText: {
     fontFamily: fonts.semibold,
-    color: colors.muted,
+    color: colors.text,
   },
   offerTabTextActive: {
-    color: colors.text,
+    color: colors.onInk,
   },
   offerTabPrice: {
     fontFamily: fonts.body,
@@ -1023,39 +1383,38 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     fontVariant: ['tabular-nums'],
   },
+  offerTabPriceActive: {
+    color: colors.onInkMuted,
+  },
+  // Kvitteringen: en bon på lyst papir (lidt skarpere hjørner end kortene) med stiplede linjer og
+  // en stor total nederst.
   receipt: {
     backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.borderStrong,
-    borderRadius: 4,
-    padding: 16,
+    borderRadius: shape.receiptRadius,
+    padding: 20,
   },
   receiptKicker: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    color: colors.muted,
-    marginBottom: 6,
+    ...kicker,
+    marginBottom: 10,
   },
   receiptDivider: {
     borderTopWidth: 1,
     borderStyle: 'dashed',
     borderColor: colors.borderStrong,
-    marginVertical: 10,
+    marginVertical: 12,
   },
   receiptTotalLine: {
-    borderTopWidth: 3,
-    borderColor: colors.text,
-    marginVertical: 8,
+    height: 3,
+    backgroundColor: colors.text,
+    marginTop: 10,
+    marginBottom: 12,
   },
   receiptRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
   receiptLabel: {
     fontFamily: fonts.medium,
@@ -1067,102 +1426,133 @@ const GlobalStyle = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   receiptTotalLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
+    fontFamily: fonts.display,
+    fontSize: 18,
+    letterSpacing: -0.1,
     color: colors.text,
   },
   receiptTotal: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    color: colors.text,
-    fontVariant: ['tabular-nums'],
+    ...figure(34),
   },
   facilityGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    rowGap: 10,
+    gap: 8,
   },
+  // Faciliteter som små bento-felter, to pr. række.
   facilityCell: {
-    width: '50%',
-    paddingRight: 8,
+    width: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 14,
   },
+  // Advarsel: lyst papir med en blæk-kant og et ikon ved titlen, ingen gul.
   warningBox: {
-    backgroundColor: colors.warningLight,
-    borderWidth: 1,
-    borderColor: colors.warning,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
     borderRadius: shape.radius,
-    padding: 12,
+    padding: 18,
     marginBottom: 12,
   },
-  warningTitle: {
-    color: colors.warning,
-    fontFamily: fonts.bold,
+  warningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 4,
+  },
+  warningTitle: {
+    flexShrink: 1,
+    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 18,
   },
   // Favoritter: ♥-knappen og rækkerne på Favoritter-skærmen.
   shrinkText: {
     flexShrink: 1,
   },
   favoriteButton: {
-    paddingHorizontal: 4,
+    width: 40,
+    height: 40,
+    borderRadius: shape.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  favoriteButtonOnInk: {
+    backgroundColor: 'rgba(247, 241, 232, 0.10)',
   },
   favoriteRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
+  },
+  // "Se detaljer" på en Favorit, venstrestillet som i boksen på kortet.
+  favoriteDetails: {
+    alignItems: 'flex-start',
+    marginTop: 8,
   },
   favoriteInfo: {
     flex: 1,
+    gap: 2,
   },
+  // Prisfald: samme pille som en besparelse.
   priceDropText: {
-    color: colors.accentText,
+    alignSelf: 'flex-start',
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginVertical: 4,
     fontFamily: fonts.semibold,
   },
   priceRiseText: {
     fontFamily: fonts.body,
     color: colors.muted,
+    marginVertical: 4,
   },
-  // Spørg Ronnie: chatbobler (brugeren til højre, Ronnie til venstre med avatar) og inputfeltet.
+  // Spørg Ronnie: chatbobler (brugeren til højre i blæk, Ronnie til venstre på papir).
   chatContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
-  },
-  ronnieAvatar: {
-    width: 40,
-    height: 40,
-    marginRight: 8,
   },
   bubbleRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginTop: 12,
+    marginTop: 14,
   },
   bubble: {
     borderRadius: shape.radius,
-    padding: 12,
-    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 14,
     maxWidth: '85%',
   },
   bubbleUser: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.ink,
     alignSelf: 'flex-end',
+    borderBottomRightRadius: 6,
   },
   bubbleRonnie: {
     flexShrink: 1,
     marginTop: 0,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderBottomLeftRadius: 6,
   },
   bubbleUserText: {
-    color: colors.onPrimary,
-    fontFamily: fonts.semibold,
+    color: colors.onInk,
+    fontFamily: fonts.medium,
+    lineHeight: 21,
   },
   bubbleText: {
     fontFamily: fonts.body,
     color: colors.text,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   chatButtons: {
     flexDirection: 'row',
@@ -1171,8 +1561,7 @@ const GlobalStyle = StyleSheet.create({
     marginTop: 8,
     marginLeft: 48,
   },
-  // Ronnies første besked: Ronnie i mellemstørrelse med en lille taleboble ved siden af, og
-  // forslagene centreret under.
+  // Ronnies første besked: Ronnie på sin cirkel med en taleboble (med spids) ved siden af, og forslagene under.
   greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1183,9 +1572,8 @@ const GlobalStyle = StyleSheet.create({
   greetingBubble: {
     maxWidth: 190,
     borderRadius: shape.radius,
-    borderBottomLeftRadius: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     marginBottom: 24,
   },
   chatSuggestions: {
@@ -1196,25 +1584,80 @@ const GlobalStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    backgroundColor: colors.background,
   },
   chatInput: {
     flex: 1,
     maxHeight: 100,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.inputBackground,
+    minHeight: 50,
+    borderRadius: 25,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: colors.surface,
     color: colors.text,
     fontFamily: fonts.body,
+    fontSize: 15,
+  },
+  // Fanebjælken: den aktive fane får en violet pille bag ikonet, der vokser frem.
+  tabIcon: {
+    width: 52,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconPill: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: shape.pill,
+    backgroundColor: colors.primary,
+  },
+
+  // ---------- Usability-rettelser (Nielsen, del B) ----------
+  // Kort linje over onboardingens knapper, der siger hvorfor "Næste" er spærret.
+  stepFooterHint: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.muted,
+    textAlign: 'right',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    backgroundColor: colors.background,
+  },
+  stepFooterAttached: {
+    borderTopWidth: 0,
+    paddingTop: 6,
+  },
+  // Spørg Ronnie: "Ronnie tænker …" i en taleboble, og hvorfor Send er spærret.
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatInputHint: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.muted,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    backgroundColor: colors.background,
+  },
+  // Om GymFinder: korte afsnit med lidt luft over hver overskrift.
+  aboutContent: {
+    paddingBottom: 32,
+  },
+  // Spørg Ronnie: et færdigt spørgsmål fra Centerdetalje, der venter over inputfeltet.
+  chatPendingQuestion: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    backgroundColor: colors.background,
   },
 });
 
-export { brand, colors, fonts };
+export { brand, colors, fonts, motion };
 export default GlobalStyle;

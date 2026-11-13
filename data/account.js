@@ -25,9 +25,10 @@ export function validateAccountForm({ name, email, password }, mode = 'create') 
 }
 
 const EMAIL_IN_USE = 'Der findes allerede en konto med den e-mail. Log ind i stedet.';
-const FIREBASE_SETUP_ERROR =
-  'Appens forbindelse til Firebase er sat forkert op (ugyldig API-nøgle eller app). ' +
-  'Fortsæt anonymt indtil videre.';
+// Fejl, brugeren ikke selv kan rette (opsætningen af appen). Brugeren får en kort, venlig tekst;
+// den tekniske forklaring står i SETUP_HINTS og skrives i konsollen til udviklerne.
+const ACCOUNT_UNAVAILABLE = 'Konto virker ikke lige nu. Du kan fortsætte uden konto.';
+const GENERIC_ERROR = 'Noget gik galt. Prøv igen om lidt.';
 
 const ERROR_MESSAGES = {
   'auth/email-already-in-use': EMAIL_IN_USE,
@@ -46,38 +47,49 @@ const ERROR_MESSAGES = {
   'auth/requires-recent-login': 'Log ind igen, og prøv så igen.',
   'auth/password-does-not-meet-requirements':
     'Adgangskoden opfylder ikke kravene. Brug en længere kode med både bogstaver og tal.',
-  'auth/internal-error': 'Der skete en fejl hos Firebase. Prøv igen om lidt.',
-  // Opsætningsfejl i Firebase-projektet. Brugeren kan ikke selv rette dem, men kan fortsætte
-  // anonymt; teksten siger, hvad der mangler, så fejlen kan rettes i Firebase-konsollen.
-  'auth/operation-not-allowed':
-    'Konto med e-mail og adgangskode er ikke slået til i GymFinder endnu (Firebase: ' +
-    'Authentication → Sign-in method → Email/Password). Fortsæt anonymt indtil videre.',
+  'auth/internal-error': GENERIC_ERROR,
+  'auth/operation-not-allowed': ACCOUNT_UNAVAILABLE,
   'auth/admin-restricted-operation':
-    'Nye konti er slået fra i GymFinder lige nu (Firebase tillader ikke oprettelse af ' +
-    'brugere). Fortsæt anonymt indtil videre.',
-  'auth/configuration-not-found':
-    'Login er ikke sat op i GymFinders Firebase-projekt endnu (Authentication er ikke ' +
-    'startet). Fortsæt anonymt indtil videre.',
-  'auth/invalid-api-key': FIREBASE_SETUP_ERROR,
-  'auth/app-not-authorized': FIREBASE_SETUP_ERROR,
-  'account/unavailable': 'Konto kræver forbindelse til databasen, som ikke er sat op.',
-  // Realtime Database: reglerne afviser skrivningen (fx udløbet testtilstand).
+    'Nye konti kan ikke oprettes lige nu. Du kan fortsætte uden konto.',
+  'auth/configuration-not-found': ACCOUNT_UNAVAILABLE,
+  'auth/invalid-api-key': ACCOUNT_UNAVAILABLE,
+  'auth/app-not-authorized': ACCOUNT_UNAVAILABLE,
+  'account/unavailable': ACCOUNT_UNAVAILABLE,
   PERMISSION_DENIED:
-    'Databasen afviste at gemme dine oplysninger, fordi dens regler ikke tillader det lige ' +
-    'nu. De er gemt på telefonen.',
+    'Dine oplysninger kunne ikke gemmes på din konto lige nu. De er gemt på telefonen.',
 };
 
-// Firebase-fejl (eller en fejlkode) → forståelig dansk tekst til brugeren. En ukendt fejl får
-// en generel tekst med fejlkoden, så den kan findes igen.
+// Hvad der skal rettes i Firebase-projektet. Skrives kun i konsollen (console.warn), aldrig i appen.
+const SETUP_HINTS = {
+  'auth/internal-error': 'Intern fejl hos Firebase Auth.',
+  'auth/operation-not-allowed':
+    'Slå Email/Password til i Firebase: Authentication → Sign-in method → Email/Password.',
+  'auth/admin-restricted-operation':
+    'Firebase tillader ikke oprettelse af brugere (Authentication → Settings → User actions).',
+  'auth/configuration-not-found': 'Authentication er ikke startet i Firebase-projektet.',
+  'auth/invalid-api-key': 'Ugyldig Firebase API-nøgle (EXPO_PUBLIC_FIREBASE_* i .env).',
+  'auth/app-not-authorized': 'Appen er ikke godkendt i Firebase-projektet.',
+  'account/unavailable': 'Firebase er ikke sat op (.env mangler EXPO_PUBLIC_FIREBASE_*).',
+  PERMISSION_DENIED: 'Realtime Database-reglerne afviste skrivningen (fx udløbet testtilstand).',
+};
+
+function warnDeveloper(code, hint) {
+  console.warn(`[Konto] ${code}${hint ? `: ${hint}` : ''}`);
+}
+
+// Firebase-fejl (eller en fejlkode) → forståelig dansk tekst til brugeren. Opsætningsfejl og
+// ukendte fejlkoder skrives desuden i konsollen med fejlkoden, så de kan findes igen.
 export function accountErrorMessage(error) {
   const code = typeof error === 'string' ? error : error?.code;
-  if (ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
   // Firebase laver koden ud fra serverens tekst, fx 'auth/api-key-not-valid.-please-pass-...'.
   if (typeof code === 'string' && code.startsWith('auth/api-key-not-valid')) {
-    return FIREBASE_SETUP_ERROR;
+    warnDeveloper(code, SETUP_HINTS['auth/invalid-api-key']);
+    return ACCOUNT_UNAVAILABLE;
   }
-  if (code) return `Noget gik galt (fejlkode: ${code}). Prøv igen om lidt.`;
-  return 'Noget gik galt. Prøv igen om lidt.';
+  if (SETUP_HINTS[code]) warnDeveloper(code, SETUP_HINTS[code]);
+  if (ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
+  if (code) warnDeveloper(code, error?.message);
+  return GENERIC_ERROR;
 }
 
 // Firebase-brugeren → det, appen viser om kontoen. null, hvis der ikke er nogen bruger.

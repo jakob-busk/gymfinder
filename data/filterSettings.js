@@ -13,6 +13,15 @@ export const DEFAULT_SORT = 'honestYearlyPrice';
 
 const TOGGLE_KEYS = ['sauna', 'groupClasses', 'open24h', 'multiCenterAccess', 'noBinding'];
 
+// Korte navne til de aktive Filtre, som de står i pillerne under Filtre-knappen på Find.
+const FILTER_LABELS = {
+  sauna: 'Sauna',
+  groupClasses: 'Holdtræning',
+  open24h: 'Døgnåbent',
+  multiCenterAccess: 'Landsdækkende',
+  noBinding: 'Ingen binding',
+};
+
 // Et komplet Filter-objekt i samme form som Præferencer (og som Matchning forventer).
 function normalizeFilters(value) {
   const filters = { ...EMPTY_PREFERENCES, ...value };
@@ -47,4 +56,13 @@ export function activeFilterCount(filters) {
   const active = filters ?? {};
   const toggles = TOGGLE_KEYS.filter((key) => active[key] === true).length;
   return toggles + (active.machines ?? []).length;
+}
+
+// De aktive Filtre (ud over maks. afstand) som korte navne: først slå-til-Filtrene, så maskinerne.
+export function activeFilterLabels(filters) {
+  const active = filters ?? {};
+  const toggles = TOGGLE_KEYS.filter((key) => active[key] === true).map(
+    (key) => FILTER_LABELS[key],
+  );
+  return [...toggles, ...(active.machines ?? [])];
 }

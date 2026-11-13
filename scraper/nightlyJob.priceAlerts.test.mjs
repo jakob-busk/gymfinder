@@ -110,7 +110,7 @@ describe('Prisalarm på en Favorit', () => {
         sound: 'default',
         channelId: 'default',
         title: 'Prisfald: Test Center',
-        body: 'Ærlig årspris er faldet 50 kr/md til 250 kr/md.',
+        body: 'Ærlig årspris er faldet 50 kr. pr. md. til 250 kr. pr. md.',
         data: { centerId: 'test-1', kind: 'favorite' },
       },
     ]);
@@ -154,7 +154,7 @@ describe('Prisalarm på en Favorit', () => {
       night2: { standardPrice: 295 },
     });
 
-    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 5 kr/md til 295 kr/md.');
+    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 5 kr. pr. md. til 295 kr. pr. md.');
     assert.equal(db.snapshot().Users.anna.favorites['test-1'].honestYearlyPrice, 295);
   });
 
@@ -165,7 +165,7 @@ describe('Prisalarm på en Favorit', () => {
       night2: { standardPrice: 300, campaignPrice: 0, campaignMonths: 2 },
     });
 
-    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 50 kr/md til 250 kr/md.');
+    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 50 kr. pr. md. til 250 kr. pr. md.');
   });
 
   test('en prisstigning giver ingen push', async () => {
@@ -222,7 +222,7 @@ describe('Prisalarm på en Favorit', () => {
     // 11 × 599 / 12 = 549,08 kr/md: faldet 45,83 kr/md.
     assert.equal(client.messages.length, 1);
     assert.equal(client.messages[0].title, 'Prisfald: SATS Adelgade');
-    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 46 kr/md til 549 kr/md.');
+    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 46 kr. pr. md. til 549 kr. pr. md.');
     assert.deepEqual(client.messages[0].data, { centerId: 'sats-412', kind: 'favorite' });
     const stored = db.snapshot().Users.anna.favorites['sats-412'].honestYearlyPrice;
     assert.equal(stored, (11 * 599) / 12);
@@ -250,9 +250,9 @@ describe('Prisalarm på Nuværende medlemskab', () => {
         to: TOKEN,
         sound: 'default',
         channelId: 'default',
-        title: 'Spar 100 kr/md',
+        title: 'Spar 100 kr. pr. md.',
         body:
-          'Test Center koster 300 kr/md i ærlig årspris. ' +
+          'Test Center koster 300 kr. pr. md. i ærlig årspris. ' +
           'Det er billigere end dit nuværende medlemskab.',
         data: { centerId: 'test-1', kind: 'currentMembership' },
       },
@@ -271,7 +271,7 @@ describe('Prisalarm på Nuværende medlemskab', () => {
 
     await runNight(db, NIGHT_3, [testChain({ standardPrice: 250 })], client);
     assert.equal(client.messages.length, 2);
-    assert.equal(client.messages[1].title, 'Spar 150 kr/md');
+    assert.equal(client.messages[1].title, 'Spar 150 kr. pr. md.');
     assert.equal(db.snapshot().Users.bo.currentMembershipAlert.notifiedHonestYearlyPrice, 250);
   });
 
@@ -293,7 +293,7 @@ describe('Prisalarm på Nuværende medlemskab', () => {
     const client = createFakePushClient();
     await runNight(db, NIGHT_1, [testChain()], client);
 
-    assert.equal(client.messages[0].title, 'Spar 10 kr/md');
+    assert.equal(client.messages[0].title, 'Spar 10 kr. pr. md.');
   });
 
   test('Centre uden for brugerens maks. afstand tæller ikke', async () => {
@@ -326,7 +326,7 @@ describe('Kæder, der ikke blev opdateret', () => {
     // Næste nat, hvor Kæden opdateres igen, kommer alarmen.
     await runNight(db, NIGHT_3, [testChain()], client);
     assert.equal(client.messages.length, 1);
-    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 100 kr/md til 300 kr/md.');
+    assert.equal(client.messages[0].body, 'Ærlig årspris er faldet 100 kr. pr. md. til 300 kr. pr. md.');
   });
 
   test('Nuværende medlemskab: kun Centre fra opdaterede Kæder kan udløse alarmen', async () => {

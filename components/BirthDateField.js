@@ -12,7 +12,7 @@ import {
   parseBirthDate,
 } from '../data/userProfile';
 
-// Fødselsdato: vælges i en kalender (datovælger) eller skrives som DD-MM-ÅÅÅÅ.
+// Fødselsdato: vælges i en kalender (datovælger) eller skrives som dd-mm-åååå.
 // onChange('YYYY-MM-DD') kaldes med en gyldig dato. Rettes datoen til noget ugyldigt eller
 // halvt skrevet, kaldes onChange(null), så Aldersgruppen aldrig regnes ud fra en gammel dato,
 // og skærmen kan spærre "Næste". Datovælgeren tillader kun datoer, hvor brugeren er 15-120 år.
@@ -41,7 +41,7 @@ export default function BirthDateField({ birthDate, onChange }) {
   const handleChangeText = (value) => {
     setText(value);
     const result = parseBirthDate(value);
-    // Fejl vises først, når datoen er skrevet færdig (DD-MM-ÅÅÅÅ er 10 tegn).
+    // Fejl vises først, når datoen er skrevet færdig (dd-mm-åååå er 10 tegn).
     setError(result.error && value.trim().length >= 10 ? result.error : null);
     report(result.birthDate ?? null);
   };
@@ -87,7 +87,7 @@ export default function BirthDateField({ birthDate, onChange }) {
         value={text}
         onChangeText={handleChangeText}
         onBlur={handleBlur}
-        placeholder="DD-MM-ÅÅÅÅ"
+        placeholder="dd-mm-åååå"
         placeholderTextColor={colors.muted}
         keyboardType="numbers-and-punctuation"
         maxLength={10}

@@ -27,6 +27,7 @@ export default function AddressScreen({ navigation }) {
       intro="Vi bruger din adresse til at vise afstanden til Centrene. Du kan også bruge din placering."
       onNext={() => navigation.navigate('Fødselsdato')}
       nextDisabled={user.location == null}
+      nextDisabledReason="Vælg en adresse fra listen, eller brug din placering."
     >
       <RonnieHint pose="peger">
         Jeg bruger kun din adresse til at regne afstanden til Centrene ud.

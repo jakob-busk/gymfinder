@@ -9,7 +9,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
-const mockDatabase = { data: {}, failReads: false, configured: true };
+const mockDatabase = { data: {}, failReads: false, failWrites: false, configured: true };
 
 jest.mock('../database/firebase', () => ({
   get rtdb() {
@@ -24,6 +24,7 @@ jest.mock('firebase/database', () => ({
     return { val: () => mockDatabase.data[path] ?? null };
   },
   set: async (path, value) => {
+    if (mockDatabase.failWrites) throw new Error('PERMISSION_DENIED');
     mockDatabase.data[path] = value;
   },
 }));
@@ -50,6 +51,7 @@ beforeEach(async () => {
   await AsyncStorage.clear();
   mockDatabase.data = {};
   mockDatabase.failReads = false;
+  mockDatabase.failWrites = false;
   mockDatabase.configured = true;
   jest.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -99,6 +101,15 @@ test('en profil gemt før login følger med til den anonyme bruger', async () =>
   await saveUserProfile(null, PROFILE);
   mockDatabase.configured = true;
 
+  expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
+});
+
+test('fejler databasen, er profilen stadig gemt på telefonen, og fejlen siger det', async () => {
+  mockDatabase.failWrites = true;
+
+  await expect(saveUserProfile('uid-1', PROFILE)).rejects.toMatchObject({ savedLocally: true });
+
+  mockDatabase.failReads = true;
   expect(await loadUserProfile('uid-1')).toEqual(PROFILE);
 });
 

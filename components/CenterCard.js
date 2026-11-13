@@ -1,71 +1,117 @@
 import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import CenterTitle, { centerTitleLabel } from './CenterTitle';
 import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
+import Reveal from './Reveal';
+import {
+  formatDistance,
+  formatNumber,
+  formatPrice,
+  offerBasisText,
+} from '../data/centerDetail';
 import { openSignupPage } from '../services/Signup';
 
-const kr = (amount) => `${Math.round(amount)} kr`;
-
-// Kort for ét Center i listen: navn, Ærlig årspris for det billigste Tilbud for brugeren, og kun
-// to handlinger: "Se detaljer" (åbner Centerdetalje, ligesom et tryk på navnet) og "Tilmeld".
-// ♥ gør Centret til Favorit. Detaljerne om tilbuddet står på Centerdetalje.
-export default function CenterCard({ match, isRecommended, onShowDetails }) {
+// Kort for ét Center i listen: titel (logo, pin, navn), afstand, Ærlig årspris for det billigste
+// Tilbud for brugeren som et stort tal med Tilbuddets navn (og Rabat) og "Tilmeld {Tilbud}". Hele kortet åbner Centerdetalje (pilen til
+// højre viser det); ♥ gør Centret til Favorit. Detaljer som de første 3 mdr. står på
+// Centerdetalje, så kortet holdes kort. Det Anbefalede Center er en mørk blok med prisen i lyst
+// blæk, så listen får en rytme i stedet for ens kort. index er pladsen i listen; kortene toner ind
+// forskudt efter den (den vises ikke, så den ikke ligner en rangering).
+export default function CenterCard({ match, isRecommended, onShowDetails, index = 0 }) {
   const { center, chain, bestOffer } = match;
-  const details = [
-    chain?.name,
-    match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
+  const ink = isRecommended;
 
   return (
-    <View style={[GlobalStyle.card, isRecommended && GlobalStyle.cardHighlighted]}>
-      <View style={GlobalStyle.cardHeader}>
-        <Pressable
-          style={GlobalStyle.cardTitleArea}
-          onPress={onShowDetails}
-          accessibilityRole="button"
-        >
-          {isRecommended && (
+    <Reveal index={index}>
+      {/* Hele kortet kan trykkes. Det er ikke selv et element for skærmlæsere (så ♥ og Tilmeld
+          stadig kan nås); titlen er knappen, der læses op. */}
+      <Pressable
+        onPress={onShowDetails}
+        accessible={false}
+        style={({ pressed }) => [
+          GlobalStyle.card,
+          ink && GlobalStyle.cardHighlighted,
+          pressed && GlobalStyle.cardPressed,
+        ]}
+      >
+        {isRecommended && (
+          <View style={GlobalStyle.cardTopRow}>
             <View style={[GlobalStyle.badge, GlobalStyle.badgeInline]}>
-              <Text style={GlobalStyle.badgeText}>ANBEFALET</Text>
+              <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
             </View>
-          )}
-          <Text style={GlobalStyle.cardTitle}>{center.name}</Text>
-          <Text style={GlobalStyle.mutedText}>{details}</Text>
-        </Pressable>
-        <FavoriteButton center={center} chain={chain} />
-      </View>
-
-      <View style={GlobalStyle.cardPriceRow}>
-        <Text style={GlobalStyle.cardPrice}>{kr(match.honestYearlyPrice)}</Text>
-        <Text style={GlobalStyle.cardPriceUnit}>/md · ærlig årspris</Text>
-        <InfoButton term="honestYearlyPrice" />
-      </View>
-      <Text style={GlobalStyle.mutedText}>De første 3 mdr. {kr(match.quarterlyPrice)}/md</Text>
-      <NotStatedRow notStated={match.notStated} />
-      {match.savingPerMonth != null && match.savingPerMonth > 0 && (
-        <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
-          Du sparer {kr(match.savingPerMonth)}/md i forhold til dit nuværende medlemskab
-        </Text>
-      )}
-
-      <View style={GlobalStyle.cardActions}>
-        {onShowDetails && (
-          <ButtonComponent title="Se detaljer" type="text" size="small" onPress={onShowDetails} />
+            <InfoButton term="recommended" onInk={ink} />
+          </View>
         )}
-        <ButtonComponent
-          title="Tilmeld"
-          type="primary"
-          size="small"
-          icon="open-outline"
-          // Det billigste Tilbud for brugeren, som kortet viser.
-          onPress={() => openSignupPage(center, chain, bestOffer)}
-        />
-      </View>
-    </View>
+        <View style={GlobalStyle.cardHeader}>
+          <View style={GlobalStyle.cardTitleArea}>
+            {/* Titlen (logo, pin, navn) og pilen; skærmlæseren hører "Kæde, Centernavn". */}
+            <Pressable
+              onPress={onShowDetails}
+              accessibilityRole="button"
+              accessibilityLabel={centerTitleLabel(chain, center.name)}
+              accessibilityHint="Åbner detaljer om Centret"
+              style={GlobalStyle.cardTitleButton}
+            >
+              <View style={GlobalStyle.fill}>
+                <CenterTitle chain={chain} name={center.name} onInk={ink} labelled={false} />
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={ink ? colors.onInk : colors.text}
+                style={GlobalStyle.cardChevron}
+              />
+            </Pressable>
+            {distance && (
+              <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>{distance}</Text>
+            )}
+          </View>
+          <FavoriteButton center={center} chain={chain} onInk={ink} />
+        </View>
+
+        <View style={GlobalStyle.cardPriceRow}>
+          <Text style={[GlobalStyle.cardPrice, ink && GlobalStyle.priceOnInk]}>
+            {formatNumber(Math.round(match.honestYearlyPrice))}
+          </Text>
+          <View style={GlobalStyle.cardPriceUnitBox}>
+            <Text style={[GlobalStyle.cardPriceUnit, ink && GlobalStyle.textOnInk]}>kr.</Text>
+            <View style={GlobalStyle.inlineRow}>
+              <Text style={[GlobalStyle.cardPriceCaption, ink && GlobalStyle.mutedOnInk]}>
+                ærlig årspris · gns. pr. md.
+              </Text>
+              <InfoButton term="honestYearlyPrice" onInk={ink} />
+            </View>
+          </View>
+        </View>
+        {/* Hvilket Tilbud prisen og Tilmeld gælder, og om en Rabat er regnet med. */}
+        <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
+          {offerBasisText(bestOffer)}
+        </Text>
+        <NotStatedRow notStated={match.notStated} onInk={ink} />
+        {match.savingPerMonth != null && match.savingPerMonth > 0 && (
+          <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
+            Du sparer {formatPrice(Math.round(match.savingPerMonth))} i forhold til dit nuværende
+            medlemskab
+          </Text>
+        )}
+
+        <View style={GlobalStyle.cardActions}>
+          <ButtonComponent
+            title={`Tilmeld ${bestOffer.offer.name}`}
+            type="primary"
+            size="small"
+            icon="open-outline"
+            // Det billigste Tilbud for brugeren, som kortet viser.
+            onPress={() => openSignupPage(center, chain, bestOffer)}
+          />
+        </View>
+      </Pressable>
+    </Reveal>
   );
 }

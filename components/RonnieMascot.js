@@ -1,6 +1,7 @@
-import { Image, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, Animated, View } from 'react-native';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { motion } from '../styles/GlobalStyle';
 
 // Ronnies positurer. Indtil videre findes kun tommel op; de andre falder tilbage til den.
 // Positurer, der bruges i appen: vinker (Velkomst), peger (Adresse, tomme Favoritter),
@@ -10,27 +11,81 @@ const POSES = {
   'tommel op': require('../assets/ronnie.png'),
 };
 
+// Billedet og den lyse violette cirkel bag Ronnie pr. størrelse. Avataren er selv en cirkel.
+// Mini (i knapper) har ingen cirkel, så den ikke slås med knappens farve.
 const SIZES = {
-  large: 'ronnieLarge',
-  small: 'ronnieSmall',
-  avatar: 'ronnieAvatar',
-  tiny: 'ronnieTiny',
+  large: { image: 'ronnieLarge', stage: 'ronnieLargeStage', circle: 'ronnieLargeCircle' },
+  small: { image: 'ronnieSmall', stage: 'ronnieSmallStage', circle: 'ronnieSmallCircle' },
+  hint: { image: 'ronnieHintImage', stage: 'ronnieHintStage', circle: 'ronnieHintCircle' },
+  avatar: { image: 'ronnieTiny', stage: 'ronnieAvatarStage' },
+  tiny: { image: 'ronnieTiny' },
 };
 
-// Ronnie, GymFinders maskot, med neon-glød. size er 'large' (Velkomst, afslutning), 'small'
-// (tomme tilstande, Spørg Ronnie), 'avatar' (ved Ronnies beskeder i chatten) eller 'tiny' (i
-// knapper og hints). pose er den positur, der passer til stedet (se POSES).
+// Ronnie dukker op med et lille fjeder-hop, og i de store størrelser vipper han roligt op og ned,
+// så han føles levende. Slår brugeren "reducer bevægelse" til, står han stille efter hoppet.
+function useRonnieMotion(bob) {
+  const pop = useRef(new Animated.Value(0.85)).current;
+  const lift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let loop;
+    let cancelled = false;
+    Animated.spring(pop, {
+      toValue: 1,
+      friction: 4,
+      tension: 120,
+      useNativeDriver: motion.native,
+    }).start();
+
+    Promise.resolve(AccessibilityInfo.isReduceMotionEnabled?.())
+      .catch(() => false)
+      .then((reduceMotion) => {
+        if (cancelled || reduceMotion || !bob) return;
+        const step = (toValue) =>
+          Animated.timing(lift, {
+            toValue,
+            duration: 900,
+            easing: motion.easeInOut,
+            useNativeDriver: motion.native,
+          });
+        loop = Animated.loop(Animated.sequence([step(-6), step(0), Animated.delay(900)]));
+        loop.start();
+      });
+
+    return () => {
+      cancelled = true;
+      loop?.stop();
+    };
+  }, [bob, lift, pop]);
+
+  return { transform: [{ translateY: lift }, { scale: pop }] };
+}
+
+// Ronnie, GymFinders maskot, på en lys violet cirkel (samme farve uanset positur).
+// size er 'large' (Velkomst, afslutning), 'small' (tomme tilstande, Spørg Ronnie), 'hint' (ved en
+// taleboble), 'avatar' (ved Ronnies beskeder i chatten) eller 'tiny' (i knapper). pose er den
+// positur, der passer til stedet (se POSES). style flytter ham, fx ud til højre på Velkomst.
 // Ronnie er kun med ved godt nyt, aldrig ved priser, advarsler, fejl eller login.
-export default function RonnieMascot({ size = 'large', pose = 'tommel op' }) {
+export default function RonnieMascot({ size = 'large', pose = 'tommel op', style }) {
+  const parts = SIZES[size] ?? SIZES.large;
   const centered = size === 'large' || size === 'small';
+  const ronnieMotion = useRonnieMotion(centered);
+
+  const image = (
+    <Animated.Image
+      source={POSES[pose] ?? POSES['tommel op']}
+      style={[GlobalStyle[parts.image], ronnieMotion]}
+      resizeMode="contain"
+      accessibilityLabel="Ronnie, GymFinders maskot"
+    />
+  );
+
+  if (!parts.stage) return image;
+
   return (
-    <View style={[GlobalStyle.ronnieGlow, centered && GlobalStyle.centeredSelf]}>
-      <Image
-        source={POSES[pose] ?? POSES['tommel op']}
-        style={GlobalStyle[SIZES[size]] ?? GlobalStyle.ronnieLarge}
-        resizeMode="contain"
-        accessibilityLabel="Ronnie, GymFinders maskot"
-      />
+    <View style={[GlobalStyle[parts.stage], centered && GlobalStyle.centeredSelf, style]}>
+      {parts.circle && <View style={GlobalStyle[parts.circle]} />}
+      {image}
     </View>
   );
 }
