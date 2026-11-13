@@ -1,6 +1,6 @@
-# Styling-prototype 7: "Tribune, men venlig" (blanding af 2 og 6)
+# Styling v3: "Tribune, men venlig"
 
-Branch: `proto/styling-7-blanding`, lavet ud fra `proto/styling-2-awwwards`.
+Begrundelsen for valget står i [ADR 0006](../adr/0006-designretning-tribune-men-venlig.md). Stilen blev lavet som prototype 7 (en blanding af prototype 2 og 6) og flettet ind fra `proto/styling-7-blanding`.
 
 ## Idé
 
