@@ -157,13 +157,76 @@ export function loosenFilterSuggestions(filters, { hasLocation = true } = {}) {
   return suggestions;
 }
 
-// Linjen øverst på Find, der viser, hvilken Rabatprofil priserne er regnet med:
-// "Priser regnet med: Studerende" eller "Priser uden rabat", når Rabatprofilen er tom.
-export function discountProfileText(discountProfile) {
+// Danske opremsninger: "a", "a og b", "a, b og c".
+function joinDanish(items) {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} og ${items.at(-1)}`;
+}
+
+// Linjen øverst på Find, der viser, hvilken Rabatprofil priserne er regnet med, og knappen ved
+// siden af: { text: 'Priser med studierabat og makkerpris', action: 'Skift' } eller
+// { text: 'Priser uden rabat', action: 'Vælg rabat' }, når Rabatprofilen er tom. Rabatterne står
+// med appens ord (optionLabel fra Matchning).
+export function discountProfileLine(discountProfile) {
   const labels = (discountProfile ?? [])
-    .map((group) => DISCOUNT_GROUPS[group]?.label)
+    .map((group) => DISCOUNT_GROUPS[group]?.optionLabel)
     .filter(Boolean);
-  return labels.length > 0 ? `Priser regnet med: ${labels.join(', ')}` : 'Priser uden rabat';
+  return labels.length > 0
+    ? { text: `Priser med ${joinDanish(labels)}`, action: 'Skift' }
+    : { text: 'Priser uden rabat', action: 'Vælg rabat' };
+}
+
+// "Ikke oplyst"-nøglerne fra Matchning i fast rækkefølge og med appens ord, som de står i
+// beskeden, når intet Center kan blive Anbefalet ("Ingen centre bekræfter ingen binding").
+const UNCONFIRMED_LABELS = {
+  sauna: 'sauna',
+  groupClasses: 'holdtræning',
+  open24h: 'døgnåbent',
+  machines: 'dine maskiner',
+  binding: 'ingen binding',
+  subscriptionType: 'landsdækkende',
+};
+
+// Knappen, når det kun er ét Filter, der ikke er oplyst.
+const TURN_OFF_ONE = {
+  sauna: 'Slå sauna fra',
+  groupClasses: 'Slå holdtræning fra',
+  open24h: 'Slå døgnåbent fra',
+  machines: 'Fjern krav om maskiner',
+  binding: 'Tillad binding',
+  subscriptionType: 'Slå landsdækkende fra',
+};
+
+// Beskeden øverst i listen på Find, når der er Centre, men intet sikkert match (og derfor intet
+// Anbefalet): hvilke Filtre ingen Centre bekræfter, og en knap, der slår dem fra.
+// centers er CenterMatch fra Matchning. Returnerer { text, action, keys } eller null.
+// keys er alle "Ikke oplyst"-Filtre blandt Centrene; slås de fra, bliver mindst ét Center et
+// sikkert match (se filtersWithout).
+export function noRecommendationNotice(centers, recommendedId) {
+  if (recommendedId != null || (centers ?? []).length === 0) return null;
+  const found = new Set(centers.flatMap((match) => match.notStated ?? []));
+  const keys = Object.keys(UNCONFIRMED_LABELS).filter((key) => found.has(key));
+  if (keys.length === 0) return null;
+  return {
+    text:
+      `Ingen centre bekræfter ${joinDanish(keys.map((key) => UNCONFIRMED_LABELS[key]))}, så vi ` +
+      'kan ikke anbefale ét. Her er de bedste, hvor det ikke er oplyst.',
+    action: keys.length === 1 ? TURN_OFF_ONE[keys[0]] : 'Slå dem fra',
+    keys,
+  };
+}
+
+// Filtrene med de givne "Ikke oplyst"-nøgler slået fra (binding → ingen binding, subscriptionType
+// → landsdækkende, machines → ingen maskiner). Resten, også maks. afstand, er uændret.
+export function filtersWithout(filters, keys) {
+  const next = { ...filters };
+  for (const key of keys ?? []) {
+    if (FACILITY_FILTERS.includes(key)) next[key] = false;
+    else if (key === 'machines') next.machines = [];
+    else if (key === 'binding') next.noBinding = false;
+    else if (key === 'subscriptionType') next.multiCenterAccess = false;
+  }
+  return next;
 }
 
 // Beskeden på Find, når der vises eksempeldata i stedet for de rigtige priser, med grunden.

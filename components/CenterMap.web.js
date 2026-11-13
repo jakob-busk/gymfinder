@@ -16,7 +16,7 @@ export default function CenterMap({ matches, chains, recommendedId, onSelect }) 
   return (
     <View style={[GlobalStyle.map, GlobalStyle.webMap]}>
       <Text style={GlobalStyle.mutedText}>
-        Kortet vises kun på telefonen. Tryk på en pin herunder for at se boksen.
+        Kortet findes kun i appen. Tryk på et center herunder for at se prisen.
       </Text>
       <ScrollView style={GlobalStyle.webMapScroll} contentContainerStyle={GlobalStyle.webMapPins}>
         {matches.map(({ center }) => {
