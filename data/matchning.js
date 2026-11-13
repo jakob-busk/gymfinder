@@ -57,10 +57,10 @@ export const DISCOUNT_GROUPS = {
 };
 
 export const SORT_OPTIONS = [
-  { id: 'honestYearlyPrice', label: 'Ærlig årspris' },
-  { id: 'quarterlyPrice', label: 'Kvartalspris' },
-  { id: 'priceDesc', label: 'Pris høj→lav' },
-  { id: 'distance', label: 'Afstand' },
+  { id: 'honestYearlyPrice', label: 'Ærlig årspris, billigst først' },
+  { id: 'quarterlyPrice', label: 'Kvartalspris, billigst først' },
+  { id: 'priceDesc', label: 'Ærlig årspris, dyrest først' },
+  { id: 'distance', label: 'Afstand, nærmest først' },
 ];
 
 const MONTHS_IN_YEAR = 12;

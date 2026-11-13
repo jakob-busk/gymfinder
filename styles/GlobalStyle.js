@@ -1564,6 +1564,42 @@ const GlobalStyle = StyleSheet.create({
     borderRadius: shape.pill,
     backgroundColor: colors.primary,
   },
+
+  // ---------- Usability-rettelser (Nielsen, del B) ----------
+  // Kort linje over onboardingens knapper, der siger hvorfor "Næste" er spærret.
+  stepFooterHint: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.muted,
+    textAlign: 'right',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    backgroundColor: colors.background,
+  },
+  stepFooterAttached: {
+    borderTopWidth: 0,
+    paddingTop: 6,
+  },
+  // Spørg Ronnie: "Ronnie tænker …" i en taleboble, og hvorfor Send er spærret.
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatInputHint: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.muted,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    backgroundColor: colors.background,
+  },
+  // Om GymFinder: korte afsnit med lidt luft over hver overskrift.
+  aboutContent: {
+    paddingBottom: 32,
+  },
 });
 
 export { brand, colors, fonts, motion };

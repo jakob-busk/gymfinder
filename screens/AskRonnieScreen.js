@@ -163,6 +163,8 @@ export default function AskRonnieScreen({ navigation, route }) {
   const centerName = (centerId) =>
     centerData.centers.find((center) => center.id === centerId)?.name ?? 'Centret';
 
+  const goToFind = () => navigation.navigate('Find');
+
   if (!ronnieAvailable) {
     return (
       <SafeAreaView style={GlobalStyle.screen} edges={['top']}>
@@ -173,9 +175,10 @@ export default function AskRonnieScreen({ navigation, route }) {
             <Text style={GlobalStyle.infoTitle}>Ronnie holder fri lige nu</Text>
             <Text style={GlobalStyle.bodyText}>{ronnieErrorMessage({ code: 'missingKey' })}</Text>
           </View>
-          <Text style={GlobalStyle.mutedText}>
+          <Text style={[GlobalStyle.mutedText, GlobalStyle.spacedBelow]}>
             Indtil da kan du finde det Center med den laveste Ærlig årspris på Find.
           </Text>
+          <ButtonComponent title="Gå til Find" type="primary" icon="search" onPress={goToFind} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -185,9 +188,12 @@ export default function AskRonnieScreen({ navigation, route }) {
   const footer = (
     <>
       {sending && (
-        <View style={GlobalStyle.bubbleRow}>
+        <View style={GlobalStyle.bubbleRow} accessibilityLiveRegion="polite">
           <RonnieMascot size="avatar" />
-          <ActivityIndicator color={colors.text} />
+          <View style={[GlobalStyle.bubble, GlobalStyle.bubbleRonnie, GlobalStyle.thinkingBubble]}>
+            <ActivityIndicator size="small" color={colors.muted} />
+            <Text style={GlobalStyle.bubbleText}>Ronnie tænker …</Text>
+          </View>
         </View>
       )}
 
@@ -196,6 +202,9 @@ export default function AskRonnieScreen({ navigation, route }) {
           <RonnieMascot size="small" pose="trækker på skuldrene" />
           <Text style={GlobalStyle.infoTitle}>Ronnie holder fri resten af ugen</Text>
           <Text style={GlobalStyle.bodyText}>{ronnieWeekOffMessage(new Date())}</Text>
+          <View style={GlobalStyle.paragraph}>
+            <ButtonComponent title="Gå til Find" type="primary" icon="search" onPress={goToFind} />
+          </View>
         </View>
       )}
 
@@ -217,6 +226,11 @@ export default function AskRonnieScreen({ navigation, route }) {
   );
 
   const busy = sending || loading || weekOff;
+  // Kort forklaring over feltet, når Send er spærret af andet end et tomt felt.
+  let sendHint = null;
+  if (loading) sendHint = 'Ronnie gør sig klar. Vent et øjeblik.';
+  else if (sending) sendHint = 'Du kan sende igen, når Ronnie har svaret.';
+  else if (weekOff) sendHint = 'Ronnie holder fri resten af ugen.';
   const openCenter = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
 
   const renderMessage = ({ item: message }) => {
@@ -282,7 +296,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                     <View style={[GlobalStyle.bubbleRonnie, GlobalStyle.greetingBubble]}>
                       <View style={[GlobalStyle.bubbleTail, GlobalStyle.bubbleTailLeft]} />
                       <Text style={GlobalStyle.bubbleText}>
-                        Hej, jeg er Ronnie, din AI-hjælper! Skriv for hjælp.
+                        Hej, jeg er Ronnie! Spørg mig om priser og Centre nær dig.
                       </Text>
                     </View>
                   </View>
@@ -294,7 +308,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                           type="ghost"
                           icon="chatbubble-ellipses-outline"
                           onPress={() => handleSend(suggestion)}
-                          disabled={sending || loading || weekOff}
+                          disabled={busy}
                         />
                       </Reveal>
                     ))}
@@ -306,6 +320,11 @@ export default function AskRonnieScreen({ navigation, route }) {
           ListFooterComponent={footer}
         />
 
+        {sendHint && (
+          <Text style={GlobalStyle.chatInputHint} accessibilityLiveRegion="polite">
+            {sendHint}
+          </Text>
+        )}
         <View style={GlobalStyle.chatInputRow}>
           <TextInput
             style={GlobalStyle.chatInput}
@@ -319,7 +338,7 @@ export default function AskRonnieScreen({ navigation, route }) {
             title="Send"
             type="primary"
             onPress={() => handleSend(input)}
-            disabled={sending || loading || weekOff || !input.trim()}
+            disabled={busy || !input.trim()}
           />
         </View>
       </KeyboardAvoidingView>

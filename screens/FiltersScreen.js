@@ -7,13 +7,12 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import InfoButton from '../components/InfoButton';
 import PreferencesEditor from '../components/PreferencesEditor';
-import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
-// Filtre og sortering til Find: sauna, holdtræning, døgnåbent, Landsdækkende
+// Filtre til Find (sorteringen vælges kun på Find, så den står ét sted): sauna, holdtræning, døgnåbent, Landsdækkende
 // (Abonnementstype), ingen Binding, maskiner og maks. afstand. Udgangspunktet er brugerens
 // Præferencer. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
 // til Præferencerne. Find læser de samme gemte Filtre, så kort og liste følger med.
@@ -21,7 +20,7 @@ import { useFilterSettings } from '../services/FilterSettings';
 export default function FiltersScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const centerData = useCenterData();
-  const { filters, sortBy, isCustom, loading, setFilters, setSortBy, reset } = useFilterSettings(
+  const { filters, sortBy, isCustom, loading, setFilters, reset } = useFilterSettings(
     user.preferences,
   );
 
@@ -50,9 +49,6 @@ export default function FiltersScreen({ navigation }) {
   return (
     <SafeAreaView style={GlobalStyle.screen} edges={['bottom']}>
       <ScrollView contentContainerStyle={[GlobalStyle.stepContent, GlobalStyle.filtersContent]}>
-        <Text style={GlobalStyle.groupTitle}>Sortér efter</Text>
-        <SortPicker sortBy={sortBy} onChange={setSortBy} full />
-
         <PreferencesEditor preferences={filters} onChange={setFilters} />
 
         <Text style={GlobalStyle.mutedText}>

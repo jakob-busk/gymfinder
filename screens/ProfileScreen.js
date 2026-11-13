@@ -30,7 +30,7 @@ function SectionRows({ sections, onPress }) {
 // Profil: en liste som i telefonens Indstillinger med adresse, fødselsdato, Rabatprofil,
 // Nuværende medlemskab, Præferencer og Konto. Hver række viser det valgte og åbner Redigér profil
 // med kun den ene ting at rette. Ændringer slår straks igennem i Matchning på Find og gemmes
-// automatisk (Users/<uid>/profile i Firebase og lokalt). Om os nås herfra, og under udvikling kan
+// automatisk (Users/<uid>/profile i Firebase og lokalt). Om GymFinder nås herfra, og under udvikling kan
 // man starte forfra med onboarding.
 export default function ProfileScreen({ navigation }) {
   const { sections, handleStartOver, canStartOver } = useProfileSections(navigation);
@@ -62,7 +62,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={GlobalStyle.group}>
             <SettingsRow
               icon="information-circle-outline"
-              label="Om GymFinder og Ronnie"
+              label="Om GymFinder"
               onPress={() => navigation.navigate('Om os')}
             />
           </View>
