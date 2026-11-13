@@ -13,8 +13,8 @@ const OFF_DESCRIPTIONS = {
 };
 
 const FIELD_LABELS = {
-  favorite: 'Sig til, når prisen falder mindst (kr. pr. md.):',
-  currentMembership: 'Sig til, når et abonnement er mindst så meget billigere (kr. pr. md.):',
+  favorite: 'Giv mig besked, når prisen falder med mindst',
+  currentMembership: 'Giv mig besked, når et abonnement er mindst så meget billigere',
 };
 
 // Prisalarm på en Favorit eller på Nuværende medlemskab (kind = 'favorite' | 'currentMembership'):
@@ -70,15 +70,18 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
     return (
       <View style={[GlobalStyle.cardSection, GlobalStyle.groupPadded]}>
         <Text style={GlobalStyle.fieldLabel}>{FIELD_LABELS[kind]}</Text>
-        <TextInput
-          style={GlobalStyle.input}
-          value={text}
-          onChangeText={setText}
-          placeholder="Ethvert fald"
-          placeholderTextColor={colors.muted}
-          keyboardType="decimal-pad"
-          accessibilityLabel="Tærskel i kr. pr. md."
-        />
+        <View style={GlobalStyle.inputWithUnit}>
+          <TextInput
+            style={[GlobalStyle.input, GlobalStyle.inputWithUnitField]}
+            value={text}
+            onChangeText={setText}
+            placeholder="Ethvert fald"
+            placeholderTextColor={colors.muted}
+            keyboardType="decimal-pad"
+            accessibilityLabel="Tærskel i kr. pr. md."
+          />
+          <Text style={GlobalStyle.inputUnit}>kr. pr. md.</Text>
+        </View>
         {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
         <Text style={GlobalStyle.mutedText}>Lad feltet stå tomt for besked ved ethvert fald.</Text>
         <View style={GlobalStyle.accountActions}>

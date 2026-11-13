@@ -51,7 +51,7 @@ export function startAnonymousSession(onUserChange) {
   });
 }
 
-// "Gem din profil": den anonyme bruger linkes til e-mail og adgangskode. uid'et bevares, så
+// "Opret konto": den anonyme bruger linkes til e-mail og adgangskode. uid'et bevares, så
 // profil, Favoritter og Prisalarmer under Users/<uid> følger med uden at blive kopieret.
 // Lykkedes det anonyme login ikke, oprettes en ny konto i stedet.
 // Returnerer Firebase-brugeren. Fejl har Firebase' fejlkode (se accountErrorMessage).

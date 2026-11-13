@@ -27,9 +27,12 @@
 | Kampagnepris / Standardpris | kampagnepris / normalpris |
 | Oprettelsesgebyr / Admingebyr | oprettelse / admingebyr |
 | Rabat (fx for Rabatgruppen Studerende) | studierabat, seniorrabat, Ældre Sagen-rabat |
+| Rabatprofil | rabatter (overskrift "Rabatter") |
 | Makkerpris | makkerpris |
 | Binding | binding |
 | Ikke oplyst | ikke oplyst |
-| Anbefalet | Anbefalet (mærke) |
-| Filter / Præference | filtre / dine ønsker |
+| Anbefalet | Anbefalet (mærke), ellers "det anbefalede center" / "anbefalingen" |
+| Filter | filtre |
+| Præference | dine ønsker (overskrift "Dine ønsker") |
 | Favorit | favorit / gemt |
+| Konto (anonym bruger linkes til e-mail) | opret konto (knap "Opret konto") |

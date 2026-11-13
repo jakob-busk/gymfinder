@@ -176,7 +176,7 @@ export function useUserProfile({ authReady, uid }) {
       return null;
     } catch (error) {
       // Profilen er gemt på telefonen før databasen, så appen virker videre. Fejlen returneres,
-      // så "Gem din profil" kan fortælle, at profilen ikke kom med op på kontoen.
+      // så "Opret konto" kan fortælle, at profilen ikke kom med op på kontoen.
       console.warn('Gem profil fejlede:', error);
       return error;
     }
