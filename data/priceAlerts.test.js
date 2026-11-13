@@ -70,6 +70,8 @@ describe('tærskel', () => {
   test('læser kroner med komma og "kr", og tom tekst betyder ethvert fald', () => {
     expect(parseThreshold('50')).toEqual({ thresholdPerMonth: 50 });
     expect(parseThreshold(' 49,50 kr ')).toEqual({ thresholdPerMonth: 49.5 });
+    expect(parseThreshold('50 kr. pr. md.')).toEqual({ thresholdPerMonth: 50 });
+    expect(parseThreshold('50 kr/md')).toEqual({ thresholdPerMonth: 50 });
     expect(parseThreshold('')).toEqual({ thresholdPerMonth: null });
     expect(parseThreshold('0')).toEqual({ thresholdPerMonth: null });
   });

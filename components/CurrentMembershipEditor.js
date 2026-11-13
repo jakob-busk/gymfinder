@@ -68,7 +68,7 @@ export default function CurrentMembershipEditor({
     }
     setError(
       trimmed
-        ? 'Skriv månedsprisen i kr, fx 299. Indtil da gemmes intet medlemskab.'
+        ? 'Skriv månedsprisen i kr., fx 299. Indtil da gemmes intet medlemskab.'
         : 'Skriv din månedspris. Uden den gemmes intet medlemskab.',
     );
     onChange(null);
@@ -98,7 +98,7 @@ export default function CurrentMembershipEditor({
 
       {hasMembership && (
         <View>
-          <Text style={GlobalStyle.fieldLabel}>Hvad betaler du om måneden? (kr)</Text>
+          <Text style={GlobalStyle.fieldLabel}>Hvad betaler du om måneden? (kr.)</Text>
           <TextInput
             style={GlobalStyle.input}
             value={priceText}
@@ -106,7 +106,7 @@ export default function CurrentMembershipEditor({
             placeholder="Fx 299"
             placeholderTextColor={colors.muted}
             keyboardType="decimal-pad"
-            accessibilityLabel="Månedspris i kr"
+            accessibilityLabel="Månedspris i kr."
           />
           {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
 

@@ -43,9 +43,12 @@ function normalizeThreshold(value) {
 // Tærsklen, som brugeren skriver den, fx "50" eller "49,50". Tom tekst = ingen tærskel
 // (enhver Besparelse). Returnerer { thresholdPerMonth } eller { error } med en dansk fejltekst.
 export function parseThreshold(text) {
-  const value = String(text ?? '').trim().replace(/\s*kr\.?(\/md)?$/i, '').replace(',', '.');
+  const value = String(text ?? '')
+    .trim()
+    .replace(/\s*kr\.?(\s*(\/|pr\.?)\s*md\.?)?$/i, '')
+    .replace(',', '.');
   if (!value) return { thresholdPerMonth: null };
-  if (!/^\d+(\.\d{1,2})?$/.test(value)) return { error: 'Skriv tærsklen i kr/md, fx 50.' };
+  if (!/^\d+(\.\d{1,2})?$/.test(value)) return { error: 'Skriv tærsklen i kr. pr. md., fx 50.' };
   const threshold = Number(value);
   if (threshold > MAX_THRESHOLD_PER_MONTH) return { error: 'Tærsklen er for høj.' };
   return { thresholdPerMonth: threshold > 0 ? threshold : null };

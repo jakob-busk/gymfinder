@@ -13,8 +13,8 @@ const OFF_DESCRIPTIONS = {
 };
 
 const FIELD_LABELS = {
-  favorite: 'Sig til, når prisen falder mindst (kr/md):',
-  currentMembership: 'Sig til, når et Tilbud er mindst så meget billigere (kr/md):',
+  favorite: 'Sig til, når prisen falder mindst (kr. pr. md.):',
+  currentMembership: 'Sig til, når et Tilbud er mindst så meget billigere (kr. pr. md.):',
 };
 
 // Prisalarm på en Favorit eller på Nuværende medlemskab (kind = 'favorite' | 'currentMembership'):
@@ -77,7 +77,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
           placeholder="Ethvert fald"
           placeholderTextColor={colors.muted}
           keyboardType="decimal-pad"
-          accessibilityLabel="Tærskel i kr pr. måned"
+          accessibilityLabel="Tærskel i kr. pr. md."
         />
         {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
         <Text style={GlobalStyle.mutedText}>Lad feltet stå tomt for besked ved ethvert fald.</Text>

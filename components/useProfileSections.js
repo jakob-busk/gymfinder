@@ -9,7 +9,7 @@ import BirthDateField from './BirthDateField';
 import DiscountProfilePicker from './DiscountProfilePicker';
 import CurrentMembershipEditor from './CurrentMembershipEditor';
 import PreferencesEditor from './PreferencesEditor';
-import { formatKr } from '../data/centerDetail';
+import { formatPrice } from '../data/centerDetail';
 import { DISCOUNT_GROUPS } from '../data/matchning';
 import { formatBirthDate } from '../data/userProfile';
 import { UserContext } from '../data/UserContext';
@@ -191,7 +191,7 @@ export function useProfileSections(navigation) {
       icon: 'card-outline',
       title: 'Nuværende medlemskab',
       summary: membership
-        ? `${formatKr(membership.monthlyPrice)}/md${membershipChain ? ` hos ${membershipChain}` : ''}`
+        ? `${formatPrice(membership.monthlyPrice)}${membershipChain ? ` hos ${membershipChain}` : ''}`
         : 'Ingen',
       render: () => (
         <CurrentMembershipEditor
