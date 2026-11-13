@@ -56,7 +56,6 @@ function run(overrides = {}) {
     chains: [chain()],
     user: user(),
     filters: {},
-    sortBy: 'honestYearlyPrice',
     location: HOME,
     today: TODAY,
     ...overrides,
@@ -599,14 +598,6 @@ describe('Anbefalet', () => {
     expect(result.recommendedOfferId).toBe('tilbud');
   });
 
-  test('er uafhængig af sorteringen', () => {
-    for (const sortBy of ['honestYearlyPrice', 'quarterlyPrice', 'priceDesc', 'distance']) {
-      expect(run({ centers, filters: { sauna: true }, sortBy }).recommendedId).toBe(
-        'sikker-billig',
-      );
-    }
-  });
-
   test('vælger kun blandt Tilbud, der med sikkerhed matcher', () => {
     // Det billigste Tilbud i 'a' har ukendt Binding, så Anbefalet bygger på de sikre Tilbud.
     const result = run({
@@ -636,7 +627,7 @@ describe('Anbefalet', () => {
   });
 });
 
-describe('Sortering', () => {
+describe('Rækkefølge', () => {
   // X: år (3 * 100 + 9 * 300) / 12 = 250, kvartal 100, 3 km
   // Y: år 200, kvartal 200, 1 km
   // Z: år 300, kvartal 300, 2 km
@@ -649,12 +640,26 @@ describe('Sortering', () => {
     center({ id: 'Y', location: north(1), offers: [offer({ standardPrice: 200 })] }),
     center({ id: 'Z', location: north(2), offers: [offer({ standardPrice: 300 })] }),
   ];
-  const order = (sortBy) => run({ centers, sortBy }).centers.map((entry) => entry.center.id);
+  const order = (overrides) => run(overrides).centers.map((entry) => entry.center.id);
 
-  test('Ærlig årspris lav→høj', () => expect(order('honestYearlyPrice')).toEqual(['Y', 'X', 'Z']));
-  test('Kvartalspris lav→høj', () => expect(order('quarterlyPrice')).toEqual(['X', 'Y', 'Z']));
-  test('Pris høj→lav', () => expect(order('priceDesc')).toEqual(['Z', 'X', 'Y']));
-  test('Afstand', () => expect(order('distance')).toEqual(['Y', 'Z', 'X']));
+  test('Centrene står efter Ærlig årspris, billigst først', () => {
+    expect(order({ centers })).toEqual(['Y', 'X', 'Z']);
+  });
+
+  test('en gammel sortering som input ignoreres', () => {
+    expect(order({ centers, sortBy: 'distance' })).toEqual(['Y', 'X', 'Z']);
+  });
+
+  test('uafgjort afgøres stabilt efter Center-id', () => {
+    // Samme Ærlig årspris; den nærmeste har det højeste id, så afstand ikke afgør det.
+    const same = [
+      center({ id: 'c', location: north(1), offers: [offer()] }),
+      center({ id: 'a', location: north(3), offers: [offer()] }),
+      center({ id: 'b', location: north(2), offers: [offer()] }),
+    ];
+    expect(order({ centers: same })).toEqual(['a', 'b', 'c']);
+    expect(order({ centers: [...same].reverse() })).toEqual(['a', 'b', 'c']);
+  });
 });
 
 describe('Spar mere-forslag', () => {
@@ -749,7 +754,6 @@ describe('Eksempeldata', () => {
       chains: CHAINS,
       user: DEFAULT_USER,
       filters: {},
-      sortBy: 'honestYearlyPrice',
       location: DEFAULT_USER.location,
       today: TODAY,
     });
@@ -768,7 +772,6 @@ describe('Eksempeldata', () => {
       chains: CHAINS,
       user: DEFAULT_USER,
       filters: DEFAULT_USER.preferences,
-      sortBy: 'distance',
       location: DEFAULT_USER.location,
       today: TODAY,
     });

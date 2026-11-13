@@ -13,7 +13,6 @@ import OfflineNotice from '../components/OfflineNotice';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
-import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
 import {
   discountProfileText,
@@ -25,17 +24,17 @@ import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
-// Find: kort med brugerens placering og en pin pr. Center, sortering og Filtre under kortet, og
-// en liste over de samme Centre nedenunder. Kortet ligger øverst i listen, så det scroller væk,
-// og listen får hele skærmen, når man scroller ned. Begge viser præcis resultatet fra Matchning, så Filtre (fra Filtre-skærmen, med
-// Præferencerne som udgangspunkt, inkl. maks. afstand) og sortering slår ens igennem. Filtre og
-// sortering huskes efter genstart. Anbefalet er lavest Ærlig årspris blandt sikre match og
+// Find: kort med brugerens placering og en pin pr. Center, Filtre under kortet, og en liste over
+// de samme Centre nedenunder. Kortet ligger øverst i listen, så det scroller væk, og listen får
+// hele skærmen, når man scroller ned. Begge viser præcis resultatet fra Matchning i Matchnings
+// rækkefølge, så Filtre (fra Filtre-skærmen, med Præferencerne som udgangspunkt, inkl. maks.
+// afstand) slår ens igennem. Filtrene huskes efter genstart. Anbefalet er lavest Ærlig årspris blandt sikre match og
 // fremhæves både på kortet og i listen.
 export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [selectedId, setSelectedId] = useState(null);
   const centerData = useCenterData();
-  const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(user.preferences);
+  const { filters, ...filterSettings } = useFilterSettings(user.preferences);
   const loading = centerData.loading || filterSettings.loading;
   const filterCount = activeFilterCount(filters);
   const filterLabels = activeFilterLabels(filters);
@@ -45,7 +44,6 @@ export default function FindScreen({ navigation }) {
     chains: centerData.chains,
     user,
     filters,
-    sortBy,
     location: user.location,
     today: new Date(),
   });
@@ -122,7 +120,7 @@ export default function FindScreen({ navigation }) {
     </View>
   );
 
-  // Rabatprofil, kort, forklaring og sortering/Filtre øverst i listen.
+  // Rabatprofil, kort, forklaring og Filtre øverst i listen.
   const listHeader = (
     <>
       {notice}
@@ -151,9 +149,8 @@ export default function FindScreen({ navigation }) {
       </View>
       <MapLegend text={legendText} />
 
-      {/* Sortering og Filtre samlet i én række under kortet. */}
+      {/* Filtre i en række under kortet. */}
       <View style={GlobalStyle.toolbar}>
-        <SortPicker sortBy={sortBy} onChange={setSortBy} />
         <ButtonComponent
           title={filterLabel}
           type="ghost"

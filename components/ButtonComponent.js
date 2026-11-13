@@ -14,7 +14,7 @@ const BUTTON_STYLES = {
   ghost: ['buttonGhost', 'buttonTextGhost'],
 };
 
-// Genbrugeligt knap komponenet. Bruges alle steder i appen hvor der er en knap (sortering, tilmelding, osv.)
+// Genbrugeligt knap komponenet. Bruges alle steder i appen hvor der er en knap (Filtre, tilmelding, osv.)
 // disabled gør knappen grå og utrykbar (fx mens en adresse slås op).
 // size 'small' bruges i kort og rækker; full fylder hele bredden. icon er et Ionicons-navn.
 // ronnie viser en lille Ronnie foran teksten (fx "Spørg Ronnie om dette Center").

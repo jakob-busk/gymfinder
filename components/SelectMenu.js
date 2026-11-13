@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 
-// Et felt, der viser det valgte og åbner en liste nedefra (dropdown), fx sortering eller Kæde.
+// Et felt, der viser det valgte og åbner en liste nedefra (dropdown), fx Kæde.
 // options er [{ value, label }]. label står foran værdien i feltet, fx "Sortér".
 // placeholder vises, når intet er valgt; allowNone tilføjer et "Ingen"-valg (value null).
 export default function SelectMenu({

@@ -52,7 +52,7 @@ export const EXPLANATIONS = {
     text:
       'Det Center med den laveste ærlige årspris blandt dem, der passer til dine krav. Vi ' +
       'vælger kun blandt Centre, hvor vi ved, at alt det, du har valgt i Filtre, passer, så et ' +
-      'Center med noget "Ikke oplyst" kan ikke blive Anbefalet. Sorteringen ændrer ikke valget.',
+      'Center med noget "Ikke oplyst" kan ikke blive Anbefalet.',
   },
   savingSuggestion: {
     title: 'Spar mere-forslag',

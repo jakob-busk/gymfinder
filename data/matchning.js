@@ -1,5 +1,5 @@
 // Matchning: beregner hvad netop denne bruger reelt kommer til at betale i hvert Center,
-// filtrerer og sorterer Centrene og udpeger det Anbefalede.
+// filtrerer Centrene, sætter dem i rækkefølge og udpeger det Anbefalede.
 //
 // Modulet er ren JavaScript uden afhængighed af React Native eller Expo, så det kan bruges
 // både i appen (Find, Centerdetalje, Favoritter, Ronnie) og af nat-jobbet (prisalarmer).
@@ -55,13 +55,6 @@ export const DISCOUNT_GROUPS = {
   },
   partner: { label: 'Træn med en makker', optionLabel: 'Makkerpris' },
 };
-
-export const SORT_OPTIONS = [
-  { id: 'honestYearlyPrice', label: 'Ærlig årspris, billigst først' },
-  { id: 'quarterlyPrice', label: 'Kvartalspris, billigst først' },
-  { id: 'priceDesc', label: 'Ærlig årspris, dyrest først' },
-  { id: 'distance', label: 'Afstand, nærmest først' },
-];
 
 const MONTHS_IN_YEAR = 12;
 const MONTHS_IN_QUARTER = 3;
@@ -395,29 +388,21 @@ function savingSuggestionsFor(offers, chain, user, profile, today, currentBest) 
     .filter((suggestion) => suggestion.savingPerYear > suggestion.membershipPricePerYear);
 }
 
-// ---------- Sortering ----------
+// ---------- Rækkefølge ----------
 
-const COMPARATORS = {
-  honestYearlyPrice: (a, b) => a.honestYearlyPrice - b.honestYearlyPrice,
-  quarterlyPrice: (a, b) => a.quarterlyPrice - b.quarterlyPrice,
-  priceDesc: (a, b) => b.honestYearlyPrice - a.honestYearlyPrice,
-  distance: (a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity),
-};
-
-function sortCenters(results, sortBy) {
-  const compare = COMPARATORS[sortBy] ?? COMPARATORS.honestYearlyPrice;
-  return [...results].sort(
-    (a, b) =>
-      compare(a, b) ||
-      a.honestYearlyPrice - b.honestYearlyPrice ||
-      String(a.center.id).localeCompare(String(b.center.id)),
+// Lavest Ærlig årspris først; uafgjort afgøres af Center-id, så rækkefølgen er stabil.
+function byHonestYearlyPrice(a, b) {
+  return (
+    a.honestYearlyPrice - b.honestYearlyPrice ||
+    String(a.center.id).localeCompare(String(b.center.id))
   );
 }
 
 // ---------- Matchning ----------
 
-// Input:  { centers, chains, user, filters, sortBy, location, today }
+// Input:  { centers, chains, user, filters, location, today }
 // Output: { centers: [CenterMatch], recommendedId, recommendedOfferId }
+//   centers står efter Ærlig årspris, billigst først (uafgjort: Center-id).
 //
 // CenterMatch: { center, chain, distanceKm, offers: [PrisetTilbud], bestOffer, honestYearlyPrice,
 //                quarterlyPrice, notStated, isSureMatch, bestSureOffer, savingSuggestions,
@@ -432,7 +417,7 @@ function sortCenters(results, sortBy) {
 //
 // bestOffer er Tilbuddet med lavest Ærlig årspris. quarterlyPrice på Centret er den laveste
 // Kvartalspris blandt Centrets Tilbud. Priser er ikke afrundede; afrund først ved visning.
-export function matchCenters({ centers, chains, user, filters, sortBy, location, today }) {
+export function matchCenters({ centers, chains, user, filters, location, today }) {
   const activeFilters = filters ?? {};
   const todayDate = toDate(today ?? new Date());
   const profile = user?.discountProfile ?? [];
@@ -489,7 +474,7 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
     });
   }
 
-  // Anbefalet: lavest Ærlig årspris blandt sikre match, uafhængig af sorteringen.
+  // Anbefalet: lavest Ærlig årspris blandt sikre match.
   const sure = results.filter((result) => result.isSureMatch);
   const recommended =
     sure.length > 0
@@ -499,7 +484,7 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
       : null;
 
   return {
-    centers: sortCenters(results, sortBy),
+    centers: [...results].sort(byHonestYearlyPrice),
     recommendedId: recommended?.center.id ?? null,
     recommendedOfferId: recommended?.bestSureOffer.offer.id ?? null,
   };
