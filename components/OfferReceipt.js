@@ -10,6 +10,7 @@ import {
   priceBreakdown,
   receiptLines,
   subscriptionTypeLabel,
+  capitalize,
 } from '../data/centerDetail';
 
 // Én række på kvitteringen: tekst til venstre, beløb til højre.
@@ -51,9 +52,11 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
         )}
       </View>
       <Text style={GlobalStyle.mutedText}>
-        {[subscriptionTypeLabel(offer.subscriptionType), `med ${yearlyOption.label}`]
-          .filter(Boolean)
-          .join(' · ')}
+        {capitalize(
+          [subscriptionTypeLabel(offer.subscriptionType), `med ${yearlyOption.label}`]
+            .filter(Boolean)
+            .join(' · '),
+        )}
       </Text>
 
       <View style={GlobalStyle.receiptDivider} />
@@ -69,7 +72,7 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
           }
         />
       ))}
-      <ReceiptRow label="Oprettelsesgebyr" value={formatKr(breakdown.signupFee)} />
+      <ReceiptRow label="Oprettelse" value={formatKr(breakdown.signupFee)} />
       <View style={GlobalStyle.receiptDivider} />
       <ReceiptRow label="I alt første år" value={formatKr(Math.round(breakdown.yearTotal))} />
       <Text style={GlobalStyle.mutedText}>÷ 12 måneder</Text>
@@ -92,11 +95,11 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
 
       <View style={GlobalStyle.receiptDivider} />
       <ReceiptRow
-        label="Kvartalspris"
+        label="De første 3 måneder"
         term="quarterlyPrice"
         sublabel={
           quarterlyOption.id !== yearlyOption.id
-            ? `De første 3 måneder er ${quarterlyOption.label} billigst`
+            ? `Regnet med ${quarterlyOption.label}, som er billigst i starten`
             : null
         }
         value={formatPrice(Math.round(pricedOffer.quarterlyPrice))}
@@ -125,10 +128,10 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
         />
       )}
       {partner?.available && partner.signupFee !== (offer.signupFee ?? 0) && (
-        <ReceiptRow label="Oprettelsesgebyr med makker" value={formatKr(partner.signupFee)} />
+        <ReceiptRow label="Oprettelse med makker" value={formatKr(partner.signupFee)} />
       )}
       {partner?.available && Boolean(partner.requirement) && (
-        <Text style={GlobalStyle.mutedText}>Krav for Makkerpris: {partner.requirement}</Text>
+        <Text style={GlobalStyle.mutedText}>Krav for makkerpris: {partner.requirement}</Text>
       )}
     </View>
   );

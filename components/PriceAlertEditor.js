@@ -9,12 +9,12 @@ import { describePriceAlert, parseThreshold, thresholdText } from '../data/price
 
 const OFF_DESCRIPTIONS = {
   favorite: 'Få besked, når prisen falder.',
-  currentMembership: 'Få besked, når et Tilbud er billigere end dit medlemskab.',
+  currentMembership: 'Få besked, når et abonnement er billigere end dit medlemskab.',
 };
 
 const FIELD_LABELS = {
   favorite: 'Sig til, når prisen falder mindst (kr. pr. md.):',
-  currentMembership: 'Sig til, når et Tilbud er mindst så meget billigere (kr. pr. md.):',
+  currentMembership: 'Sig til, når et abonnement er mindst så meget billigere (kr. pr. md.):',
 };
 
 // Prisalarm på en Favorit eller på Nuværende medlemskab (kind = 'favorite' | 'currentMembership'):
@@ -51,7 +51,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
       setEditing(false);
     } catch (saveError) {
       console.error('Gem Prisalarm fejlede:', saveError);
-      Alert.alert('Kunne ikke gemme Prisalarm', TRY_AGAIN_MESSAGE);
+      Alert.alert('Kunne ikke gemme prisalarmen', TRY_AGAIN_MESSAGE);
     } finally {
       setSaving(false);
     }
@@ -62,7 +62,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
       await onDisable();
     } catch (disableError) {
       console.error('Slå Prisalarm fra fejlede:', disableError);
-      Alert.alert('Kunne ikke slå Prisalarm fra', TRY_AGAIN_MESSAGE);
+      Alert.alert('Kunne ikke slå prisalarmen fra', TRY_AGAIN_MESSAGE);
     }
   };
 
@@ -89,7 +89,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
             disabled={saving}
           />
           <ButtonComponent
-            title="Gem Prisalarm"
+            title="Gem prisalarm"
             type="primary"
             size="small"
             onPress={handleSave}

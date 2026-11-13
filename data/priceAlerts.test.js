@@ -94,7 +94,7 @@ describe('tærskel', () => {
     );
     expect(describePriceAlert({ thresholdPerMonth: null })).toBe('Besked ved ethvert prisfald.');
     expect(describePriceAlert({ thresholdPerMonth: 50 }, 'currentMembership')).toBe(
-      'Besked, når et Tilbud er mindst 50 kr. pr. md. billigere end dit nuværende medlemskab.',
+      'Besked, når et abonnement er mindst 50 kr. pr. md. billigere end dit nuværende medlemskab.',
     );
   });
 });

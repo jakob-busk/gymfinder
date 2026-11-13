@@ -43,17 +43,18 @@
 //   Bruger: { birthDate: 'YYYY-MM-DD', discountProfile: ['student', ...],
 //             currentMembership: { monthlyPrice, chainId? } | null }
 
-// Rabatgrupperne. Kun grupper med en medlemspris kan man "melde sig ind i" (Spar mere-forslag).
+// Rabatgrupperne. optionLabel er mulighedens navn med appens ord (småt, så det kan stå midt i en
+// sætning; se "Sproget i appen" i CODING_STANDARDS.md). Kun grupper med en medlemspris kan man "melde sig ind i" (Spar mere-forslag).
 export const DISCOUNT_GROUPS = {
-  student: { label: 'Studerende', optionLabel: 'Studierabat' },
-  senior: { label: 'Senior/pensionist', optionLabel: 'Seniorrabat' },
+  student: { label: 'Studerende', optionLabel: 'studierabat' },
+  senior: { label: 'Senior/pensionist', optionLabel: 'seniorrabat' },
   aeldreSagen: {
     label: 'Ældre Sagen-medlem',
     optionLabel: 'Ældre Sagen-rabat',
     membershipPricePerYear: 310,
     minAge: 18,
   },
-  partner: { label: 'Træn med en makker', optionLabel: 'Makkerpris' },
+  partner: { label: 'Træn med en makker', optionLabel: 'makkerpris' },
 };
 
 const MONTHS_IN_YEAR = 12;
@@ -161,7 +162,7 @@ function optionsFor(offer, chain, profile, ageGroups) {
       id: hasCampaign ? 'campaign' : 'standard',
       kind: hasCampaign ? 'campaign' : 'standard',
       discountGroup: null,
-      label: hasCampaign ? 'Kampagnepris' : 'Standardpris',
+      label: hasCampaign ? 'kampagnepris' : 'normalpris',
       signupFee,
       month: (i) =>
         hasCampaign && i < offer.campaignMonths
@@ -177,7 +178,7 @@ function optionsFor(offer, chain, profile, ageGroups) {
       id: `discount-${discount.discountGroup}`,
       kind: 'discount',
       discountGroup: discount.discountGroup,
-      label: DISCOUNT_GROUPS[discount.discountGroup]?.optionLabel ?? 'Rabat',
+      label: DISCOUNT_GROUPS[discount.discountGroup]?.optionLabel ?? 'rabat',
       signupFee: discount.signupFee ?? signupFee,
       month: (i) => {
         if (i >= months) return { price: standard(i), kind: 'standard' };
@@ -315,15 +316,17 @@ export function distanceKm(from, to) {
 
 export const FACILITY_FILTERS = ['sauna', 'groupClasses', 'open24h'];
 
-// Navne til "Ikke oplyst"-mærker i UI. Abonnementstype-Filteret hedder "Landsdækkende" i UI,
-// så mærket bruger samme ord.
+// Navne til "Ikke oplyst" og faciliteter i UI, med appens ord og småt, så de kan stå midt i en
+// sætning ("Ikke oplyst: binding, maskiner"). Står navnet alene (mærke, rækkenavn), får det stort
+// begyndelsesbogstav dér. Abonnementstype-Filteret hedder "landsdækkende" i UI, så navnet bruger
+// samme ord.
 export const NOT_STATED_LABELS = {
-  sauna: 'Sauna',
-  groupClasses: 'Holdtræning',
-  open24h: 'Døgnåbent',
-  machines: 'Maskiner',
-  binding: 'Binding',
-  subscriptionType: 'Landsdækkende',
+  sauna: 'sauna',
+  groupClasses: 'holdtræning',
+  open24h: 'døgnåbent',
+  machines: 'maskiner',
+  binding: 'binding',
+  subscriptionType: 'landsdækkende',
 };
 
 function checkCenter(center, filters) {

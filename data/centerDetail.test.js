@@ -109,7 +109,7 @@ describe('matchCenter', () => {
       { discountProfile: ['student'] },
     );
     // Kampagne: (99 + 11 * 300) / 12 = 283,25. Studierabat: 150 hele året.
-    expect(best.yearlyOption.label).toBe('Studierabat');
+    expect(best.yearlyOption.label).toBe('studierabat');
     expect(best.honestYearlyPrice).toBe(150);
   });
 });
@@ -161,7 +161,7 @@ describe('priceBreakdown', () => {
     });
     expect(breakdown.rows[2]).toMatchObject({
       label: 'Måned 3',
-      kindLabel: 'Standardpris',
+      kindLabel: 'Normalpris',
       total: 314,
     });
     // 60 + 2 * 114 + 10 * 314 = 3.428 kr. 3.428 / 12 = 285,67 kr/md.
@@ -194,8 +194,8 @@ describe('priceBreakdown', () => {
     );
     const breakdown = priceBreakdown(best);
     // Måned 3 (22. dec.–22. jan.) rummer 30-års-fødselsdagen den 15. januar 2027.
-    expect(breakdown.rows[1]).toMatchObject({ kindLabel: 'Standardpris (under 30)', total: 200 });
-    expect(breakdown.rows[2]).toMatchObject({ kindLabel: 'Standardpris (30+)', total: 250 });
+    expect(breakdown.rows[1]).toMatchObject({ kindLabel: 'Normalpris (under 30)', total: 200 });
+    expect(breakdown.rows[2]).toMatchObject({ kindLabel: 'Normalpris (30+)', total: 250 });
     // 2 * 200 + 10 * 250 = 2.900 kr. 2.900 / 12 = 241,67 kr/md.
     expect(breakdown.honestYearlyPrice).toBeCloseTo(241.6667, 4);
   });
@@ -449,7 +449,7 @@ describe('offerBasisText', () => {
   test('siger, hvilket Tilbud prisen gælder, og hvilken Rabat der er regnet med', () => {
     expect(offerBasisText(bestOfferFor())).toBe('for Basis');
     expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }))).toBe(
-      'for Basis · med Studierabat',
+      'for Basis · med studierabat',
     );
   });
 });
@@ -493,7 +493,7 @@ describe('receiptLines', () => {
 
     expect(lines).toEqual([
       { key: '1', label: 'Måned 1–2', kindLabel: 'Kampagnepris', total: 114, share: 1, count: 2 },
-      { key: '3', label: 'Måned 3–12', kindLabel: 'Standardpris', total: 314, share: 1, count: 10 },
+      { key: '3', label: 'Måned 3–12', kindLabel: 'Normalpris', total: 314, share: 1, count: 10 },
     ]);
   });
 
@@ -509,9 +509,9 @@ describe('receiptLines', () => {
 });
 
 describe('subscriptionTypeLabel', () => {
-  test('viser Abonnementstypen som "Landsdækkende" eller "Lokalt Center"', () => {
-    expect(subscriptionTypeLabel('Lokal center')).toBe('Lokalt Center');
-    expect(subscriptionTypeLabel('Landsdækkende')).toBe('Landsdækkende');
+  test('viser Abonnementstypen med appens ord: "lokalt center" eller "landsdækkende"', () => {
+    expect(subscriptionTypeLabel('Lokal center')).toBe('lokalt center');
+    expect(subscriptionTypeLabel('Landsdækkende')).toBe('landsdækkende');
     expect(subscriptionTypeLabel(null)).toBeNull();
   });
 });

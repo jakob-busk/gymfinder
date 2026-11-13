@@ -105,8 +105,8 @@ export default function FavoritesScreen({ navigation }) {
   const handleRemove = async (row) => {
     const name = row.center?.name ?? 'Centret';
     const confirmed = await confirmAction({
-      title: 'Fjern Favorit?',
-      message: `${name} fjernes fra dine Favoritter.`,
+      title: 'Fjern favorit?',
+      message: `${name} fjernes fra dine favoritter.`,
       confirmText: 'Fjern',
     });
     if (!confirmed) return;
@@ -114,7 +114,7 @@ export default function FavoritesScreen({ navigation }) {
       await favorites.removeFavorite(row.centerId);
     } catch (error) {
       console.error('Fjern Favorit fejlede:', error);
-      Alert.alert('Kunne ikke fjerne Favorit', TRY_AGAIN_MESSAGE);
+      Alert.alert('Kunne ikke fjerne favorit', TRY_AGAIN_MESSAGE);
     }
   };
 
@@ -128,14 +128,14 @@ export default function FavoritesScreen({ navigation }) {
             onPress={() => showDetails(row.centerId)}
             accessibilityRole="button"
           >
-            <CenterTitle chain={row.chain} name={row.center?.name ?? 'Ukendt Center'} />
+            <CenterTitle chain={row.chain} name={row.center?.name ?? 'Ukendt center'} />
             {row.match ? (
               <>
                 <HonestPrice amount={row.honestYearlyPrice} />
                 <PriceChange priceChange={row.priceChange} />
                 <View style={GlobalStyle.favoriteDetails}>
                   <ButtonComponent
-                    title="Se detaljer"
+                    title="Om centret"
                     type="secondary"
                     size="small"
                     onPress={() => showDetails(row.centerId)}
@@ -145,7 +145,7 @@ export default function FavoritesScreen({ navigation }) {
             ) : (
               <Text style={GlobalStyle.notStatedText}>
                 {row.center
-                  ? 'Centret har ingen Tilbud lige nu.'
+                  ? 'Centret har ingen abonnementer lige nu.'
                   : 'Centret findes ikke længere i GymFinder.'}
               </Text>
             )}
@@ -173,7 +173,7 @@ export default function FavoritesScreen({ navigation }) {
     if (!membership) {
       return (
         <Text style={GlobalStyle.notStatedText}>
-          Angiv dit nuværende medlemskab under Profil, så kan du få besked, når et Tilbud er
+          Angiv dit nuværende medlemskab under Profil, så kan du få besked, når et abonnement er
           billigere.
         </Text>
       );
@@ -205,16 +205,16 @@ export default function FavoritesScreen({ navigation }) {
       {priceDrops > 0 && (
         <RonnieHint pose="jubler">
           {priceDrops === 1
-            ? 'En af dine Favoritter er faldet i pris. Se den herunder.'
-            : `${priceDrops} af dine Favoritter er faldet i pris. Se dem herunder.`}
+            ? 'En af dine favoritter er faldet i pris. Se den herunder.'
+            : `${priceDrops} af dine favoritter er faldet i pris. Se dem herunder.`}
         </RonnieHint>
       )}
       {(!account || account.isAnonymous) && (
         <Text style={GlobalStyle.noticeText}>
           {accountsAvailable
-            ? 'Du bruger GymFinder anonymt, så dine Favoritter og Prisalarmer forsvinder, hvis ' +
+            ? 'Du bruger GymFinder anonymt, så dine favoritter og prisalarmer forsvinder, hvis ' +
               'du sletter appen. Gem din profil under Profil for at beholde dem.'
-            : 'Dine Favoritter og Prisalarmer gemmes kun på denne telefon og forsvinder, hvis ' +
+            : 'Dine favoritter og prisalarmer gemmes kun på denne telefon og forsvinder, hvis ' +
               'du sletter appen.'}
         </Text>
       )}
@@ -231,7 +231,7 @@ export default function FavoritesScreen({ navigation }) {
     <View style={GlobalStyle.centeredContent}>
       <RonnieMascot size="small" pose="peger" />
       <Text style={GlobalStyle.emptyText}>
-        Du har ingen Favoritter endnu. Tryk ♥ på et Center for at følge prisen.
+        Du har ingen favoritter endnu. Tryk ♥ på et center for at følge prisen.
       </Text>
     </View>
   );

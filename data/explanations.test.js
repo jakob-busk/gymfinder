@@ -10,7 +10,7 @@ describe('Forklaringer til ⓘ-infoboksen', () => {
         'Anbefalet',
         'Binding',
         'Ikke oplyst',
-        'Kvartalspris',
+        'De første 3 måneder',
         'Makkerpris',
         'Spar mere-forslag',
         'Træn med en makker',
@@ -22,6 +22,20 @@ describe('Forklaringer til ⓘ-infoboksen', () => {
   it('har en forklaring til hvert fagord', () => {
     Object.values(EXPLANATIONS).forEach((explanation) => {
       expect(explanation.text.length).toBeGreaterThan(40);
+    });
+  });
+
+  it('siger, at de første 3 måneder ikke bruges til at anbefale, men pris og afstand gør', () => {
+    const { text } = EXPLANATIONS.quarterlyPrice;
+    expect(text).toMatch(/ærlige årspris/);
+    expect(text).toMatch(/afstand/);
+    expect(text).not.toMatch(/Ærlig årspris/);
+  });
+
+  it('skriver ordlistens ord med småt midt i en sætning', () => {
+    const midSentence = /\S (Centre|Centret|Center|Tilbud|Tilbuddet|Ærlig årspris|Makkerpris)\b/;
+    Object.values(EXPLANATIONS).forEach(({ text }) => {
+      expect(text).not.toMatch(midSentence);
     });
   });
 
