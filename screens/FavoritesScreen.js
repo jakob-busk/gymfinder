@@ -13,7 +13,6 @@ import Reveal from '../components/Reveal';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
-import { useUndoToast } from '../components/UndoToast';
 import { formatNumber, formatPrice } from '../data/centerDetail';
 import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoriteRows } from '../data/favorites';
@@ -47,7 +46,7 @@ function PriceChange({ priceChange }) {
 
 // Favoritter og Prisalarmer: brugerens gemte Centre med den aktuelle laveste Ærlig årspris blandt
 // de Tilbud, brugeren kan bruge dér (regnet med brugerens Rabatprofil, ligesom på Centerdetalje).
-// Tryk på et Center åbner Centerdetalje, og en Favorit kan fjernes (og fortrydes). Prisalarm kan slås til på
+// Tryk på et Center åbner Centerdetalje, og en Favorit kan fjernes. Prisalarm kan slås til på
 // hver Favorit og på Nuværende medlemskab med valgfri tærskel. Første gang en alarm slås til,
 // spørges om lov til notifikationer, og push-tokenet gemmes på brugeren. Alt gemmes under
 // brugerens uid i Firebase og huskes efter genstart. Kortene toner ind forskudt, og prisen står
@@ -57,7 +56,6 @@ export default function FavoritesScreen({ navigation }) {
     useContext(UserContext);
   const centerData = useCenterData();
   const loading = favorites.loading || centerData.loading || membershipAlert.loading;
-  const showUndo = useUndoToast();
   // Beskeden om, at push ikke kan bruges, vises kun én gang.
   const toldAboutPush = useRef(false);
 
@@ -102,21 +100,23 @@ export default function FavoritesScreen({ navigation }) {
     await registerPush();
   };
 
-  // Fjern sker med det samme; "Fortryd" lægger Favoritten tilbage med Prisalarm og startpris.
-  const handleRemove = async (row) => {
-    const removed = row.favorite;
-    try {
-      await favorites.removeFavorite(row.centerId);
-      showUndo('Fjernet fra Favoritter', () =>
-        favorites.restoreFavorite(row.centerId, removed).catch((error) => {
-          console.error('Fortryd Favorit fejlede:', error);
-          Alert.alert('Kunne ikke gemme Favorit', TRY_AGAIN_MESSAGE);
-        }),
-      );
-    } catch (error) {
-      console.error('Fjern Favorit fejlede:', error);
-      Alert.alert('Kunne ikke fjerne Favorit', TRY_AGAIN_MESSAGE);
-    }
+  const handleRemove = (row) => {
+    const name = row.center?.name ?? 'Centret';
+    Alert.alert('Fjern Favorit?', `${name} fjernes fra dine Favoritter.`, [
+      { text: 'Annuller', style: 'cancel' },
+      {
+        text: 'Fjern',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await favorites.removeFavorite(row.centerId);
+          } catch (error) {
+            console.error('Fjern Favorit fejlede:', error);
+            Alert.alert('Kunne ikke fjerne Favorit', TRY_AGAIN_MESSAGE);
+          }
+        },
+      },
+    ]);
   };
 
   const renderRow = ({ item: row, index }) => (

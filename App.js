@@ -39,7 +39,6 @@ import { useCurrentMembershipAlert } from './services/PriceAlerts';
 import { useUserProfile } from './services/UserProfile';
 import ProfileEditScreen from './screens/ProfileEditScreen';
 import TabIcon from './components/TabIcon';
-import { UndoToastProvider } from './components/UndoToast';
 import GlobalStyle, { colors, fonts } from './styles/GlobalStyle';
 import { APP_FONTS } from './styles/fonts';
 
@@ -272,18 +271,15 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <UserContext.Provider value={userContext}>
-        {/* "Fjernet fra Favoritter · Fortryd" og lignende beskeder ligger over alle skærme. */}
-        <UndoToastProvider>
-          <NavigationContainer
-            ref={navigationRef}
-            theme={navigationTheme}
-            onReady={() => setNavigationReady(true)}
-          >
-            <RootStack.Navigator screenOptions={stackHeader}>
-              {showOnboarding ? onboardingScreens() : appScreens()}
-            </RootStack.Navigator>
-          </NavigationContainer>
-        </UndoToastProvider>
+        <NavigationContainer
+          ref={navigationRef}
+          theme={navigationTheme}
+          onReady={() => setNavigationReady(true)}
+        >
+          <RootStack.Navigator screenOptions={stackHeader}>
+            {showOnboarding ? onboardingScreens() : appScreens()}
+          </RootStack.Navigator>
+        </NavigationContainer>
         <StatusBar style="dark" />
       </UserContext.Provider>
     </SafeAreaProvider>
