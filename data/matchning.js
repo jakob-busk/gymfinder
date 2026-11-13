@@ -1,5 +1,5 @@
 // Matchning: beregner hvad netop denne bruger reelt kommer til at betale i hvert Center,
-// filtrerer Centrene, sætter dem i rækkefølge og udpeger det Anbefalede.
+// filtrerer Centrene, sætter dem i rækkefølge efter Rangeringspris og udpeger det Anbefalede.
 //
 // Modulet er ren JavaScript uden afhængighed af React Native eller Expo, så det kan bruges
 // både i appen (Find, Centerdetalje, Favoritter, Ronnie) og af nat-jobbet (prisalarmer).
@@ -388,11 +388,22 @@ function savingSuggestionsFor(offers, chain, user, profile, today, currentBest) 
     .filter((suggestion) => suggestion.savingPerYear > suggestion.membershipPricePerYear);
 }
 
-// ---------- Rækkefølge ----------
+// ---------- Rangeringspris og rækkefølge ----------
 
-// Lavest Ærlig årspris først; uafgjort afgøres af Center-id, så rækkefølgen er stabil.
-function byHonestYearlyPrice(a, b) {
+// Afstandstillæg: 10 kr/md pr. km Distance. En fast konstant, brugeren ikke kan ændre.
+export const DISTANCE_SURCHARGE_PER_KM = 10;
+
+// Afstandstillægget for en Distance. Kendes Distance ikke (fx brugerens placering er ukendt),
+// er det 0.
+function distanceSurcharge(distance) {
+  return distance == null ? 0 : distance * DISTANCE_SURCHARGE_PER_KM;
+}
+
+// Lavest Rangeringspris først. Uafgjort afgøres af Ærlig årspris og derefter Center-id,
+// så rækkefølgen er stabil.
+function byRankingPrice(a, b) {
   return (
+    a.rankingPrice - b.rankingPrice ||
     a.honestYearlyPrice - b.honestYearlyPrice ||
     String(a.center.id).localeCompare(String(b.center.id))
   );
@@ -402,11 +413,13 @@ function byHonestYearlyPrice(a, b) {
 
 // Input:  { centers, chains, user, filters, location, today }
 // Output: { centers: [CenterMatch], recommendedId, recommendedOfferId }
-//   centers står efter Ærlig årspris, billigst først (uafgjort: Center-id).
+//   centers står efter Rangeringspris, lavest først (uafgjort: Ærlig årspris, derefter Center-id).
 //
 // CenterMatch: { center, chain, distanceKm, offers: [PrisetTilbud], bestOffer, honestYearlyPrice,
-//                quarterlyPrice, notStated, isSureMatch, bestSureOffer, savingSuggestions,
-//                savingPerMonth }
+//                rankingPrice, quarterlyPrice, notStated, isSureMatch, bestSureOffer,
+//                savingSuggestions, savingPerMonth }
+//   rankingPrice = Rangeringspris: Ærlig årspris for bestOffer + Afstandstillæg. Bruges kun til
+//                  rækkefølgen og Anbefalet og vises aldrig.
 //   notStated = aktive Filtre, der er "Ikke oplyst" for Centret / det billigste Tilbud.
 //   savingPerMonth = Besparelse i forhold til Nuværende medlemskab (null hvis intet).
 // PrisetTilbud: { offer, honestYearlyPrice, quarterlyPrice, yearlyOption, quarterlyOption,
@@ -458,6 +471,7 @@ export function matchCenters({ centers, chains, user, filters, location, today }
       offers,
       bestOffer,
       honestYearlyPrice: bestOffer.honestYearlyPrice,
+      rankingPrice: bestOffer.honestYearlyPrice + distanceSurcharge(distance),
       quarterlyPrice: cheapest(offers, 'quarterlyPrice').quarterlyPrice,
       notStated: [...centerCheck.notStated, ...bestOffer.notStated],
       isSureMatch: sureOffers.length > 0,
@@ -474,17 +488,21 @@ export function matchCenters({ centers, chains, user, filters, location, today }
     });
   }
 
-  // Anbefalet: lavest Ærlig årspris blandt sikre match.
-  const sure = results.filter((result) => result.isSureMatch);
+  // Anbefalet: lavest Rangeringspris blandt sikre match, regnet på det billigste Tilbud, der
+  // med sikkerhed matcher. Et Center med "Ikke oplyst" kan aldrig blive Anbefalet.
   const recommended =
-    sure.length > 0
-      ? sure.reduce((best, r) =>
-          r.bestSureOffer.honestYearlyPrice < best.bestSureOffer.honestYearlyPrice ? r : best,
-        )
-      : null;
+    results
+      .filter((result) => result.isSureMatch)
+      .map((result) => ({
+        ...result,
+        honestYearlyPrice: result.bestSureOffer.honestYearlyPrice,
+        rankingPrice:
+          result.bestSureOffer.honestYearlyPrice + distanceSurcharge(result.distanceKm),
+      }))
+      .sort(byRankingPrice)[0] ?? null;
 
   return {
-    centers: [...results].sort(byHonestYearlyPrice),
+    centers: [...results].sort(byRankingPrice),
     recommendedId: recommended?.center.id ?? null,
     recommendedOfferId: recommended?.bestSureOffer.offer.id ?? null,
   };

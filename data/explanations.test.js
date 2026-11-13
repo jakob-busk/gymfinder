@@ -24,4 +24,14 @@ describe('Forklaringer til ⓘ-infoboksen', () => {
       expect(explanation.text.length).toBeGreaterThan(40);
     });
   });
+
+  it('forklarer Anbefalet kort ud fra pris og afstand, uden tal og interne ord', () => {
+    const { text } = EXPLANATIONS.recommended;
+    expect(text).toMatch(/pris/);
+    expect(text).toMatch(/afstand/);
+    expect(text).toMatch(/dine ønsker/);
+    expect(text).not.toMatch(/\d/);
+    expect(text).not.toMatch(/Rangeringspris/i);
+    expect(text).not.toMatch(/ærlig årspris/i);
+  });
 });

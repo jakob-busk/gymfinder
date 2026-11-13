@@ -39,7 +39,8 @@ export const ronnieLookupTool = {
 };
 
 // Ronnie kender de nærmeste Centre: Matchnings Centre sorteret efter Distance, nærmeste først.
-// Uden Distance sidst; uafgjort afgøres af Matchnings rækkefølge (Ærlig årspris, Center-id).
+// Uden Distance sidst; uafgjort afgøres af Matchnings rækkefølge (ved samme Distance svarer
+// Rangeringspris til Ærlig årspris, derefter Center-id).
 export function nearestFirst(matches) {
   return [...matches].sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
 }

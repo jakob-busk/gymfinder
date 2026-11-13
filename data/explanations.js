@@ -49,10 +49,12 @@ export const EXPLANATIONS = {
   },
   recommended: {
     title: 'Anbefalet',
+    // Anbefalet bygger på Rangeringspris (Ærlig årspris + Afstandstillæg) blandt sikre match.
+    // Teksten nævner bevidst hverken Rangeringspris eller tal.
     text:
-      'Det Center med den laveste ærlige årspris blandt dem, der passer til dine krav. Vi ' +
-      'vælger kun blandt Centre, hvor vi ved, at alt det, du har valgt i Filtre, passer, så et ' +
-      'Center med noget "Ikke oplyst" kan ikke blive Anbefalet.',
+      'Vi vælger det center, der passer bedst til dig ud fra pris og afstand. Et center lidt ' +
+      'længere væk skal være mærkbart billigere for at vinde. Vi vælger kun blandt centre, der ' +
+      'helt sikkert passer til dine ønsker.',
   },
   savingSuggestion: {
     title: 'Spar mere-forslag',
