@@ -1,9 +1,9 @@
-import { Pressable, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Animated, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle, { brand } from '../styles/GlobalStyle';
+import GlobalStyle from '../styles/GlobalStyle';
 import RonnieMascot from './RonnieMascot';
+import { usePressScale } from './usePressScale';
 
 const BUTTON_STYLES = {
   primary: ['buttonPrimary', 'buttonTextPrimary'],
@@ -17,7 +17,9 @@ const BUTTON_STYLES = {
 // Genbrugeligt knap komponenet. Bruges alle steder i appen hvor der er en knap (sortering, tilmelding, osv.)
 // disabled gør knappen grå og utrykbar (fx mens en adresse slås op).
 // size 'small' bruges i kort og rækker; full fylder hele bredden. icon er et Ionicons-navn.
-// ronnie viser en lille Ronnie foran teksten (fx "Spørg Ronnie om dette center").
+// ronnie viser en lille Ronnie foran teksten (fx "Spørg Ronnie om dette Center").
+// onInk bruges i den mørke blok (det Anbefalede Center), så tekst- og ghost-knapper kan ses.
+// Knappen trykkes en anelse ind og fjedrer tilbage, så den føles fysisk.
 export default function ButtonComponent({
   title,
   type = 'secondary',
@@ -27,40 +29,45 @@ export default function ButtonComponent({
   full = false,
   icon,
   ronnie = false,
+  onInk = false,
 }) {
   const [buttonStyle, textStyle] = BUTTON_STYLES[type] ?? BUTTON_STYLES.secondary;
   const small = size === 'small';
-  // Den primære knap har en svag gradient.
-  const gradient = type === 'primary' ? brand.buttonGradient : null;
-  const textColor = GlobalStyle[textStyle].color;
+  const inverted = onInk && type !== 'primary';
+  const { scaleStyle, onPressIn, onPressOut } = usePressScale();
+  const textColor = inverted ? GlobalStyle.buttonTextOnInk.color : GlobalStyle[textStyle].color;
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        GlobalStyle[buttonStyle],
-        small && type !== 'text' && GlobalStyle.buttonSmall,
-        full && GlobalStyle.buttonFull,
-        disabled && GlobalStyle.buttonDisabled,
-        pressed && GlobalStyle.buttonPressed,
-      ]}
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-    >
-      {gradient && (
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={GlobalStyle.buttonGradient}
-        />
-      )}
-      <View style={GlobalStyle.buttonContent}>
-        {ronnie && <RonnieMascot size="tiny" />}
-        {icon && <Ionicons name={icon} size={small ? 15 : 17} color={textColor} />}
-        <Text style={[GlobalStyle[textStyle], small && GlobalStyle.buttonTextSmall]}>{title}</Text>
-      </View>
-    </Pressable>
+    <Animated.View style={[full && GlobalStyle.buttonFull, !disabled && scaleStyle]}>
+      <Pressable
+        style={({ pressed }) => [
+          GlobalStyle[buttonStyle],
+          small && type !== 'text' && GlobalStyle.buttonSmall,
+          inverted && type !== 'text' && GlobalStyle.buttonOnInk,
+          disabled && GlobalStyle.buttonDisabled,
+          pressed && GlobalStyle.buttonPressed,
+        ]}
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+      >
+        <View style={GlobalStyle.buttonContent}>
+          {ronnie && <RonnieMascot size="tiny" />}
+          {icon && <Ionicons name={icon} size={small ? 15 : 17} color={textColor} />}
+          <Text
+            style={[
+              GlobalStyle[textStyle],
+              small && GlobalStyle.buttonTextSmall,
+              inverted && GlobalStyle.buttonTextOnInk,
+            ]}
+          >
+            {title}
+          </Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }

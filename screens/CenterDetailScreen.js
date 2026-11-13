@@ -1,39 +1,58 @@
 // Ansvarlig: Christian
 import { useContext, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
+import ButtonComponent from '../components/ButtonComponent';
+import CenterTitle from '../components/CenterTitle';
+import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
-import CenterDetailPrototype, {
-  CENTER_DETAIL_VARIANTS,
-} from '../components/CenterDetailPrototype';
-import PrototypeSwitcher from '../components/PrototypeSwitcher';
-import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
+import OfferReceipt from '../components/OfferReceipt';
+import OfflineNotice from '../components/OfflineNotice';
+import Reveal from '../components/Reveal';
+import {
+  facilityRows,
+  formatDistance,
+  formatKr,
+  formatNumber,
+  formatPrice,
+  matchCenter,
+  offerBasisText,
+  turns30Notice,
+} from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { openSignupPage } from '../services/Signup';
 
-// Centerdetalje: Kæde, adresse og Distance, og Centrets Tilbud som faner. Det valgte Tilbud vises
-// som en kvittering for brugerens første år, der ender i Ærlig årspris (se OfferReceipt).
+// Centerdetalje: titel (Kæde og navn), adresse og Distance, og Centrets Tilbud som faner. Øverst
+// står prisen for det valgte Tilbud (Ærlig årspris og de første 3 mdr.), så 30-års-advarsel og
+// Spar mere-forslag, og derefter "Tilmeld dig ...", der åbner tilmeldingen til det valgte Tilbud.
+// Udregningen bag prisen (kvitteringen, se OfferReceipt) er foldet sammen under "Se udregningen".
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
-// for brugeren valgt. "Tilmeld dig ..." åbner tilmeldingen til det valgte Tilbud. Viser også
-// 30-års-advarsel, Spar mere-forslag, faciliteter og "Spørg Ronnie om dette center".
-// ♥ i titelrækken gør Centret til Favorit.
-// PROTOTYPE: indholdet vises lige nu som en af varianterne i components/CenterDetailPrototype.js.
+// for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Viser også faciliteter og "Spørg
+// Ronnie om dette Center". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
-  const { centers, chains, loading } = useCenterData();
+  const { centers, chains, loading, offline, retry } = useCenterData();
   const [selectedOfferId, setSelectedOfferId] = useState(null);
-  // PROTOTYPE: hvilken variant af Centerdetalje der vises.
-  const [variant, setVariant] = useState('A');
+  const [showReceipt, setShowReceipt] = useState(false);
   const center = centers.find((entry) => entry.id === centerId);
 
   const match = useMemo(
     () => matchCenter({ center, chains, user, today: new Date() }),
     [center, chains, user],
   );
+
+  if (offline) {
+    return (
+      <View style={GlobalStyle.container}>
+        <OfflineNotice onRetry={retry} />
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -49,6 +68,14 @@ export default function CenterDetailScreen({ navigation, route }) {
         <Text style={GlobalStyle.emptyText}>
           {center ? 'Centret har ingen Tilbud lige nu.' : 'Centret blev ikke fundet.'}
         </Text>
+        <View style={GlobalStyle.emptyState}>
+          <ButtonComponent
+            title="Tilbage til Find"
+            type="secondary"
+            icon="arrow-back"
+            onPress={() => navigation.navigate('Faner', { screen: 'Find' })}
+          />
+        </View>
       </View>
     );
   }
@@ -63,7 +90,7 @@ export default function CenterDetailScreen({ navigation, route }) {
   );
 
   const selected = offers.find((priced) => priced.offer.id === selectedOfferId) ?? bestOffer;
-  const distance = match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null;
+  const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
   // sættes ind, hvis man spørger om samme Center igen.
@@ -79,11 +106,14 @@ export default function CenterDetailScreen({ navigation, route }) {
     <>
       {ageNotice && (
         <View style={GlobalStyle.warningBox}>
-          <Text style={GlobalStyle.warningTitle}>Prisen stiger, når du fylder 30</Text>
+          <View style={GlobalStyle.warningHeader}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.text} />
+            <Text style={GlobalStyle.warningTitle}>Prisen stiger, når du fylder 30</Text>
+          </View>
           <Text style={GlobalStyle.bodyText}>
             Du fylder 30 i {ageNotice.birthdayMonth}. Fra måned {ageNotice.fromPeriod} stiger prisen
             på {ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}
-            {formatKr(ageNotice.priceAfter)}/md. Det er regnet med i din ærlige årspris.
+            {formatPrice(ageNotice.priceAfter)}. Det er regnet med i din ærlige årspris.
           </Text>
         </View>
       )}
@@ -95,41 +125,142 @@ export default function CenterDetailScreen({ navigation, route }) {
             <InfoButton term="savingSuggestion" />
           </View>
           <Text style={GlobalStyle.bodyText}>
-            Bliv {suggestion.label} for {suggestion.membershipPricePerYear} kr/år og spar{' '}
-            {formatKr(Math.round(suggestion.savingPerYear))}/år her (
+            Bliv {suggestion.label} for {formatPrice(suggestion.membershipPricePerYear, 'år')} og
+            spar {formatPrice(Math.round(suggestion.savingPerYear), 'år')} her (
             {offerNames[suggestion.offerId]} til{' '}
-            {formatKr(Math.round(suggestion.honestYearlyPrice))}/md).
+            {formatPrice(Math.round(suggestion.honestYearlyPrice))}).
           </Text>
         </View>
       ))}
     </>
   );
 
-  // PROTOTYPE: varianterne af Centerdetalje (se components/CenterDetailPrototype.js).
   return (
-    <View style={GlobalStyle.screen}>
-      <CenterDetailPrototype
-        variant={variant}
-        center={center}
-        chain={chain}
-        match={match}
-        user={user}
-        offers={offers}
-        bestOffer={bestOffer}
-        selected={selected}
-        onSelect={setSelectedOfferId}
-        facilities={facilities}
-        distance={distance}
-        notices={notices}
-        hasNotices={Boolean(ageNotice) || match.savingSuggestions.length > 0}
-        onSignup={() => openSignupPage(center, chain, selected)}
-        onAskRonnie={handleAskRonnie}
+    <ScrollView style={GlobalStyle.screen} contentContainerStyle={GlobalStyle.stepContent}>
+      <View style={GlobalStyle.titleRow}>
+        <View style={GlobalStyle.fill}>
+          <CenterTitle chain={chain} name={center.name} size="screen" />
+        </View>
+        <FavoriteButton center={center} chain={chain} />
+      </View>
+      {/* Kædens logo står i titlen, så her står kun adresse og afstand. */}
+      <Text style={GlobalStyle.detailHeroMeta}>
+        {[center.address, distance].filter(Boolean).join(' · ')}
+      </Text>
+
+      {offers.length > 1 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={GlobalStyle.offerTabs}
+        >
+          {offers.map((priced) => {
+            const active = priced === selected;
+            return (
+              <Pressable
+                key={priced.offer.id}
+                style={[GlobalStyle.offerTab, active && GlobalStyle.offerTabActive]}
+                onPress={() => setSelectedOfferId(priced.offer.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[GlobalStyle.offerTabText, active && GlobalStyle.offerTabTextActive]}>
+                  {priced.offer.name}
+                </Text>
+                <Text
+                  style={[GlobalStyle.offerTabPrice, active && GlobalStyle.offerTabPriceActive]}
+                >
+                  {formatPrice(Math.round(priced.honestYearlyPrice))}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {/* Prisen for det valgte Tilbud øverst, så den og Tilmeld ses med det samme. */}
+      <Reveal key={selected.offer.id} distance={12}>
+        <View style={GlobalStyle.detailPrice}>
+          <View style={GlobalStyle.cardPriceRow}>
+            <Text style={GlobalStyle.cardPrice}>
+              {formatNumber(Math.round(selected.honestYearlyPrice))}
+            </Text>
+            <View style={GlobalStyle.cardPriceUnitBox}>
+              <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
+              <View style={GlobalStyle.inlineRow}>
+                <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
+                <InfoButton term="honestYearlyPrice" />
+              </View>
+            </View>
+          </View>
+          <Text style={GlobalStyle.mutedText}>{offerBasisText(selected)}</Text>
+          <Text style={GlobalStyle.mutedText}>
+            De første 3 mdr.: {formatPrice(Math.round(selected.quarterlyPrice))}
+          </Text>
+        </View>
+      </Reveal>
+
+      {match.savingPerMonth > 0 && selected === bestOffer && (
+        <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
+          Du sparer {formatPrice(Math.round(match.savingPerMonth))} i forhold til dit nuværende
+          medlemskab.
+        </Text>
+      )}
+
+      {/* Advarsler og Spar mere før knappen, så man ser dem, inden man tilmelder sig. */}
+      <View style={GlobalStyle.paragraph}>{notices}</View>
+
+      <View style={GlobalStyle.choiceList}>
+        <ButtonComponent
+          title={`Tilmeld dig ${selected.offer.name}`}
+          type="primary"
+          icon="open-outline"
+          full
+          onPress={() => openSignupPage(center, chain, selected)}
+        />
+        <Text style={[GlobalStyle.mapLegend, GlobalStyle.centeredText]}>
+          Åbner {selected.offer.name} på {chain?.name ?? 'kædens'} egen side.
+        </Text>
+      </View>
+
+      {/* Udregningen bag prisen (kvitteringen) er foldet sammen fra start. */}
+      <ButtonComponent
+        title={showReceipt ? 'Skjul udregningen' : 'Se udregningen'}
+        type="ghost"
+        icon={showReceipt ? 'chevron-up' : 'chevron-down'}
+        onPress={() => setShowReceipt((open) => !open)}
       />
-      <PrototypeSwitcher
-        variants={CENTER_DETAIL_VARIANTS}
-        current={variant}
-        onChange={setVariant}
+      {showReceipt && (
+        <Reveal key={selected.offer.id} distance={16} style={GlobalStyle.paragraph}>
+          <OfferReceipt
+            pricedOffer={selected}
+            chain={chain}
+            user={user}
+            isCheapest={selected === bestOffer && offers.length > 1}
+          />
+        </Reveal>
+      )}
+
+      <View style={GlobalStyle.inlineRow}>
+        <Text style={GlobalStyle.sectionLabel}>Faciliteter</Text>
+        {facilities.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
+      </View>
+      <View style={GlobalStyle.facilityGrid}>
+        {facilities.map((row, index) => (
+          <Reveal key={row.key} index={index} distance={12} style={GlobalStyle.facilityCell}>
+            <Text style={GlobalStyle.mapLegend}>{row.label}</Text>
+            <Text style={GlobalStyle.feeValue}>{row.value}</Text>
+          </Reveal>
+        ))}
+      </View>
+
+      {/* Ronnie står nederst, langt fra prisen: han er aldrig med ved priser. */}
+      <ButtonComponent
+        title="Spørg Ronnie om dette Center"
+        type="text"
+        ronnie
+        onPress={handleAskRonnie}
       />
-    </View>
+    </ScrollView>
   );
 }

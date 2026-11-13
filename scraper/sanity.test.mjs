@@ -181,23 +181,26 @@ describe('Tilbud', () => {
     ]);
   });
 
-  test('Kampagnepris må højst ændre sig ±50 % på én nat, hvis den fandtes i går', () => {
+  // Kampagner starter og slutter fra den ene dag til den anden, så store spring er normale.
+  // Med ±50 %-reglen blev Kæden sprunget over, de gamle priser blev stående, og næste nat
+  // fejlede igen: PureGym i oktober 2026 (239,5 → 1 kr/md) og Loop i november (50 → 100 kr/md).
+  test('Kampagnepris må gerne ændre sig mere end ±50 % på én nat', () => {
     const offer = (campaignPrice) => withPrice(549, { campaignPrice });
-    assert.deepEqual(offerProblems(offer(150), offer(100)), []);
-    assert.deepEqual(offerProblems(offer(151), offer(100)), [
-      'Kampagnepris ændret 51 % på én nat (100 → 151 kr/md)',
-    ]);
-    assert.deepEqual(offerProblems(offer(49), offer(100)), [
-      'Kampagnepris ændret -51 % på én nat (100 → 49 kr/md)',
-    ]);
-    // Ingen falske alarmer: en ny kampagne, en kampagne der slutter, og en gratis kampagne i går.
+    assert.deepEqual(offerProblems(offer(100), offer(50)), []);
+    assert.deepEqual(offerProblems(offer(1), offer(239.5)), []);
+    assert.deepEqual(offerProblems(offer(0), offer(400)), []);
+    assert.deepEqual(
+      offerProblems(offer({ under30: 134.5, over30: 149.5 }), offer({ under30: 1, over30: 1 })),
+      [],
+    );
     assert.deepEqual(offerProblems(offer(99), offer(null)), []);
     assert.deepEqual(offerProblems(offer(null), offer(100)), []);
-    assert.deepEqual(offerProblems(offer(99), offer(0)), []);
-    // Fra ét tal til pr. Aldersgruppe sammenlignes hver Aldersgruppe med tallet.
-    assert.deepEqual(offerProblems(offer({ under30: 120, over30: 140 }), offer(100)), []);
-    assert.deepEqual(offerProblems(offer({ under30: 120, over30: 160 }), offer(100)), [
-      'Kampagnepris (over30) ændret 60 % på én nat (100 → 160 kr/md)',
+  });
+
+  test('en Kampagnepris, der springer, skal stadig være lavere end Standardprisen', () => {
+    const offer = (campaignPrice) => withPrice(549, { campaignPrice });
+    assert.deepEqual(offerProblems(offer(549), offer(50)), [
+      'Kampagnepris 549 er ikke lavere end Standardpris 549',
     ]);
   });
 

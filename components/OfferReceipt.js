@@ -5,9 +5,11 @@ import InfoButton from './InfoButton';
 import {
   feeSummary,
   formatKr,
+  formatPrice,
   partnerInfo,
   priceBreakdown,
   receiptLines,
+  subscriptionTypeLabel,
 } from '../data/centerDetail';
 
 // Én række på kvitteringen: tekst til venstre, beløb til højre.
@@ -44,12 +46,14 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
         <Text style={[GlobalStyle.cardTitle, GlobalStyle.shrinkText]}>{offer.name}</Text>
         {isCheapest && (
           <View style={GlobalStyle.badge}>
-            <Text style={GlobalStyle.badgeText}>BILLIGST HER</Text>
+            <Text style={GlobalStyle.badgeText}>Billigst her</Text>
           </View>
         )}
       </View>
       <Text style={GlobalStyle.mutedText}>
-        {[offer.subscriptionType, `med ${yearlyOption.label}`].filter(Boolean).join(' · ')}
+        {[subscriptionTypeLabel(offer.subscriptionType), `med ${yearlyOption.label}`]
+          .filter(Boolean)
+          .join(' · ')}
       </Text>
 
       <View style={GlobalStyle.receiptDivider} />
@@ -71,13 +75,14 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
       <Text style={GlobalStyle.mutedText}>÷ 12 måneder</Text>
       <View style={GlobalStyle.receiptTotalLine} />
       <View style={GlobalStyle.receiptRow}>
-        <View style={GlobalStyle.inlineRow}>
-          <Text style={GlobalStyle.receiptTotalLabel}>Ærlig årspris</Text>
-          <InfoButton term="honestYearlyPrice" />
+        <View>
+          <View style={GlobalStyle.inlineRow}>
+            <Text style={GlobalStyle.receiptTotalLabel}>Ærlig årspris</Text>
+            <InfoButton term="honestYearlyPrice" />
+          </View>
+          <Text style={GlobalStyle.mapLegend}>gns. pr. md.</Text>
         </View>
-        <Text style={GlobalStyle.receiptTotal}>
-          {formatKr(Math.round(breakdown.honestYearlyPrice))}/md
-        </Text>
+        <Text style={GlobalStyle.receiptTotal}>{formatKr(Math.round(breakdown.honestYearlyPrice))}</Text>
       </View>
       {breakdown.rows.some((row) => row.share < 1) && (
         <Text style={GlobalStyle.mutedText}>
@@ -94,7 +99,7 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
             ? `De første 3 måneder er ${quarterlyOption.label} billigst`
             : null
         }
-        value={`${formatKr(Math.round(pricedOffer.quarterlyPrice))}/md`}
+        value={formatPrice(Math.round(pricedOffer.quarterlyPrice))}
       />
       <ReceiptRow label="Binding" term="binding" value={fees.binding} />
       <ReceiptRow
@@ -107,13 +112,16 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
         <ReceiptRow
           label="Makkerpris pr. person"
           term="partnerPrice"
-          value={partner.available ? `${formatKr(partner.price)}/${breakdown.perPeriod}` : 'Ingen'}
+          value={partner.available ? formatPrice(partner.price, breakdown.perPeriod) : 'Ingen'}
         />
       )}
       {partner?.campaign && (
         <ReceiptRow
           label="Makkerpris, kampagne"
-          value={`${formatKr(partner.campaign.price)}/${breakdown.perPeriod} i ${partner.campaign.months} betalinger`}
+          value={
+            `${formatPrice(partner.campaign.price, breakdown.perPeriod)} ` +
+            `i ${partner.campaign.months} betalinger`
+          }
         />
       )}
       {partner?.available && partner.signupFee !== (offer.signupFee ?? 0) && (

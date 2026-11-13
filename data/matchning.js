@@ -57,10 +57,10 @@ export const DISCOUNT_GROUPS = {
 };
 
 export const SORT_OPTIONS = [
-  { id: 'honestYearlyPrice', label: 'Ærlig årspris' },
-  { id: 'quarterlyPrice', label: 'Kvartalspris' },
-  { id: 'priceDesc', label: 'Pris høj→lav' },
-  { id: 'distance', label: 'Afstand' },
+  { id: 'honestYearlyPrice', label: 'Ærlig årspris, billigst først' },
+  { id: 'quarterlyPrice', label: 'Kvartalspris, billigst først' },
+  { id: 'priceDesc', label: 'Ærlig årspris, dyrest først' },
+  { id: 'distance', label: 'Afstand, nærmest først' },
 ];
 
 const MONTHS_IN_YEAR = 12;
@@ -322,14 +322,15 @@ export function distanceKm(from, to) {
 
 export const FACILITY_FILTERS = ['sauna', 'groupClasses', 'open24h'];
 
-// Navne til "Ikke oplyst"-mærker i UI.
+// Navne til "Ikke oplyst"-mærker i UI. Abonnementstype-Filteret hedder "Landsdækkende" i UI,
+// så mærket bruger samme ord.
 export const NOT_STATED_LABELS = {
   sauna: 'Sauna',
   groupClasses: 'Holdtræning',
   open24h: 'Døgnåbent',
   machines: 'Maskiner',
   binding: 'Binding',
-  subscriptionType: 'Abonnementstype',
+  subscriptionType: 'Landsdækkende',
 };
 
 function checkCenter(center, filters) {
