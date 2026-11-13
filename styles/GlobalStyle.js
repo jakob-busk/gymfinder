@@ -1156,6 +1156,13 @@ const GlobalStyle = StyleSheet.create({
     borderTopColor: colors.borderStrong,
     backgroundColor: colors.background,
   },
+  // Find: linjen med Rabatprofilen øverst og "Ret" ved siden af.
+  discountLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
   // Find: kort med pins og en boks for det valgte Center oven på kortet.
   mapBox: {
     height: 250,

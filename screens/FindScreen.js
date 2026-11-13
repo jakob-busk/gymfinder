@@ -14,7 +14,7 @@ import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
 import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
-import { loosenFilterSuggestions } from '../data/findView';
+import { discountProfileText, loosenFilterSuggestions } from '../data/findView';
 import { activeFilterCount } from '../data/filterSettings';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
@@ -47,6 +47,14 @@ export default function FindScreen({ navigation }) {
   const selected = centers.find((match) => match.center.id === selectedId);
 
   const showDetails = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
+  // "Ret" ved Rabatprofilen åbner den samme redigering som under Profil. initial: false lægger
+  // Profil-forsiden nedenunder, så tilbage-knappen virker, selv om Profil ikke er åbnet endnu.
+  const editDiscountProfile = () =>
+    navigation.navigate('Profil', {
+      screen: 'Redigér profil',
+      params: { section: 'discountProfile' },
+      initial: false,
+    });
   const filterLabel = filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre';
   const legendText =
     `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
@@ -95,10 +103,17 @@ export default function FindScreen({ navigation }) {
     <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
   );
 
-  // Kort, forklaring og sortering/Filtre øverst i listen.
+  // Rabatprofil, kort, forklaring og sortering/Filtre øverst i listen.
   const listHeader = (
     <>
       {notice}
+      {/* Hvilken Rabatprofil priserne er regnet med, så man kan se det uden at åbne Profil. */}
+      <View style={GlobalStyle.discountLine}>
+        <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
+          {discountProfileText(user.discountProfile)}
+        </Text>
+        <ButtonComponent title="Ret" type="text" size="small" onPress={editDiscountProfile} />
+      </View>
       <View style={GlobalStyle.mapBox}>
         <CenterMap
           userLocation={user.location}

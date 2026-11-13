@@ -1,4 +1,10 @@
-import { DEFAULT_LOCATION, centerKeywords, loosenFilterSuggestions, mapRegion } from './findView';
+import {
+  DEFAULT_LOCATION,
+  centerKeywords,
+  discountProfileText,
+  loosenFilterSuggestions,
+  mapRegion,
+} from './findView';
 
 // Adfærdstests for visningslogikken på Find. Tallene er regnet ud på forhånd.
 
@@ -87,5 +93,19 @@ describe('loosenFilterSuggestions', () => {
   test('giver ingen forslag uden Filtre', () => {
     expect(loosenFilterSuggestions(undefined)).toEqual([]);
     expect(loosenFilterSuggestions({ machines: [], sauna: false })).toEqual([]);
+  });
+});
+
+describe('discountProfileText', () => {
+  test('viser Rabatgrupperne, priserne er regnet med', () => {
+    expect(discountProfileText(['student'])).toBe('Priser regnet med: Studerende');
+    expect(discountProfileText(['student', 'partner'])).toBe(
+      'Priser regnet med: Studerende, Træn med en makker',
+    );
+  });
+
+  test('siger det, når Rabatprofilen er tom', () => {
+    expect(discountProfileText([])).toBe('Priser uden Rabat');
+    expect(discountProfileText(undefined)).toBe('Priser uden Rabat');
   });
 });
