@@ -7,7 +7,10 @@ export const PRICE_RANGE = { min: 50, max: 2000 };
 // Kampagnepriser må gerne være 0 kr (fx "træn gratis til 1. december").
 export const CAMPAIGN_PRICE_RANGE = { min: 0, max: 2000 };
 
-// Højst ±50 % ændring af Standardpris, Kampagnepris og Makkerpris fra én nat til den næste.
+// Højst ±50 % ændring af Standardpris og Makkerpris fra én nat til den næste. Kampagnepriser er
+// undtaget: kampagner starter og slutter fra dag til dag (fx 1 kr → 239 kr/md), og en afvist
+// Kæde beholder gårsdagens pris, så den samme ændring ville blive afvist nat efter nat. En
+// Kampagnepris skal stadig ligge i CAMPAIGN_PRICE_RANGE og være lavere end Standardprisen.
 export const MAX_NIGHTLY_CHANGE = 0.5;
 
 // Kæden springes over, hvis mere end 20 % af dens Tilbud og Centre fejler.
@@ -252,7 +255,6 @@ export function offerProblems(offer, previous) {
   if (previous) {
     problems.push(
       ...nightlyChangeProblems('Standardpris', offer?.standardPrice, previous.standardPrice),
-      ...nightlyChangeProblems('Kampagnepris', offer?.campaignPrice, previous.campaignPrice),
       ...nightlyChangeProblems('Makkerpris', offer?.partnerPrice, previous.partnerPrice),
     );
   }
