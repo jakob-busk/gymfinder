@@ -160,7 +160,7 @@ describe('Forespørgsel til OpenAI', () => {
         },
       ],
     });
-    expect(systemPrompt).toContain('Anbefal KUN centre fra listen');
+    expect(systemPrompt).toContain('Anbefal kun centre fra listen');
     expect(systemPrompt).toContain('ærlig årspris');
     expect(systemPrompt).toContain('Studerende');
     expect(systemPrompt).toContain('299 kr. pr. md.');

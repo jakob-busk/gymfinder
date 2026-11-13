@@ -15,6 +15,7 @@ import { centerDisplayName } from '../data/centerDisplayName';
 import { formatDistance, formatPrice, offerBasisText } from '../data/centerDetail';
 import {
   FACILITY_TAG_ROW_LIMIT,
+  chainCardOffer,
   facilityTags,
   notStatedWithoutFacilities,
   otherCentersLabel,
@@ -22,11 +23,12 @@ import {
 import { openSignupPage } from '../services/Signup';
 
 // Kort for én Kæde i listen på Find (chainMatch er et ChainMatch fra Matchning). Kortet viser
-// Kædens bedste Center: titel (logo, pin, navn), afstand, Ærlig årspris for det billigste Tilbud
-// for brugeren som et stort tal med Tilbuddets navn (og Rabat), facilitetsmærker (ønskede først,
-// højst 6 og "+N mere"; filters er de aktive Filtre), "Ikke oplyst" for binding, abonnementstype
-// og maskiner og "Du sparer". ♥ og
-// "Tilmeld {Tilbud}" gælder Kædens bedste Center og dets billigste Tilbud. Titlen og "Om centret"
+// Kædens bedste Center: titel (logo, pin, navn), afstand, Ærlig årspris for det Tilbud, Centret er
+// rangeret på (det billigste, der med sikkerhed matcher, eller det billigste, hvis intet gør; se
+// chainCardOffer), som et stort tal med Tilbuddets navn (og Rabat), facilitetsmærker (ønskede
+// først, højst 6 og "+N mere"; filters er de aktive Filtre), "Ikke oplyst" for binding,
+// abonnementstype og maskiner og "Du sparer". ♥ og "Tilmeld {Tilbud}" gælder Kædens bedste Center
+// og samme Tilbud. Titlen og "Om centret"
 // åbner Centerdetalje. Nederst kan Kædens andre matchende Centre foldes ud; hver række viser kort
 // navn, afstand, ærlig årspris og højst 4 facilitetsmærker og åbner Centerdetalje (rækkerne har ingen Tilmeld). Det
 // Anbefalede Center er en mørk blok med prisen i lyst blæk, så listen får en rytme i stedet for
@@ -41,7 +43,8 @@ export default function ChainCard({
 }) {
   const [showOthers, setShowOthers] = useState(false);
   const { best: match, others } = chainMatch;
-  const { center, chain, bestOffer } = match;
+  const { center, chain } = match;
+  const shown = chainCardOffer(match);
   const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
   const ink = isRecommended;
   const showBest = () => onShowDetails(center.id);
@@ -87,16 +90,16 @@ export default function ChainCard({
           <FavoriteButton center={center} chain={chain} onInk={ink} />
         </View>
 
-        <HonestPrice amount={match.honestYearlyPrice} size="card" onInk={ink} />
+        <HonestPrice amount={shown.honestYearlyPrice} size="card" onInk={ink} />
         {/* Hvilket Tilbud prisen og Tilmeld gælder, og om en Rabat er regnet med. */}
         <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
-          {offerBasisText(bestOffer)}
+          {offerBasisText(shown.priced)}
         </Text>
         <FacilityTags result={facilityTags(center, filters)} onInk={ink} expandable />
-        <NotStatedRow notStated={notStatedWithoutFacilities(match.notStated)} onInk={ink} />
-        {match.savingPerMonth != null && match.savingPerMonth > 0 && (
+        <NotStatedRow notStated={notStatedWithoutFacilities(shown.notStated)} onInk={ink} />
+        {shown.savingPerMonth != null && shown.savingPerMonth > 0 && (
           <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
-            Du sparer {formatPrice(Math.round(match.savingPerMonth))} i forhold til dit nuværende
+            Du sparer {formatPrice(Math.round(shown.savingPerMonth))} i forhold til dit nuværende
             medlemskab
           </Text>
         )}
@@ -110,12 +113,12 @@ export default function ChainCard({
             onPress={showBest}
           />
           <ButtonComponent
-            title={`Tilmeld ${bestOffer.offer.name}`}
+            title={`Tilmeld ${shown.priced.offer.name}`}
             type="primary"
             size="small"
             icon="open-outline"
-            // Det billigste Tilbud for brugeren, som kortet viser.
-            onPress={() => openSignupPage(center, chain, bestOffer)}
+            // Det Tilbud, kortet viser.
+            onPress={() => openSignupPage(center, chain, shown.priced)}
           />
         </View>
 
@@ -146,14 +149,15 @@ export default function ChainCard({
   );
 }
 
-// Én af Kædens andre Centre: kort navn, afstand, ærlig årspris og højst 4 facilitetsmærker. Et
+// Én af Kædens andre Centre: kort navn, afstand, ærlig årspris (for det Tilbud, Centret er
+// rangeret på, som på kortet) og højst 4 facilitetsmærker. Et
 // tryk åbner Centerdetalje, så "+N mere" kan ikke trykkes her. Skærmlæseren hører mærkerne som en
 // del af rækken.
 function OtherCenterRow({ match, filters, onInk, onPress }) {
   const { center, chain } = match;
   const name = centerDisplayName(center.name, chain);
   const distance = match.distanceKm != null ? formatDistance(match.distanceKm) : 'Afstand ukendt';
-  const price = formatPrice(Math.round(match.honestYearlyPrice));
+  const price = formatPrice(Math.round(chainCardOffer(match).honestYearlyPrice));
   const tags = facilityTags(center, filters, { limit: FACILITY_TAG_ROW_LIMIT });
   const tagsLabel = tags.tags.map((tag) => `, ${tag.accessibilityLabel}`).join('');
 
