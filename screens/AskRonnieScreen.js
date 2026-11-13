@@ -46,18 +46,32 @@ export default function AskRonnieScreen({ navigation, route }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [askedCenterIds, setAskedCenterIds] = useState([]);
+  // Et færdigt spørgsmål fra Centerdetalje, der venter, fordi brugeren allerede har skrevet noget.
+  const [pendingQuestion, setPendingQuestion] = useState(null);
+  // Det seneste i inputfeltet, så effekten nedenfor kan se det uden at køre ved hvert tastetryk.
+  const inputRef = useRef('');
+  inputRef.current = input;
   // Spørgsmål tilbage i denne uge; null, indtil tælleren er hentet.
   const [remaining, setRemaining] = useState(null);
   const nextMessageId = useRef(1);
   const scrollRef = useRef(null);
 
   // "Spørg Ronnie om dette center" på Centerdetalje: færdigt spørgsmål i inputfeltet, og
-  // Centret kommer med i det, Ronnie kender.
+  // Centret kommer med i det, Ronnie kender. Har brugeren allerede skrevet noget, overskrives
+  // det ikke; spørgsmålet står i stedet som en knap over feltet.
   const question = route?.params?.question;
   const askedCenterId = route?.params?.centerId;
   const askedAt = route?.params?.askedAt;
   useEffect(() => {
-    if (question) setInput(question);
+    if (question) {
+      const typed = inputRef.current.trim();
+      if (typed && typed !== question.trim()) {
+        setPendingQuestion(question);
+      } else {
+        setPendingQuestion(null);
+        setInput(question);
+      }
+    }
     if (askedCenterId) {
       setAskedCenterIds((current) =>
         current.includes(askedCenterId) ? current : [...current, askedCenterId],
@@ -164,6 +178,19 @@ export default function AskRonnieScreen({ navigation, route }) {
     centerData.centers.find((center) => center.id === centerId)?.name ?? 'Centret';
 
   const goToFind = () => navigation.navigate('Find');
+
+  // Ny samtale: Ronnie glemmer samtalen. Det, brugeren er i gang med at skrive, bliver stående.
+  const handleNewConversation = () => {
+    setMessages([]);
+    setError(null);
+    setAskedCenterIds([]);
+    setPendingQuestion(null);
+  };
+
+  const applyPendingQuestion = () => {
+    setInput(pendingQuestion);
+    setPendingQuestion(null);
+  };
 
   if (!ronnieAvailable) {
     return (
@@ -286,7 +313,21 @@ export default function AskRonnieScreen({ navigation, route }) {
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={
             <>
-              <ScreenHeader title="Spørg Ronnie" />
+              <ScreenHeader
+                title="Spørg Ronnie"
+                right={
+                  messages.length > 0 && (
+                    <ButtonComponent
+                      title="Ny samtale"
+                      type="ghost"
+                      size="small"
+                      icon="add"
+                      onPress={handleNewConversation}
+                      disabled={sending}
+                    />
+                  )
+                }
+              />
 
               {messages.length === 0 && (
                 <>
@@ -320,6 +361,17 @@ export default function AskRonnieScreen({ navigation, route }) {
           ListFooterComponent={footer}
         />
 
+        {pendingQuestion && (
+          <View style={GlobalStyle.chatPendingQuestion}>
+            <ButtonComponent
+              title="Brug det færdige spørgsmål om Centret"
+              type="ghost"
+              size="small"
+              icon="chatbubble-ellipses-outline"
+              onPress={applyPendingQuestion}
+            />
+          </View>
+        )}
         {sendHint && (
           <Text style={GlobalStyle.chatInputHint} accessibilityLiveRegion="polite">
             {sendHint}
