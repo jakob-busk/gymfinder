@@ -18,7 +18,7 @@ export default function BirthDateScreen({ navigation }) {
     <OnboardingStep
       step={2}
       title="Hvornår er du født?"
-      intro="Nogle Kæder har forskellig pris for under 30 og 30+. Fylder du 30 inden for et år, regner vi den højere pris med fra den måned."
+      intro="Nogle kæder har forskellig pris for under 30 og 30+. Fylder du 30 inden for et år, regner vi den højere pris med fra den måned."
       onNext={() => navigation.navigate('Rabatprofil')}
       nextDisabled={!user.birthDate}
       nextDisabledReason="Skriv eller vælg din fødselsdato."

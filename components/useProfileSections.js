@@ -114,7 +114,7 @@ export function useProfileSections(navigation) {
       return (
         <View style={GlobalStyle.groupPadded}>
           <Text style={GlobalStyle.stepIntro}>
-            Du er logget ind som {accountLabel}. Dine oplysninger, Favoritter og Prisalarmer følger
+            Du er logget ind som {accountLabel}. Dine oplysninger, favoritter og prisalarmer følger
             din konto.
           </Text>
           <View style={GlobalStyle.accountActions}>
@@ -128,7 +128,7 @@ export function useProfileSections(navigation) {
       <View style={GlobalStyle.groupPadded}>
         <Text style={GlobalStyle.stepIntro}>
           Du bruger GymFinder anonymt, så dine oplysninger er knyttet til denne telefon. Gem din
-          profil, så følger alt med, også Favoritter og Prisalarmer, hvis du skifter telefon.
+          profil, så følger alt med, også favoritter og prisalarmer, hvis du skifter telefon.
         </Text>
         <AccountForm mode="create" onSubmit={handleCreateAccount} />
         <View style={GlobalStyle.accountActions}>
@@ -168,7 +168,7 @@ export function useProfileSections(navigation) {
     {
       key: 'discountProfile',
       icon: 'pricetag-outline',
-      title: 'Rabatprofil',
+      title: 'Rabatter',
       summary:
         user.discountProfile.map((group) => DISCOUNT_GROUPS[group]?.label).join(', ') || 'Ingen',
       render: () => (
@@ -196,7 +196,7 @@ export function useProfileSections(navigation) {
     {
       key: 'preferences',
       icon: 'options-outline',
-      title: 'Præferencer',
+      title: 'Dine ønsker',
       summary: preferencesSummary(user.preferences),
       render: () => (
         <PreferencesEditor

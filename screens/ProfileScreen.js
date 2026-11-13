@@ -43,7 +43,7 @@ export default function ProfileScreen({ navigation }) {
       <ScrollView style={GlobalStyle.container} contentContainerStyle={GlobalStyle.scrollEnd}>
         <ScreenHeader title="Profil" />
         <Text style={GlobalStyle.mutedText}>
-          Det her bruger vi til at regne din Ærlige årspris og finde Centre til dig.
+          Det her bruger vi til at regne din ærlige årspris og finde centre til dig.
         </Text>
 
         {/* Grupperne toner ind én efter én. */}

@@ -3,7 +3,7 @@
 // ikke selv, han får brugerens personlige Ærlig årspris for hvert Tilbud serveret.
 
 import { DISCOUNT_GROUPS } from './matchning.js';
-import { facilityRows } from './centerDetail.js';
+import { facilityRows, subscriptionTypeLabel } from './centerDetail.js';
 
 // Navnet på Ronnies værktøj til opslag af Centre andre steder (se data/ronnieLookup.js).
 export const RONNIE_LOOKUP_TOOL_NAME = 'find_centre_naer_sted';
@@ -17,7 +17,8 @@ function bindingText(bindingMonths) {
 
 // Ét Center som kompakt data til prompten (og til svar fra opslag af andre steder): faciliteter
 // som Ja/Nej/Ikke oplyst og hvert Tilbud med brugerens Ærlig årspris, den billigste mulighed for
-// brugeren, gebyrer og Binding.
+// brugeren, gebyrer og Binding. Abonnementstypen står med appens ord (lokalt center /
+// landsdækkende), så Ronnie skriver det samme som resten af appen.
 export function centerFacts(match) {
   const { center, chain, distanceKm, offers } = match;
   return {
@@ -29,7 +30,7 @@ export function centerFacts(match) {
     faciliteter: Object.fromEntries(facilityRows(center).map((row) => [row.label, row.value])),
     tilbud: offers.map((priced) => ({
       navn: priced.offer.name,
-      abonnementstype: priced.offer.subscriptionType ?? null,
+      abonnementstype: subscriptionTypeLabel(priced.offer.subscriptionType),
       aerligAarsprisKrPrMd: round(priced.honestYearlyPrice),
       kvartalsprisKrPrMd: round(priced.quarterlyPrice),
       billigsteMulighed: priced.yearlyOption.label,
@@ -44,10 +45,10 @@ function userFacts(user) {
   const groups = (user?.discountProfile ?? []).map((group) => DISCOUNT_GROUPS[group]?.label ?? group);
   const membership = user?.currentMembership;
   return [
-    `Brugerens Rabatprofil: ${groups.length > 0 ? groups.join(', ') : 'ingen Rabatgrupper'}.`,
+    `Brugerens rabatgrupper: ${groups.length > 0 ? groups.join(', ') : 'ingen'}.`,
     membership?.monthlyPrice != null
-      ? `Brugerens Nuværende medlemskab koster ${membership.monthlyPrice} kr/md.`
-      : 'Brugeren har intet Nuværende medlemskab.',
+      ? `Brugerens nuværende medlemskab koster ${membership.monthlyPrice} kr. pr. md.`
+      : 'Brugeren har intet nuværende medlemskab.',
     user?.address
       ? `Afstande er i luftlinje fra brugerens adresse (${user.address}).`
       : 'Brugerens placering kendes ikke, så afstande mangler.',
@@ -55,34 +56,45 @@ function userFacts(user) {
 }
 
 // System-prompten til Ronnie. matches er CenterMatch fra Matchning (de Centre Ronnie må anbefale).
+// Prompten skriver selv med appens ord (se "Sproget i appen" i CODING_STANDARDS.md), og reglen om
+// sprog beder Ronnie gøre det samme. Han sammenligner fortsat kun på Ærlig årspris.
 export function buildRonnieSystemPrompt({ matches, user }) {
   return [
-    'Du er Ronnie, GymFinders maskot og rådgiver. Du hjælper brugeren med at finde det Center og',
-    'det Tilbud, der passer bedst, og du svarer kort, venligt og konkret på dansk (højst ca. 120 ord).',
+    'Du er Ronnie, GymFinders maskot og rådgiver. Du hjælper brugeren med at finde det center og',
+    'det abonnement, der passer bedst, og du svarer kort, venligt og konkret på dansk (højst ca. 120 ord).',
     '',
     'Regler:',
-    '- Anbefal KUN Centre fra listen nedenfor. Nævn aldrig andre fitnesscentre eller kæder.',
-    '- Sammenlign altid på "aerligAarsprisKrPrMd" (Ærlig årspris): det, brugeren reelt betaler',
-    '  i gennemsnit pr. måned over et år inkl. Oprettelsesgebyr, Admingebyr, Kampagnepris og Rabat.',
+    '- Anbefal KUN centre fra listen nedenfor. Nævn aldrig andre fitnesscentre eller kæder.',
+    '- Sammenlign altid på "aerligAarsprisKrPrMd" (ærlig årspris): det, brugeren reelt betaler',
+    '  i gennemsnit pr. måned over et år inkl. oprettelse, admingebyr, kampagnepris og rabat.',
     '  Det er allerede regnet ud for netop denne bruger. Regn ikke selv priser ud.',
-    '- Nævn gebyrer og Binding, når de betyder noget, og hvilken mulighed der er billigst',
-    '  ("billigsteMulighed", fx Kampagnepris eller Studierabat).',
+    '- Nævn gebyrer og binding, når de betyder noget, og hvilken mulighed der er billigst',
+    '  ("billigsteMulighed", fx kampagnepris eller studierabat).',
     '- "Ikke oplyst" betyder, at det er ukendt. Sig det ærligt i stedet for at gætte.',
-    '- Kan ønsket ikke opfyldes blandt Centrene, så sig det og foreslå det nærmeste alternativ.',
-    '- Spørger brugeren om Centre et andet sted i landet (fx ved et sommerhus, arbejdet eller en',
-    `  by), så kald værktøjet "${RONNIE_LOOKUP_TOOL_NAME}" med stednavnet, og svar ud fra de Centre,`,
+    '- Kan ønsket ikke opfyldes blandt centrene, så sig det og foreslå det nærmeste alternativ.',
+    '- Spørger brugeren om centre et andet sted i landet (fx ved et sommerhus, arbejdet eller en',
+    `  by), så kald værktøjet "${RONNIE_LOOKUP_TOOL_NAME}" med stednavnet, og svar ud fra de centre,`,
     '  det giver. Sig, hvilket sted afstandene er fra. Står der i opslagets "besked", at stedet',
-    '  ikke kunne findes, ligger uden for Danmark, eller at der ingen Centre er, så sig det venligt',
-    '  og bed evt. om et mere præcist stednavn (by eller postnummer). Gæt aldrig på Centre.',
+    '  ikke kunne findes, ligger uden for Danmark, eller at der ingen centre er, så sig det venligt',
+    '  og bed evt. om et mere præcist stednavn (by eller postnummer). Gæt aldrig på centre.',
     '',
-    'Svarformat: JSON med "tekst" (dit svar til brugeren) og "centerIds" (id på hvert Center,',
+    'Sprog: Skriv almindeligt dansk med de samme ord som resten af GymFinder.',
+    '- Stort bogstav kun først i en sætning. Midt i en sætning skrives fx "center", "kæde",',
+    '  "abonnement", "ærlig årspris", "binding" og "ikke oplyst" med småt.',
+    '- Sig "abonnement" (ikke tilbud), "normalpris" (ikke standardpris), "oprettelse" (ikke',
+    '  oprettelsesgebyr), "de første 3 måneder" om "kvartalsprisKrPrMd", "lokalt center" eller',
+    '  "landsdækkende" om abonnementstypen, "dine ønsker" om brugerens krav, og "makkerpris",',
+    '  "studierabat", "seniorrabat" eller "Ældre Sagen-rabat" om rabatter.',
+    '- Skriv tal på dansk, fx 3,4 km, 1.234 kr. og 249 kr. pr. md.',
+    '',
+    'Svarformat: JSON med "tekst" (dit svar til brugeren) og "centerIds" (id på hvert center,',
     'du nævner eller anbefaler i teksten, i samme rækkefølge). Brug kun id\'er fra listen eller',
     'fra dine opslag.',
-    'Skriv Centrenes navne i teksten præcis som i "navn".',
+    'Skriv centrenes navne i teksten præcis som i "navn".',
     '',
     ...userFacts(user),
     '',
-    'Centre (de nærmeste, der matcher brugerens Filtre):',
+    'Centre (de nærmeste, der passer til brugerens ønsker):',
     JSON.stringify(matches.map(centerFacts)),
   ].join('\n');
 }

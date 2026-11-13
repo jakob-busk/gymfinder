@@ -11,7 +11,7 @@ import { RONNIE_LOOKUP_TOOL_NAME, centerFacts } from './ronniePrompt.js';
 export const RONNIE_LOOKUP_LIMIT = 10;
 export const RONNIE_LOOKUP_RADIUS_KM = 25;
 
-// Ca. Danmarks yderpunkter (inkl. Bornholm). GymFinder kender kun Centre i Danmark.
+// Ca. Danmarks yderpunkter (inkl. Bornholm). GymFinder kender kun centre i Danmark.
 const DENMARK_BOUNDS = { minLat: 54.5, maxLat: 57.8, minLon: 8.0, maxLon: 15.3 };
 
 // Værktøjet, som OpenAI får at vide, at Ronnie kan kalde.
@@ -20,9 +20,9 @@ export const ronnieLookupTool = {
   function: {
     name: RONNIE_LOOKUP_TOOL_NAME,
     description:
-      'Finder GymFinders Centre nær et stednavn i Danmark (by, adresse, postnummer eller ' +
-      'område), med brugerens personlige Ærlig årspris. Brug det, når brugeren spørger om ' +
-      'Centre et andet sted end ved sin egen adresse.',
+      'Finder GymFinders centre nær et stednavn i Danmark (by, adresse, postnummer eller ' +
+      'område), med brugerens personlige ærlige årspris. Brug det, når brugeren spørger om ' +
+      'centre et andet sted end ved sin egen adresse.',
     strict: true,
     parameters: {
       type: 'object',
@@ -102,9 +102,9 @@ export async function findCentersNearPlace({
 const STATUS_NOTES = {
   found: (name) => `Centre nær ${name}. afstandKm er luftlinje fra ${name}.`,
   noCenters: (name) =>
-    `Ingen Centre inden for ${RONNIE_LOOKUP_RADIUS_KM} km af ${name}, der matcher brugerens Filtre.`,
+    `Ingen centre inden for ${RONNIE_LOOKUP_RADIUS_KM} km af ${name}, der passer til brugerens ønsker.`,
   unknownPlace: (name) => `Stedet "${name}" kunne ikke findes. Bed om et mere præcist stednavn.`,
-  outsideDenmark: (name) => `${name} ligger uden for Danmark. GymFinder kender kun Centre i Danmark.`,
+  outsideDenmark: (name) => `${name} ligger uden for Danmark. GymFinder kender kun centre i Danmark.`,
   lookupFailed: () => 'Opslaget kunne ikke laves lige nu (fx ingen forbindelse). Prøv igen senere.',
 };
 

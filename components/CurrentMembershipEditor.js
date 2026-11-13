@@ -110,13 +110,13 @@ export default function CurrentMembershipEditor({
           />
           {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
 
-          <Text style={GlobalStyle.fieldLabel}>Hos hvilken Kæde? (valgfrit)</Text>
+          <Text style={GlobalStyle.fieldLabel}>Hos hvilken kæde? (valgfrit)</Text>
           <SelectMenu
-            title="Hos hvilken Kæde?"
+            title="Hos hvilken kæde?"
             value={chainId}
             options={chains.map((chain) => ({ value: chain.id, label: chain.name }))}
             onChange={handleChain}
-            placeholder="Vælg Kæde"
+            placeholder="Vælg kæde"
             allowNone
             full
           />

@@ -101,7 +101,7 @@ export function ronnieWeekOffMessage(date = new Date(), limit = RONNIE_WEEKLY_LI
   const back = `mandag den ${monday.getUTCDate()}. ${MONTHS[monday.getUTCMonth()]}`;
   return (
     `Du har stillet alle ${limit} spørgsmål, du har til Ronnie i denne uge, så han holder fri ` +
-    `resten af ugen. Han er tilbage ${back}. Indtil da kan du finde det Center med den laveste ` +
-    'Ærlig årspris på Find.'
+    `resten af ugen. Han er tilbage ${back}. Indtil da kan du finde det center med den laveste ` +
+    'ærlige årspris på Find.'
   );
 }

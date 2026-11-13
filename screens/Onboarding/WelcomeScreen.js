@@ -12,9 +12,9 @@ import { UserContext } from '../../data/UserContext';
 
 // Det GymFinder kan, i tre korte punkter.
 const POINTS = [
-  'Én ærlig årspris med alle gebyrer, kampagner og dine Rabatter regnet med',
-  'Centre tæt på dig, sorteret efter hvad du reelt betaler',
-  'Besked, når et Center bliver billigere',
+  'Én ærlig årspris med alle gebyrer, kampagner og dine rabatter regnet med',
+  'Centre tæt på dig, valgt ud fra pris og afstand',
+  'Besked, når et center bliver billigere',
 ];
 
 // Velkomst: logo, en stor overskrift som på en plakat, Ronnie på sin cirkel med en hilsen, hvad
