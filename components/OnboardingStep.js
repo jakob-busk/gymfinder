@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalStyle, { motion } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import Reveal from './Reveal';
+import { useReduceMotion } from './useReduceMotion';
 
 export const ONBOARDING_STEP_COUNT = 6;
 
@@ -12,16 +13,21 @@ export const ONBOARDING_STEP_COUNT = 6;
 // fyldes op fra venstre, når trinnet åbnes, så man mærker at man er kommet et skridt videre.
 function StepProgress({ step }) {
   const fill = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      fill.setValue(1);
+      return;
+    }
     Animated.timing(fill, {
       toValue: 1,
       duration: motion.large,
-      delay: 120,
+      delay: 60,
       easing: motion.easeOut,
       useNativeDriver: motion.native,
     }).start();
-  }, [fill]);
+  }, [fill, reduceMotion]);
 
   return (
     <View style={GlobalStyle.stepProgress}>
@@ -46,7 +52,9 @@ function StepProgress({ step }) {
 
 // Fælles ramme for et onboarding-trin: fremdrift, "Trin x af 6", titel, forklaring, indhold og
 // knapper nederst. Titel og indhold glider ind forskudt. Valgfrie trin får "Spring over" (onSkip).
-// nextDisabled spærrer "Næste", indtil de krævede oplysninger er udfyldt.
+// nextDisabled spærrer "Næste", indtil de krævede oplysninger er udfyldt; nextDisabledReason er
+// en kort linje over knappen, der siger hvorfor (fx "Vælg en adresse fra listen"). nextType er
+// knappens type (fx 'text', når trinnet selv har en primærknap).
 export default function OnboardingStep({
   step,
   title,
@@ -55,6 +63,8 @@ export default function OnboardingStep({
   onNext,
   nextLabel = 'Næste',
   nextDisabled = false,
+  nextDisabledReason,
+  nextType = 'primary',
   onSkip,
 }) {
   return (
@@ -82,11 +92,21 @@ export default function OnboardingStep({
           <Reveal index={2}>{children}</Reveal>
         </ScrollView>
 
-        <View style={GlobalStyle.stepFooter}>
+        {nextDisabled && nextDisabledReason && (
+          <Text style={GlobalStyle.stepFooterHint} accessibilityLiveRegion="polite">
+            {nextDisabledReason}
+          </Text>
+        )}
+        <View
+          style={[
+            GlobalStyle.stepFooter,
+            nextDisabled && nextDisabledReason && GlobalStyle.stepFooterAttached,
+          ]}
+        >
           {onSkip && <ButtonComponent title="Spring over" type="text" onPress={onSkip} />}
           <ButtonComponent
             title={nextLabel}
-            type="primary"
+            type={nextType}
             onPress={onNext}
             disabled={nextDisabled}
           />

@@ -2,14 +2,19 @@ import { useEffect, useRef } from 'react';
 import { Animated, Text, View } from 'react-native';
 
 import GlobalStyle, { motion } from '../styles/GlobalStyle';
+import { useReduceMotion } from './useReduceMotion';
 
 // Tekstlogoet "GymFinder" i Fredoka med en violet prik bagefter, der pulserer langsomt som
-// en puls i hvile. size er 'small' (toppen af Find) eller 'large' (Velkomst).
+// en puls i hvile. Med "reducer bevægelse" står prikken stille. size er 'small' (toppen af Find)
+// eller 'large' (Velkomst).
 export default function BrandLogo({ size = 'small' }) {
   const sizeStyle = size === 'large' ? GlobalStyle.logoLarge : GlobalStyle.logoSmall;
   const pulse = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    pulse.setValue(0);
+    if (reduceMotion) return undefined;
     const beat = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
@@ -29,7 +34,7 @@ export default function BrandLogo({ size = 'small' }) {
     );
     beat.start();
     return () => beat.stop();
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
 
   const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.45] });
 

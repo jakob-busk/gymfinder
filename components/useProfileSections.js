@@ -20,7 +20,7 @@ const PREFERENCE_LABELS = {
   sauna: 'Sauna',
   groupClasses: 'Holdtræning',
   open24h: 'Døgnåbent',
-  multiCenterAccess: 'Flere centre',
+  multiCenterAccess: 'Landsdækkende',
   noBinding: 'Ingen binding',
 };
 

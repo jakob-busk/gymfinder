@@ -60,10 +60,17 @@ export async function loadUserProfile(uid) {
   return loadLocalProfile(null);
 }
 
-// Gemmer profilen lokalt og, hvis Firebase er sat op, i databasen.
+// Gemmer profilen lokalt og, hvis Firebase er sat op, i databasen. Fejler databasen, kastes
+// fejlen med savedLocally = true, så skærmen kan sige "Kun gemt på telefonen".
 export async function saveUserProfile(uid, profile) {
   await saveLocalProfile(uid, profile);
-  if (rtdb && uid) await set(ref(rtdb, profilePath(uid)), toStoredProfile(profile));
+  if (!rtdb || !uid) return;
+  try {
+    await set(ref(rtdb, profilePath(uid)), toStoredProfile(profile));
+  } catch (error) {
+    error.savedLocally = true;
+    throw error;
+  }
 }
 
 export async function loadOnboardingDone() {
@@ -89,8 +96,11 @@ export async function clearLocalUserData(uid) {
 //   showOnboarding     true, indtil onboarding er gennemført
 //   completeOnboarding afslutter onboarding og gemmer med det samme. Returnerer null, eller
 //                      fejlen, hvis profilen ikke kunne gemmes i databasen
+//   saveStatus         seneste gemning: null (intet gemt endnu), 'saving', 'saved',
+//                      'localOnly' (databasen fejlede, men telefonen har den) eller 'failed'
 export function useUserProfile({ authReady, uid }) {
   const [user, setProfile] = useState(EMPTY_PROFILE);
+  const [saveStatus, setSaveStatus] = useState(null);
   const [cachedDone, setCachedDone] = useState(false);
   const [loading, setLoading] = useState(true);
   // Kun ændringer fra brugeren gemmes, ikke den profil, der lige er hentet.
@@ -106,6 +116,7 @@ export function useUserProfile({ authReady, uid }) {
 
     const load = async () => {
       setLoading(true);
+      setSaveStatus(null);
       try {
         const [profile, done] = await Promise.all([loadUserProfile(uid), loadOnboardingDone()]);
         if (cancelled) return;
@@ -129,10 +140,22 @@ export function useUserProfile({ authReady, uid }) {
 
   useEffect(() => {
     if (loading || !changed.current) return undefined;
+    let current = true;
+    setSaveStatus('saving');
     const timer = setTimeout(() => {
-      saveUserProfile(uid, user).catch((error) => console.error('Gem profil fejlede:', error));
+      saveUserProfile(uid, user)
+        .then(() => {
+          if (current) setSaveStatus('saved');
+        })
+        .catch((error) => {
+          console.error('Gem profil fejlede:', error);
+          if (current) setSaveStatus(error?.savedLocally ? 'localOnly' : 'failed');
+        });
     }, SAVE_DELAY_MS);
-    return () => clearTimeout(timer);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
   }, [user, loading, uid]);
 
   const setUser = useCallback((update) => {
@@ -165,5 +188,6 @@ export function useUserProfile({ authReady, uid }) {
     loading,
     showOnboarding: needsOnboarding({ cachedDone, profile: user }),
     completeOnboarding,
+    saveStatus,
   };
 }

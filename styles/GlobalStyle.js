@@ -68,10 +68,11 @@ const motion = {
   micro: 150,
   small: 260,
   medium: 520,
-  large: 760,
-  stagger: 70,
-  // Højst så mange elementer forskydes; resten kommer samtidig, så lange lister ikke venter.
-  maxStagger: 8,
+  // Ind-toning (Reveal, fremdrift i onboarding): kort, så indholdet kan bruges med det samme.
+  large: 340,
+  stagger: 50,
+  // Kun de første få elementer forskydes; resten kommer samtidig, så ingen venter.
+  maxStagger: 3,
   pressScale: 0.96,
 };
 
@@ -623,9 +624,8 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
     marginTop: 6,
   },
-  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin cirkel med en taleboble, et skråt bånd med
-  // prisbegreber,
-  // tre nummererede punkter og knapperne nederst.
+  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin cirkel med en taleboble, tre nummererede
+  // punkter og knapperne nederst. Lidt mere luft mellem delene, nu hvor båndet er væk.
   welcomeRoot: {
     flex: 1,
     backgroundColor: colors.background,
@@ -637,7 +637,7 @@ const GlobalStyle = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     justifyContent: 'space-between',
-    gap: 18,
+    gap: 24,
   },
   welcomeTop: {
     gap: 22,
@@ -647,7 +647,7 @@ const GlobalStyle = StyleSheet.create({
     ...display(34, -0.015),
     lineHeight: 37,
   },
-  // "billigst" står omvendt: lys tekst på en blæk-markering.
+  // "bedst" i taglinen står omvendt: lys tekst på en blæk-markering.
   welcomeHighlight: {
     backgroundColor: colors.ink,
     color: colors.onInk,
@@ -698,28 +698,6 @@ const GlobalStyle = StyleSheet.create({
   },
   welcomeActions: {
     gap: 6,
-  },
-  // Det skrå bånd, der løber hen over Velkomst (en stille, levende detalje).
-  marquee: {
-    backgroundColor: colors.ink,
-    marginHorizontal: -48,
-    paddingVertical: 10,
-    overflow: 'hidden',
-    transform: [{ rotate: '-3deg' }],
-  },
-  marqueeTrack: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-  },
-  marqueeText: {
-    flexShrink: 0,
-    fontFamily: fonts.display,
-    fontSize: 20,
-    letterSpacing: -0.1,
-    color: colors.onInk,
-  },
-  marqueeStar: {
-    color: colors.onInkMuted,
   },
   // Onboarding: et trin med fremdriftsbjælke, stor titel, indhold og knapperne nederst.
   stepContent: {
@@ -1663,6 +1641,70 @@ const GlobalStyle = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderRadius: shape.pill,
     backgroundColor: colors.primary,
+  },
+
+  // ---------- Usability-rettelser (Nielsen, del B) ----------
+  // Kort linje over onboardingens knapper, der siger hvorfor "Næste" er spærret.
+  stepFooterHint: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.muted,
+    textAlign: 'right',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    backgroundColor: colors.background,
+  },
+  stepFooterAttached: {
+    borderTopWidth: 0,
+    paddingTop: 6,
+  },
+  // Spørg Ronnie: "Ronnie tænker …" i en taleboble, og hvorfor Send er spærret.
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatInputHint: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.muted,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    backgroundColor: colors.background,
+  },
+  // Om GymFinder: korte afsnit med lidt luft over hver overskrift.
+  aboutContent: {
+    paddingBottom: 32,
+  },
+  // Spørg Ronnie: et færdigt spørgsmål fra Centerdetalje, der venter over inputfeltet.
+  chatPendingQuestion: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    backgroundColor: colors.background,
+  },
+  // Kort besked over knapperne med en Fortryd-knap (fx "Filtre nulstillet · Fortryd").
+  undoBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginHorizontal: 20,
+    marginBottom: 8,
+    paddingLeft: 16,
+    paddingRight: 6,
+    borderRadius: shape.pill,
+    borderWidth: 1.5,
+    borderColor: colors.text,
+    backgroundColor: colors.surface,
+  },
+  undoText: {
+    flexShrink: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: colors.text,
   },
 });
 

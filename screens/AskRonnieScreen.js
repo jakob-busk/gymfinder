@@ -46,18 +46,32 @@ export default function AskRonnieScreen({ navigation, route }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [askedCenterIds, setAskedCenterIds] = useState([]);
+  // Et færdigt spørgsmål fra Centerdetalje, der venter, fordi brugeren allerede har skrevet noget.
+  const [pendingQuestion, setPendingQuestion] = useState(null);
+  // Det seneste i inputfeltet, så effekten nedenfor kan se det uden at køre ved hvert tastetryk.
+  const inputRef = useRef('');
+  inputRef.current = input;
   // Spørgsmål tilbage i denne uge; null, indtil tælleren er hentet.
   const [remaining, setRemaining] = useState(null);
   const nextMessageId = useRef(1);
   const scrollRef = useRef(null);
 
   // "Spørg Ronnie om dette center" på Centerdetalje: færdigt spørgsmål i inputfeltet, og
-  // Centret kommer med i det, Ronnie kender.
+  // Centret kommer med i det, Ronnie kender. Har brugeren allerede skrevet noget, overskrives
+  // det ikke; spørgsmålet står i stedet som en knap over feltet.
   const question = route?.params?.question;
   const askedCenterId = route?.params?.centerId;
   const askedAt = route?.params?.askedAt;
   useEffect(() => {
-    if (question) setInput(question);
+    if (question) {
+      const typed = inputRef.current.trim();
+      if (typed && typed !== question.trim()) {
+        setPendingQuestion(question);
+      } else {
+        setPendingQuestion(null);
+        setInput(question);
+      }
+    }
     if (askedCenterId) {
       setAskedCenterIds((current) =>
         current.includes(askedCenterId) ? current : [...current, askedCenterId],
@@ -163,6 +177,21 @@ export default function AskRonnieScreen({ navigation, route }) {
   const centerName = (centerId) =>
     centerData.centers.find((center) => center.id === centerId)?.name ?? 'Centret';
 
+  const goToFind = () => navigation.navigate('Find');
+
+  // Ny samtale: Ronnie glemmer samtalen. Det, brugeren er i gang med at skrive, bliver stående.
+  const handleNewConversation = () => {
+    setMessages([]);
+    setError(null);
+    setAskedCenterIds([]);
+    setPendingQuestion(null);
+  };
+
+  const applyPendingQuestion = () => {
+    setInput(pendingQuestion);
+    setPendingQuestion(null);
+  };
+
   if (!ronnieAvailable) {
     return (
       <SafeAreaView style={GlobalStyle.screen} edges={['top']}>
@@ -173,9 +202,10 @@ export default function AskRonnieScreen({ navigation, route }) {
             <Text style={GlobalStyle.infoTitle}>Ronnie holder fri lige nu</Text>
             <Text style={GlobalStyle.bodyText}>{ronnieErrorMessage({ code: 'missingKey' })}</Text>
           </View>
-          <Text style={GlobalStyle.mutedText}>
+          <Text style={[GlobalStyle.mutedText, GlobalStyle.spacedBelow]}>
             Indtil da kan du finde det Center med den laveste Ærlig årspris på Find.
           </Text>
+          <ButtonComponent title="Gå til Find" type="primary" icon="search" onPress={goToFind} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -185,9 +215,12 @@ export default function AskRonnieScreen({ navigation, route }) {
   const footer = (
     <>
       {sending && (
-        <View style={GlobalStyle.bubbleRow}>
+        <View style={GlobalStyle.bubbleRow} accessibilityLiveRegion="polite">
           <RonnieMascot size="avatar" />
-          <ActivityIndicator color={colors.text} />
+          <View style={[GlobalStyle.bubble, GlobalStyle.bubbleRonnie, GlobalStyle.thinkingBubble]}>
+            <ActivityIndicator size="small" color={colors.muted} />
+            <Text style={GlobalStyle.bubbleText}>Ronnie tænker …</Text>
+          </View>
         </View>
       )}
 
@@ -196,6 +229,9 @@ export default function AskRonnieScreen({ navigation, route }) {
           <RonnieMascot size="small" pose="trækker på skuldrene" />
           <Text style={GlobalStyle.infoTitle}>Ronnie holder fri resten af ugen</Text>
           <Text style={GlobalStyle.bodyText}>{ronnieWeekOffMessage(new Date())}</Text>
+          <View style={GlobalStyle.paragraph}>
+            <ButtonComponent title="Gå til Find" type="primary" icon="search" onPress={goToFind} />
+          </View>
         </View>
       )}
 
@@ -217,6 +253,11 @@ export default function AskRonnieScreen({ navigation, route }) {
   );
 
   const busy = sending || loading || weekOff;
+  // Kort forklaring over feltet, når Send er spærret af andet end et tomt felt.
+  let sendHint = null;
+  if (loading) sendHint = 'Ronnie gør sig klar. Vent et øjeblik.';
+  else if (sending) sendHint = 'Du kan sende igen, når Ronnie har svaret.';
+  else if (weekOff) sendHint = 'Ronnie holder fri resten af ugen.';
   const openCenter = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
 
   const renderMessage = ({ item: message }) => {
@@ -272,7 +313,21 @@ export default function AskRonnieScreen({ navigation, route }) {
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={
             <>
-              <ScreenHeader title="Spørg Ronnie" />
+              <ScreenHeader
+                title="Spørg Ronnie"
+                right={
+                  messages.length > 0 && (
+                    <ButtonComponent
+                      title="Ny samtale"
+                      type="ghost"
+                      size="small"
+                      icon="add"
+                      onPress={handleNewConversation}
+                      disabled={sending}
+                    />
+                  )
+                }
+              />
 
               {messages.length === 0 && (
                 <>
@@ -282,7 +337,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                     <View style={[GlobalStyle.bubbleRonnie, GlobalStyle.greetingBubble]}>
                       <View style={[GlobalStyle.bubbleTail, GlobalStyle.bubbleTailLeft]} />
                       <Text style={GlobalStyle.bubbleText}>
-                        Hej, jeg er Ronnie, din AI-hjælper! Skriv for hjælp.
+                        Hej, jeg er Ronnie! Spørg mig om priser og Centre nær dig.
                       </Text>
                     </View>
                   </View>
@@ -294,7 +349,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                           type="ghost"
                           icon="chatbubble-ellipses-outline"
                           onPress={() => handleSend(suggestion)}
-                          disabled={sending || loading || weekOff}
+                          disabled={busy}
                         />
                       </Reveal>
                     ))}
@@ -306,6 +361,22 @@ export default function AskRonnieScreen({ navigation, route }) {
           ListFooterComponent={footer}
         />
 
+        {pendingQuestion && (
+          <View style={GlobalStyle.chatPendingQuestion}>
+            <ButtonComponent
+              title="Brug det færdige spørgsmål om Centret"
+              type="ghost"
+              size="small"
+              icon="chatbubble-ellipses-outline"
+              onPress={applyPendingQuestion}
+            />
+          </View>
+        )}
+        {sendHint && (
+          <Text style={GlobalStyle.chatInputHint} accessibilityLiveRegion="polite">
+            {sendHint}
+          </Text>
+        )}
         <View style={GlobalStyle.chatInputRow}>
           <TextInput
             style={GlobalStyle.chatInput}
@@ -319,7 +390,7 @@ export default function AskRonnieScreen({ navigation, route }) {
             title="Send"
             type="primary"
             onPress={() => handleSend(input)}
-            disabled={sending || loading || weekOff || !input.trim()}
+            disabled={busy || !input.trim()}
           />
         </View>
       </KeyboardAvoidingView>

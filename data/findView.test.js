@@ -77,7 +77,7 @@ describe('loosenFilterSuggestions', () => {
       'Øg maks. afstand (nu 5 km)',
       'Slå Sauna fra',
       'Slå Døgnåbent fra',
-      'Slå "Adgang til flere centre" fra',
+      'Slå Landsdækkende fra',
       'Tillad Binding',
       'Fjern krav om maskiner (Romaskine)',
     ]);

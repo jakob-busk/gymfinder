@@ -33,7 +33,7 @@ Kun to flader og to farver oven på dem. Ingen mint, ingen pasteller, ingen sand
 - **Mærker** (Anbefalet, Billigst her) er en lys pille (`#F7F1E8`) med 1,5 px blæk-kant og blæk-tekst.
   Den samme pille virker på blæk-blokken og på lyst papir.
 - **Besparelse og prisfald** er en creme pille med blæk-kant og halvfed blæk-tekst.
-- **"billigst" på Velkomst** står omvendt: lys tekst på en blæk-markering.
+- **"bedst" på Velkomst** ("Fitnesscentret, der reelt er bedst for dig.") står omvendt: lys tekst på en blæk-markering.
 - **Kortpins:** Anbefalet er en stor papirprik med tyk blæk-ring (24 px), andre Centre er små
   blækprikker med papirkant (14 px), "du er her" er en violet pin. På web er Anbefalet en papirpille
   med blæk-kant, de andre blæk-piller. Forklaringen under kortet bruger de samme prikker.
@@ -159,7 +159,7 @@ automatisk test (hooket er ikke testet i forvejen).
 
 Lys stil og navigationstema, layout-rytmen, store pristal, blæk-blokken for Anbefalet, løbenumre,
 fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-indikator, tab-pille,
-`Reveal`, `usePressScale`, `Marquee`, den pulserende logo-prik, ingen skygger og ingen gradients.
+`Reveal`, `usePressScale`, den pulserende logo-prik (båndet `Marquee` er fjernet igen, se L16), ingen skygger og ingen gradients.
 
 ## Taget fra 6 (Varm og venlig)
 
@@ -207,7 +207,8 @@ ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne; p
   web-pillerne og i forklaringen er mindre iøjnefaldende end før.
 - Ronnies cirkel (lys violet) ligger tæt på cremen (1,14:1); den er pynt, så det er bevidst blødt.
 - Velkomst er blevet lidt højere af taleboblen; på små skærme skal man scrolle (ScrollView).
-- Logo-prikken og båndet på Velkomst bevæger sig stadig, selv med "reducer bevægelse" (kun Ronnie
-  respekterer indstillingen).
+- `Reveal`, logo-prikken, tryk-fjederen og fremdriften i onboarding respekterer nu
+  "reducer bevægelse" (`useReduceMotion` lytter på `reduceMotionChanged`). Reveal tager 340 ms og
+  forskyder kun de første 3 elementer med 50 ms; knapperne på Velkomst animeres ikke.
 - Animationer er kun bundlet på web, ikke afprøvet på fysisk enhed.
 - `expo-linear-gradient` er stadig installeret, men bruges ikke.

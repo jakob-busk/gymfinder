@@ -101,7 +101,11 @@ function ProfileTab() {
         component={ProfileScreen}
         options={{ headerShown: false }}
       />
-      <ProfileStack.Screen name="Om os" component={AboutScreen} />
+      <ProfileStack.Screen
+        name="Om os"
+        component={AboutScreen}
+        options={{ title: 'Om GymFinder' }}
+      />
       <ProfileStack.Screen name="Log ind" component={LoginScreen} />
       <ProfileStack.Screen name="Redigér profil" component={ProfileEditScreen} />
     </ProfileStack.Navigator>
@@ -134,7 +138,10 @@ function Tabs() {
 
 // Onboarding første gang: velkomst med Ronnie → adresse → fødselsdato → Rabatprofil →
 // Nuværende medlemskab → Præferencer → gem profil eller fortsæt anonymt. Fra velkomsten kan en
-// bruger med konto logge ind i stedet.
+// bruger med konto logge ind i stedet. Trinene har ingen titel i topbjælken (kun tilbage-pilen):
+// skærmen har selv en overskrift i hverdagssprog, og "Rabatprofil" eller "Klar" er fagord.
+const onboardingStepOptions = { headerTitle: '' };
+
 function onboardingScreens() {
   return (
     <>
@@ -144,16 +151,18 @@ function onboardingScreens() {
         options={{ headerShown: false }}
       />
       <RootStack.Screen name="Log ind" component={LoginScreen} />
-      <RootStack.Screen name="Adresse" component={AddressScreen} />
-      <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
-      <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
-      <RootStack.Screen
-        name="Medlemskab"
-        component={CurrentMembershipScreen}
-        options={{ title: 'Nuværende medlemskab' }}
-      />
-      <RootStack.Screen name="Præferencer" component={PreferencesScreen} />
-      <RootStack.Screen name="Klar" component={FinishScreen} />
+      <RootStack.Group screenOptions={onboardingStepOptions}>
+        <RootStack.Screen name="Adresse" component={AddressScreen} />
+        <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
+        <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
+        <RootStack.Screen
+          name="Medlemskab"
+          component={CurrentMembershipScreen}
+          options={{ title: 'Nuværende medlemskab' }}
+        />
+        <RootStack.Screen name="Præferencer" component={PreferencesScreen} />
+        <RootStack.Screen name="Klar" component={FinishScreen} />
+      </RootStack.Group>
     </>
   );
 }
@@ -186,7 +195,8 @@ export default function App() {
   // Profil, Favoritter og Prisalarm venter alle på login og følger samme uid.
   const session = { authReady, uid: authUser?.uid ?? null };
 
-  const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile(session);
+  const { user, setUser, loading, showOnboarding, completeOnboarding, saveStatus } =
+    useUserProfile(session);
 
   // Favoritter gemmes under Users/<uid>/favorites.
   const favorites = useFavorites(session);
@@ -225,6 +235,7 @@ export default function App() {
       setUser,
       authUser,
       completeOnboarding,
+      profileSaveStatus: saveStatus,
       account,
       accountsAvailable,
       createAccount,
@@ -238,6 +249,7 @@ export default function App() {
       setUser,
       authUser,
       completeOnboarding,
+      saveStatus,
       account,
       createAccount,
       logIn,
