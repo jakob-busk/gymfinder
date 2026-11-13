@@ -52,7 +52,8 @@ function StepProgress({ step }) {
 
 // Fælles ramme for et onboarding-trin: fremdrift, "Trin x af 6", titel, forklaring, indhold og
 // knapper nederst. Titel og indhold glider ind forskudt. Valgfrie trin får "Spring over" (onSkip).
-// nextDisabled spærrer "Næste", indtil de krævede oplysninger er udfyldt.
+// nextDisabled spærrer "Næste", indtil de krævede oplysninger er udfyldt. nextType er knappens
+// type (fx 'text', når trinnet selv har en primærknap).
 export default function OnboardingStep({
   step,
   title,
@@ -61,6 +62,7 @@ export default function OnboardingStep({
   onNext,
   nextLabel = 'Næste',
   nextDisabled = false,
+  nextType = 'primary',
   onSkip,
 }) {
   return (
@@ -92,7 +94,7 @@ export default function OnboardingStep({
           {onSkip && <ButtonComponent title="Spring over" type="text" onPress={onSkip} />}
           <ButtonComponent
             title={nextLabel}
-            type="primary"
+            type={nextType}
             onPress={onNext}
             disabled={nextDisabled}
           />
