@@ -128,6 +128,33 @@ trintæller, kortforklaring og løbenumre skrives med stort begyndelsesbogstav (
 farve. `kicker` har derfor hverken `textTransform: 'uppercase'` eller positiv spærring, og
 gruppeoverskrifter (Maks. afstand, Krav, Maskiner) er små Fredoka-titler i blæk.
 
+## Nielsen-rettelser (del A)
+
+Én commit pr. fund, så hver kan rulles tilbage for sig. Del B (onboarding, Velkomst, Ronnie,
+konto, Om, Filtre, Profil m.m.) ligger på `proto/styling-7-nielsen-b`.
+
+| Fund | Commit | Rettelse |
+|---|---|---|
+| L14 | `5e4f289` | Ét prisformat: `formatNumber`/`formatKr`/`formatPrice` (1.234 kr., 249 kr. pr. md.), også i Prisalarmens beskeder |
+| L7 | `eb37182` | Afstand med decimalkomma (`formatDistance`, "2,4 km") |
+| L1 | `2f2f5cd` | Kortet: ingen løbenumre, ingen "Se detaljer"; hele kortet åbner Centerdetalje (pil ved titlen); "De første 3 mdr." flyttet |
+| L2 | `835f785` | "for {Tilbud} · med {Rabat}" ved prisen og "Tilmeld {Tilbud}" |
+| L5 | `85c64c9` | "kr." + "ærlig årspris · gns. pr. md." ⓘ på kort, pin-boks og Favoritter |
+| L6 | `6b4b1b7` | Forklaring af Anbefalet (ⓘ ved mærket); InfoButton kan stå på blæk |
+| L3 | `a57bf20` | "Priser regnet med: … · Ret" øverst på Find |
+| L11 | `328f549` | "Henter Centre …" i stedet for "0 Centre" |
+| L12 | `8cd2002` | Aktive Filtre som små piller under Filtre-knappen |
+| L9 | `595f52c` | Centerdetalje: pris og Tilmeld øverst, advarsler før knappen, udregningen foldet sammen |
+| L15 | `2535ad3` | "Se detaljer" som samme knap i pin-boks og Favoritter; "Luk" som knap; "dette Center" |
+| F2 | `8708188` | Timeout på centerdata (8 sek.) og "Ingen forbindelse" med "Prøv igen" |
+| L17 | `e5ed8f2` | Eksempeldata-beskeden siger hvorfor og har "Prøv igen"; tomt Center har "Tilbage til Find" |
+| L8 | `974e0e8` | Abonnementstype som "Landsdækkende" / "Lokalt Center" på kvitteringen |
+| F1 | `e1dc280` | "Fjernet fra Favoritter · Fortryd" i 5 sek.; fortryd gendanner Prisalarm og startpris |
+
+Bemærk: `components/useProfileSections.js` (del B) bruger stadig `formatKr(...)/md` og viser derfor
+"299 kr./md". Den bør skifte til `formatPrice` ved fletningen. Timeouten i `useCenterData` har ingen
+automatisk test (hooket er ikke testet i forvejen).
+
 ## Taget fra 2 (Tribune)
 
 Lys stil og navigationstema, layout-rytmen, store pristal, blæk-blokken for Anbefalet, løbenumre,
@@ -168,8 +195,8 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1592 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
-ikonrække, pin-prikker, kædelogo-pillen og titellinjen; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
+Før (variant 2): 1407. Efter: 1670 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
 
