@@ -1336,6 +1336,10 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     lineHeight: 20,
   },
+  // Centerdetalje: prisen for det valgte Tilbud øverst.
+  detailPrice: {
+    marginBottom: 4,
+  },
   // Centerdetalje: adresse og afstand under titlen.
   detailHeroMeta: {
     fontFamily: fonts.body,

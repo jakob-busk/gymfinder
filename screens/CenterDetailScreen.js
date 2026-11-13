@@ -14,8 +14,10 @@ import {
   facilityRows,
   formatDistance,
   formatKr,
+  formatNumber,
   formatPrice,
   matchCenter,
+  offerBasisText,
   turns30Notice,
 } from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
@@ -23,18 +25,19 @@ import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { openSignupPage } from '../services/Signup';
 
-// Centerdetalje: Kæde, adresse og Distance, og Centrets Tilbud som faner. Det valgte Tilbud vises
-// som en kvittering for brugerens første år, der ender i Ærlig årspris (se OfferReceipt).
+// Centerdetalje: titel (Kæde og navn), adresse og Distance, og Centrets Tilbud som faner. Øverst
+// står prisen for det valgte Tilbud (Ærlig årspris og de første 3 mdr.), så 30-års-advarsel og
+// Spar mere-forslag, og derefter "Tilmeld dig ...", der åbner tilmeldingen til det valgte Tilbud.
+// Udregningen bag prisen (kvitteringen, se OfferReceipt) er foldet sammen under "Se udregningen".
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
-// for brugeren valgt. "Tilmeld dig ..." åbner tilmeldingen til det valgte Tilbud. Viser også
-// 30-års-advarsel, Spar mere-forslag, faciliteter og "Spørg Ronnie om dette center".
-// ♥ i titelrækken gør Centret til Favorit. Kvitteringen toner ind på ny, når et andet Tilbud
-// vælges, så skiftet kan ses.
+// for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Viser også faciliteter og "Spørg
+// Ronnie om dette center". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
   const { centers, chains, loading } = useCenterData();
   const [selectedOfferId, setSelectedOfferId] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
   const center = centers.find((entry) => entry.id === centerId);
 
   const match = useMemo(
@@ -158,13 +161,26 @@ export default function CenterDetailScreen({ navigation, route }) {
         </ScrollView>
       )}
 
-      <Reveal key={selected.offer.id} distance={16}>
-        <OfferReceipt
-          pricedOffer={selected}
-          chain={chain}
-          user={user}
-          isCheapest={selected === bestOffer && offers.length > 1}
-        />
+      {/* Prisen for det valgte Tilbud øverst, så den og Tilmeld ses med det samme. */}
+      <Reveal key={selected.offer.id} distance={12}>
+        <View style={GlobalStyle.detailPrice}>
+          <View style={GlobalStyle.cardPriceRow}>
+            <Text style={GlobalStyle.cardPrice}>
+              {formatNumber(Math.round(selected.honestYearlyPrice))}
+            </Text>
+            <View style={GlobalStyle.cardPriceUnitBox}>
+              <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
+              <View style={GlobalStyle.inlineRow}>
+                <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
+                <InfoButton term="honestYearlyPrice" />
+              </View>
+            </View>
+          </View>
+          <Text style={GlobalStyle.mutedText}>{offerBasisText(selected)}</Text>
+          <Text style={GlobalStyle.mutedText}>
+            De første 3 mdr.: {formatPrice(Math.round(selected.quarterlyPrice))}
+          </Text>
+        </View>
       </Reveal>
 
       {match.savingPerMonth > 0 && selected === bestOffer && (
@@ -174,7 +190,10 @@ export default function CenterDetailScreen({ navigation, route }) {
         </Text>
       )}
 
-      <View style={[GlobalStyle.choiceList, GlobalStyle.paragraph]}>
+      {/* Advarsler og Spar mere før knappen, så man ser dem, inden man tilmelder sig. */}
+      <View style={GlobalStyle.paragraph}>{notices}</View>
+
+      <View style={GlobalStyle.choiceList}>
         <ButtonComponent
           title={`Tilmeld dig ${selected.offer.name}`}
           type="primary"
@@ -193,7 +212,23 @@ export default function CenterDetailScreen({ navigation, route }) {
         />
       </View>
 
-      {notices}
+      {/* Udregningen bag prisen (kvitteringen) er foldet sammen fra start. */}
+      <ButtonComponent
+        title={showReceipt ? 'Skjul udregningen' : 'Se udregningen'}
+        type="ghost"
+        icon={showReceipt ? 'chevron-up' : 'chevron-down'}
+        onPress={() => setShowReceipt((open) => !open)}
+      />
+      {showReceipt && (
+        <Reveal key={selected.offer.id} distance={16} style={GlobalStyle.paragraph}>
+          <OfferReceipt
+            pricedOffer={selected}
+            chain={chain}
+            user={user}
+            isCheapest={selected === bestOffer && offers.length > 1}
+          />
+        </Reveal>
+      )}
 
       <View style={GlobalStyle.inlineRow}>
         <Text style={GlobalStyle.sectionLabel}>Faciliteter</Text>
