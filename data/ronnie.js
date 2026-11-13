@@ -39,23 +39,42 @@ export function centerQuestion(centerName) {
 }
 
 // De Centre, Ronnie kender i samtalen: de RONNIE_CENTER_LIMIT nærmeste, der matcher brugerens
-// Filtre, med personlig Ærlig årspris fra Matchning. Centre i includeCenterIds (fx det Center,
-// brugeren spørger om fra Centerdetalje) kommer altid med, også hvis Filtrene ellers skjuler dem.
-// Maks. afstand er hård: uden brugerens placering kender Ronnie kun includeCenterIds og må slå
-// et stednavn op for at finde Centre.
+// Filtre, med personlig Ærlig årspris fra Matchning, og derefter hver Kædes bedste Center og det
+// Anbefalede Center fra samme Matchning som på Find (også når de ligger længere væk), så Ronnie
+// kender alle Kæder, Find viser. Intet Center kommer med to gange. Det Anbefalede Center får
+// isRecommended og Kædernes bedste Centre isChainBest, så prompten kan markere dem.
+// Centre i includeCenterIds (fx det Center, brugeren spørger om fra Centerdetalje) kommer altid
+// med først, også hvis Filtrene ellers skjuler dem. Maks. afstand er hård: uden brugerens
+// placering kender Ronnie kun includeCenterIds og må slå et stednavn op for at finde Centre.
 export function ronnieMatches({ centers, chains, user, filters, today, includeCenterIds = [] }) {
   const location = user?.location ?? null;
-  const { centers: matches } = matchCenters({ centers, chains, user, filters, location, today });
-  const nearest = nearestFirst(matches).slice(0, RONNIE_CENTER_LIMIT);
+  const result = matchCenters({ centers, chains, user, filters, location, today });
+  const chainBestIds = new Set(result.chains.map((chainMatch) => chainMatch.best.center.id));
+  const fromFindIds = new Set([...chainBestIds, result.recommendedId].filter(Boolean));
 
-  const known = new Set(nearest.map((match) => match.center.id));
+  const nearest = nearestFirst(result.centers).slice(0, RONNIE_CENTER_LIMIT);
+  const nearestIds = new Set(nearest.map((match) => match.center.id));
+  const fromFind = result.centers.filter(
+    (match) => fromFindIds.has(match.center.id) && !nearestIds.has(match.center.id),
+  );
+  const marked = [...nearest, ...fromFind].map((match) => {
+    const id = match.center.id;
+    if (!fromFindIds.has(id)) return match;
+    return {
+      ...match,
+      ...(id === result.recommendedId && { isRecommended: true }),
+      ...(chainBestIds.has(id) && { isChainBest: true }),
+    };
+  });
+
+  const known = new Set(marked.map((match) => match.center.id));
   const extraCenters = (centers ?? []).filter(
     (center) => includeCenterIds.includes(center.id) && !known.has(center.id),
   );
-  if (extraCenters.length === 0) return nearest;
+  if (extraCenters.length === 0) return marked;
 
   const extra = matchCenters({ centers: extraCenters, chains, user, filters: {}, location, today });
-  return [...extra.centers, ...nearest];
+  return [...extra.centers, ...marked];
 }
 
 // Assistent-beskeder sendes tilbage i samme JSON-form, som Ronnie svarer i, så han holder formatet

@@ -484,6 +484,10 @@ const GlobalStyle = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
   },
+  chainOtherPriceBox: {
+    alignItems: 'flex-end',
+    gap: 1,
+  },
   chainOtherPrice: {
     fontFamily: fonts.figure,
     fontSize: 15,

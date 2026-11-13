@@ -2,7 +2,9 @@ import {
   DEFAULT_LOCATION,
   centerKeywords,
   chainCardOffer,
-  discountProfileText,
+  discountProfileLine,
+  filtersWithout,
+  noRecommendationNotice,
   facilityTags,
   sampleDataNotice,
   loosenFilterSuggestions,
@@ -236,17 +238,79 @@ describe('loosenFilterSuggestions', () => {
   });
 });
 
-describe('discountProfileText', () => {
-  test('viser Rabatgrupperne, priserne er regnet med', () => {
-    expect(discountProfileText(['student'])).toBe('Priser regnet med: Studerende');
-    expect(discountProfileText(['student', 'partner'])).toBe(
-      'Priser regnet med: Studerende, Træn med en makker',
+describe('discountProfileLine', () => {
+  test('viser Rabatterne med appens ord, skilt med komma og "og"', () => {
+    expect(discountProfileLine(['student'])).toEqual({
+      text: 'Priser med studierabat',
+      action: 'Skift',
+    });
+    expect(discountProfileLine(['student', 'partner']).text).toBe(
+      'Priser med studierabat og makkerpris',
+    );
+    expect(discountProfileLine(['senior', 'aeldreSagen', 'partner']).text).toBe(
+      'Priser med seniorrabat, Ældre Sagen-rabat og makkerpris',
     );
   });
 
-  test('siger det, når Rabatprofilen er tom', () => {
-    expect(discountProfileText([])).toBe('Priser uden rabat');
-    expect(discountProfileText(undefined)).toBe('Priser uden rabat');
+  test('siger det, når Rabatprofilen er tom, og knappen hedder "Vælg rabat"', () => {
+    expect(discountProfileLine([])).toEqual({ text: 'Priser uden rabat', action: 'Vælg rabat' });
+    expect(discountProfileLine(undefined).text).toBe('Priser uden rabat');
+  });
+});
+
+describe('noRecommendationNotice', () => {
+  const unsure = (id, notStated) => ({ center: { id }, isSureMatch: false, notStated });
+
+  test('intet, når der er et Anbefalet Center eller ingen Centre', () => {
+    expect(noRecommendationNotice([unsure('a', ['sauna'])], 'a')).toBeNull();
+    expect(noRecommendationNotice([], null)).toBeNull();
+  });
+
+  test('nævner det ene Filter, der ikke er oplyst', () => {
+    const notice = noRecommendationNotice([unsure('a', ['sauna']), unsure('b', ['sauna'])], null);
+    expect(notice).toEqual({
+      text:
+        'Ingen centre bekræfter sauna, så vi kan ikke anbefale ét. Her er de bedste, hvor ' +
+        'det ikke er oplyst.',
+      action: 'Slå sauna fra',
+      keys: ['sauna'],
+    });
+  });
+
+  test('samler flere Filtre med komma og "og" i Filtrenes rækkefølge', () => {
+    const notice = noRecommendationNotice(
+      [unsure('a', ['binding']), unsure('b', ['sauna', 'machines'])],
+      null,
+    );
+    expect(notice.keys).toEqual(['sauna', 'machines', 'binding']);
+    expect(notice.text).toBe(
+      'Ingen centre bekræfter sauna, dine maskiner og ingen binding, så vi kan ikke anbefale ' +
+        'ét. Her er de bedste, hvor det ikke er oplyst.',
+    );
+    expect(notice.action).toBe('Slå dem fra');
+  });
+});
+
+describe('filtersWithout', () => {
+  test('slår de Filtre fra, der ikke er oplyst, og lader resten stå', () => {
+    const filters = {
+      sauna: true,
+      groupClasses: true,
+      open24h: false,
+      noBinding: true,
+      multiCenterAccess: true,
+      machines: ['Squat rack'],
+      maxDistanceKm: 10,
+    };
+    expect(filtersWithout(filters, ['sauna', 'binding', 'subscriptionType', 'machines'])).toEqual({
+      sauna: false,
+      groupClasses: true,
+      open24h: false,
+      noBinding: false,
+      multiCenterAccess: false,
+      machines: [],
+      maxDistanceKm: 10,
+    });
   });
 });
 

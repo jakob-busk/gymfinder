@@ -31,7 +31,7 @@ import { openSignupPage } from '../services/Signup';
 // abonnementstype og maskiner og "Du sparer". ♥ og "Tilmeld" gælder Kædens bedste Center
 // og samme Tilbud. Titlen og "Om centret"
 // åbner Centerdetalje. Nederst kan Kædens andre matchende Centre foldes ud; hver række viser kort
-// navn, afstand, ærlig årspris og højst 4 facilitetsmærker og åbner Centerdetalje (rækkerne har ingen Tilmeld). Det
+// navn, afstand, ærlig årspris ("kr. pr. md." og "ærlig årspris" ⓘ som på kortet) og højst 4 facilitetsmærker og åbner Centerdetalje (rækkerne har ingen Tilmeld). Det
 // Anbefalede Center er en mørk blok med prisen i lyst blæk, så listen får en rytme i stedet for
 // ens kort. index er pladsen i listen; kortene toner ind forskudt efter den (den vises ikke, så den
 // ikke ligner en rangering). onShowDetails(centerId) åbner Centerdetalje.
@@ -180,7 +180,16 @@ function OtherCenterRow({ match, filters, onInk, onPress }) {
         <Text style={[GlobalStyle.mutedText, onInk && GlobalStyle.mutedOnInk]}>{distance}</Text>
         <FacilityTags result={tags} onInk={onInk} />
       </View>
-      <Text style={[GlobalStyle.chainOtherPrice, onInk && GlobalStyle.textOnInk]}>{price}</Text>
+      {/* Samme tal og ord som HonestPrice på kortet: "249 kr. pr. md." og "ærlig årspris" ⓘ. */}
+      <View style={GlobalStyle.chainOtherPriceBox}>
+        <Text style={[GlobalStyle.chainOtherPrice, onInk && GlobalStyle.textOnInk]}>{price}</Text>
+        <View style={GlobalStyle.inlineRow}>
+          <Text style={[GlobalStyle.cardPriceCaption, onInk && GlobalStyle.mutedOnInk]}>
+            ærlig årspris
+          </Text>
+          <InfoButton term="honestYearlyPrice" onInk={onInk} />
+        </View>
+      </View>
       <Ionicons name="chevron-forward" size={16} color={onInk ? colors.onInk : colors.text} />
     </Pressable>
   );

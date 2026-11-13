@@ -17,7 +17,7 @@ export default function MapLegend({ text }) {
       {Boolean(text) && <Text style={GlobalStyle.legendCount}>{text}</Text>}
       {dot(GlobalStyle.mapPinUser, 'Dig')}
       {dot(GlobalStyle.mapPinRecommended, 'Anbefalet')}
-      {dot(GlobalStyle.mapPinChainBest, 'Bedst i kæden')}
+      {dot(GlobalStyle.mapPinChainBest, 'Bedste valg hos hver kæde')}
       {dot(GlobalStyle.mapPinCenter, 'Andre centre')}
     </View>
   );

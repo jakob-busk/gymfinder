@@ -13,8 +13,8 @@ import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
 // Filtre til Find: sauna, holdtræning, døgnåbent, Landsdækkende
-// (Abonnementstype), ingen Binding, maskiner og maks. afstand. Udgangspunktet er brugerens
-// Præferencer. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
+// (Abonnementstype), ingen Binding, maskiner og maks. afstand. Brugerens Præferencer er valgt
+// på forhånd. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
 // til Præferencerne. Find læser de samme gemte Filtre, så kort og liste følger med.
 // Knappen nederst viser, hvor mange Centre Filtrene giver, før man går tilbage til Find.
 export default function FiltersScreen({ navigation }) {
@@ -53,12 +53,12 @@ export default function FiltersScreen({ navigation }) {
         <Text style={GlobalStyle.mutedText}>
           {isCustom
             ? 'Du har rettet filtrene. Nulstil for at bruge dine ønsker fra Profil igen.'
-            : 'Udgangspunktet er dine ønsker fra Profil.'}
+            : 'Dine faste ønsker fra Profil er valgt på forhånd.'}
         </Text>
         <View style={[GlobalStyle.inlineRow, GlobalStyle.paragraph]}>
           <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
-            Centre, der med sikkerhed ikke opfylder dine filtre, skjules. Er det ukendt, vises de
-            med "ikke oplyst". Maks. afstand gælder altid.
+            Vi skjuler centre, der ikke har det, du har valgt. Ved vi det ikke, står der "ikke
+            oplyst". Maks. afstand gælder altid.
           </Text>
           <InfoButton term="notStated" />
         </View>

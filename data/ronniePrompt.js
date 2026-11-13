@@ -27,6 +27,8 @@ export function centerFacts(match) {
     kaede: chain?.name ?? null,
     adresse: center.address ?? null,
     afstandKm: distanceKm == null ? null : Math.round(distanceKm * 10) / 10,
+    ...(match.isRecommended && { anbefalet: true }),
+    ...(match.isChainBest && { bedsteValgHosKaeden: true }),
     faciliteter: Object.fromEntries(facilityRows(center).map((row) => [row.label, row.value])),
     tilbud: offers.map((priced) => ({
       navn: priced.offer.name,
@@ -94,7 +96,9 @@ export function buildRonnieSystemPrompt({ matches, user }) {
     '',
     ...userFacts(user),
     '',
-    'Centre (de nærmeste, der passer til brugerens ønsker):',
+    'Centre (de nærmeste, der passer til brugerens ønsker, og bedste valg hos hver kæde, som',
+    'appen viser dem på Find). "anbefalet": true er det center, appen anbefaler (mærket',
+    '"Anbefalet"); "bedsteValgHosKaeden": true er det bedste valg hos sin kæde. Følg appen.',
     JSON.stringify(matches.map(centerFacts)),
   ].join('\n');
 }

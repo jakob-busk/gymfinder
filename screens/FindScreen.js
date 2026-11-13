@@ -15,8 +15,11 @@ import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
 import { matchCenters } from '../data/matchning';
 import {
-  discountProfileText,
+  discountProfileLine,
+  filtersWithout,
   loosenFilterSuggestions,
+  noRecommendationNotice,
+  pinKind,
   sampleDataNotice,
 } from '../data/findView';
 import { activeFilterCount, activeFilterLabels } from '../data/filterSettings';
@@ -37,7 +40,7 @@ export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [selectedId, setSelectedId] = useState(null);
   const centerData = useCenterData();
-  const { filters, ...filterSettings } = useFilterSettings(user.preferences);
+  const { filters, setFilters, ...filterSettings } = useFilterSettings(user.preferences);
   const loading = centerData.loading || filterSettings.loading;
   const filterCount = activeFilterCount(filters);
   const filterLabels = activeFilterLabels(filters);
@@ -53,8 +56,13 @@ export default function FindScreen({ navigation }) {
   // Forsvinder det valgte Center pga. nye Filtre, lukkes pin-boksen af sig selv.
   const selected = centers.find((match) => match.center.id === selectedId);
 
+  // Intet sikkert match (og derfor intet Anbefalet): hvorfor, og en knap, der slår de Filtre fra,
+  // som ingen Centre bekræfter.
+  const noRecommendation = loading ? null : noRecommendationNotice(centers, recommendedId);
+  const discountLine = discountProfileLine(user.discountProfile);
+
   const showDetails = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
-  // "Ret" ved Rabatprofilen åbner den samme redigering som under Profil. initial: false lægger
+  // "Vælg rabat"/"Skift" ved Rabatprofilen åbner den samme redigering som under Profil. initial: false lægger
   // Profil-forsiden nedenunder, så tilbage-knappen virker, selv om Profil ikke er åbnet endnu.
   const editDiscountProfile = () =>
     navigation.navigate('Profil', {
@@ -130,9 +138,14 @@ export default function FindScreen({ navigation }) {
       {/* Hvilken Rabatprofil priserne er regnet med, så man kan se det uden at åbne Profil. */}
       <View style={GlobalStyle.discountLine}>
         <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
-          {discountProfileText(user.discountProfile)}
+          {discountLine.text} ·
         </Text>
-        <ButtonComponent title="Ret" type="text" size="small" onPress={editDiscountProfile} />
+        <ButtonComponent
+          title={discountLine.action}
+          type="text"
+          size="small"
+          onPress={editDiscountProfile}
+        />
       </View>
       <View style={GlobalStyle.mapBox}>
         <CenterMap
@@ -146,6 +159,7 @@ export default function FindScreen({ navigation }) {
           <CenterPinInfo
             match={selected}
             isRecommended={selected.center.id === recommendedId}
+            isChainBest={pinKind(selected.center.id, { chains, recommendedId }) === 'chainBest'}
             onShowDetails={() => showDetails(selected.center.id)}
             onClose={() => setSelectedId(null)}
           />
@@ -177,6 +191,17 @@ export default function FindScreen({ navigation }) {
             </View>
           ))}
         </Pressable>
+      )}
+      {noRecommendation && (
+        <View style={GlobalStyle.sampleNotice}>
+          <Text style={GlobalStyle.noticeText}>{noRecommendation.text}</Text>
+          <ButtonComponent
+            title={noRecommendation.action}
+            type="ghost"
+            size="small"
+            onPress={() => setFilters(filtersWithout(filters, noRecommendation.keys))}
+          />
+        </View>
       )}
     </>
   );
