@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors, motion } from '../styles/GlobalStyle';
 import { TRY_AGAIN_MESSAGE } from '../data/errors';
+import { useReduceMotion } from './useReduceMotion';
 import { favoritePrice } from '../data/favorites';
 import { UserContext } from '../data/UserContext';
 
@@ -15,15 +16,19 @@ export default function FavoriteButton({ center, chain, onInk = false }) {
   const { user, favorites } = useContext(UserContext);
   const active = favorites.isFavorite(center.id);
   const beat = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReduceMotion();
 
   const handlePress = async () => {
-    beat.setValue(0.7);
-    Animated.spring(beat, {
-      toValue: 1,
-      speed: 14,
-      bounciness: 16,
-      useNativeDriver: motion.native,
-    }).start();
+    // Hjertet slår et slag, undtagen ved "reducer bevægelse".
+    if (!reduceMotion) {
+      beat.setValue(0.7);
+      Animated.spring(beat, {
+        toValue: 1,
+        speed: 14,
+        bounciness: 16,
+        useNativeDriver: motion.native,
+      }).start();
+    }
     const price = favoritePrice({
       center,
       chains: chain ? [chain] : [],
