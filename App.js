@@ -194,7 +194,8 @@ export default function App() {
   // Profil, Favoritter og Prisalarm venter alle på login og følger samme uid.
   const session = { authReady, uid: authUser?.uid ?? null };
 
-  const { user, setUser, loading, showOnboarding, completeOnboarding } = useUserProfile(session);
+  const { user, setUser, loading, showOnboarding, completeOnboarding, saveStatus } =
+    useUserProfile(session);
 
   // Favoritter gemmes under Users/<uid>/favorites.
   const favorites = useFavorites(session);
@@ -233,6 +234,7 @@ export default function App() {
       setUser,
       authUser,
       completeOnboarding,
+      profileSaveStatus: saveStatus,
       account,
       accountsAvailable,
       createAccount,
@@ -246,6 +248,7 @@ export default function App() {
       setUser,
       authUser,
       completeOnboarding,
+      saveStatus,
       account,
       createAccount,
       logIn,
