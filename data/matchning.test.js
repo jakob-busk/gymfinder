@@ -1,4 +1,4 @@
-import { matchCenters } from './matchning';
+import { DISTANCE_SURCHARGE_PER_KM, matchCenters } from './matchning';
 
 // Adfærdstests for Matchning. Alle tal i forventningerne er regnet ud på forhånd.
 // Testene kender kun til snitfladen matchCenters(input) -> { centers, recommendedId, ... }.
@@ -580,6 +580,67 @@ describe('Filtre', () => {
   });
 });
 
+describe('Rangeringspris', () => {
+  test('er Ærlig årspris plus Afstandstillæg på 10 kr/md pr. km', () => {
+    expect(DISTANCE_SURCHARGE_PER_KM).toBe(10);
+    // 300 kr + 2 km * 10 kr = 320 kr
+    const [match] = run({ centers: [center({ location: north(2) })] }).centers;
+    expect(match.distanceKm).toBeCloseTo(2, 2);
+    expect(match.rankingPrice).toBeCloseTo(match.honestYearlyPrice + 10 * match.distanceKm);
+    expect(match.rankingPrice).toBeCloseTo(320, 0);
+  });
+
+  test('bygger på det billigste Tilbud, der opfylder Filtrene', () => {
+    const centers = [
+      center({
+        offers: [
+          offer({ id: 'bundet', standardPrice: 99, bindingMonths: 12 }),
+          offer({ id: 'fri', standardPrice: 249, bindingMonths: 0 }),
+        ],
+      }),
+    ];
+    const [match] = run({ centers, filters: { noBinding: true } }).centers;
+    expect(match.rankingPrice).toBeCloseTo(249);
+  });
+
+  test('et Center tæt på vinder over et lidt billigere Center langt væk', () => {
+    // 229 + 0,5 * 10 = 234 mod 199 + 9 * 10 = 289
+    const result = run({
+      centers: [
+        center({ id: 'langt-vaek', location: north(9), offers: [offer({ standardPrice: 199 })] }),
+        center({ id: 'taet-paa', location: north(0.5), offers: [offer({ standardPrice: 229 })] }),
+      ],
+    });
+    expect(result.centers.map((entry) => entry.center.id)).toEqual(['taet-paa', 'langt-vaek']);
+    expect(result.recommendedId).toBe('taet-paa');
+  });
+
+  test('et markant billigere Center vinder, selv om det ligger lidt længere væk', () => {
+    // 263 + 1,9 * 10 = 282 mod 286 + 1,5 * 10 = 301
+    const result = run({
+      centers: [
+        center({ id: 'naermest', location: north(1.5), offers: [offer({ standardPrice: 286 })] }),
+        center({ id: 'billigst', location: north(1.9), offers: [offer({ standardPrice: 263 })] }),
+      ],
+    });
+    expect(result.centers.map((entry) => entry.center.id)).toEqual(['billigst', 'naermest']);
+    expect(result.recommendedId).toBe('billigst');
+  });
+
+  test('uden brugerens placering er Afstandstillægget 0, og Ærlig årspris afgør alene', () => {
+    const result = run({
+      location: null,
+      centers: [
+        center({ id: 'langt-vaek', location: north(9), offers: [offer({ standardPrice: 199 })] }),
+        center({ id: 'taet-paa', location: north(0.5), offers: [offer({ standardPrice: 229 })] }),
+      ],
+    });
+    expect(result.centers.map((entry) => entry.center.id)).toEqual(['langt-vaek', 'taet-paa']);
+    expect(result.centers.map((entry) => entry.rankingPrice)).toEqual([199, 229]);
+    expect(result.recommendedId).toBe('langt-vaek');
+  });
+});
+
 describe('Anbefalet', () => {
   const centers = [
     center({ id: 'sikker-dyr', location: north(1), offers: [offer({ standardPrice: 299 })] }),
@@ -592,10 +653,19 @@ describe('Anbefalet', () => {
     }),
   ];
 
-  test('er lavest Ærlig årspris blandt sikre match', () => {
+  test('er lavest Rangeringspris blandt sikre match', () => {
+    // sikker-dyr: 299 + 10 = 309, sikker-billig: 249 + 30 = 279
     const result = run({ centers, filters: { sauna: true } });
     expect(result.recommendedId).toBe('sikker-billig');
     expect(result.recommendedOfferId).toBe('tilbud');
+  });
+
+  test('er aldrig et Center med "Ikke oplyst", heller ikke når det har lavest Rangeringspris', () => {
+    // ukendt-billigst: 149 + 20 = 169 står først på listen, men kan ikke blive Anbefalet.
+    const result = run({ centers, filters: { sauna: true } });
+    expect(result.centers[0].center.id).toBe('ukendt-billigst');
+    expect(result.centers[0].isSureMatch).toBe(false);
+    expect(result.recommendedId).toBe('sikker-billig');
   });
 
   test('vælger kun blandt Tilbud, der med sikkerhed matcher', () => {
@@ -628,9 +698,9 @@ describe('Anbefalet', () => {
 });
 
 describe('Rækkefølge', () => {
-  // X: år (3 * 100 + 9 * 300) / 12 = 250, kvartal 100, 3 km
-  // Y: år 200, kvartal 200, 1 km
-  // Z: år 300, kvartal 300, 2 km
+  // X: år (3 * 100 + 9 * 300) / 12 = 250, 3 km -> Rangeringspris 280
+  // Y: år 200, 1 km -> 210
+  // Z: år 300, 2 km -> 320
   const centers = [
     center({
       id: 'X',
@@ -642,7 +712,7 @@ describe('Rækkefølge', () => {
   ];
   const order = (overrides) => run(overrides).centers.map((entry) => entry.center.id);
 
-  test('Centrene står efter Ærlig årspris, billigst først', () => {
+  test('Centrene står efter Rangeringspris, lavest først', () => {
     expect(order({ centers })).toEqual(['Y', 'X', 'Z']);
   });
 
@@ -651,11 +721,11 @@ describe('Rækkefølge', () => {
   });
 
   test('uafgjort afgøres stabilt efter Center-id', () => {
-    // Samme Ærlig årspris; den nærmeste har det højeste id, så afstand ikke afgør det.
+    // Samme Ærlig årspris og samme Distance.
     const same = [
       center({ id: 'c', location: north(1), offers: [offer()] }),
-      center({ id: 'a', location: north(3), offers: [offer()] }),
-      center({ id: 'b', location: north(2), offers: [offer()] }),
+      center({ id: 'a', location: north(1), offers: [offer()] }),
+      center({ id: 'b', location: north(1), offers: [offer()] }),
     ];
     expect(order({ centers: same })).toEqual(['a', 'b', 'c']);
     expect(order({ centers: [...same].reverse() })).toEqual(['a', 'b', 'c']);
@@ -777,5 +847,24 @@ describe('Eksempeldata', () => {
     });
     expect(result.centers.length).toBeGreaterThan(0);
     expect(result.recommendedId).not.toBeNull();
+  });
+
+  test('Find står efter Rangeringspris, og Anbefalet er PureGym frem for Fitness X', () => {
+    const { CENTERS, CHAINS, DEFAULT_USER } = require('./const');
+    const result = matchCenters({
+      centers: CENTERS,
+      chains: CHAINS,
+      user: DEFAULT_USER,
+      filters: DEFAULT_USER.preferences,
+      location: DEFAULT_USER.location,
+      today: TODAY,
+    });
+    const rankingPrices = result.centers.map((entry) => entry.rankingPrice);
+    rankingPrices.forEach((price) => expect(Number.isFinite(price)).toBe(true));
+    expect(rankingPrices).toEqual([...rankingPrices].sort((a, b) => a - b));
+    const recommended = result.centers.find((entry) => entry.center.id === result.recommendedId);
+    expect(recommended.chain.id).toBe('puregym');
+    const bestFitnessX = result.centers.find((entry) => entry.chain.id === 'fitnessx');
+    expect(recommended.rankingPrice).toBeLessThan(bestFitnessX.rankingPrice);
   });
 });

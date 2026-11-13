@@ -28,8 +28,9 @@ import { useFilterSettings } from '../services/FilterSettings';
 // de samme Centre nedenunder. Kortet ligger øverst i listen, så det scroller væk, og listen får
 // hele skærmen, når man scroller ned. Begge viser præcis resultatet fra Matchning i Matchnings
 // rækkefølge, så Filtre (fra Filtre-skærmen, med Præferencerne som udgangspunkt, inkl. maks.
-// afstand) slår ens igennem. Filtrene huskes efter genstart. Anbefalet er lavest Ærlig årspris blandt sikre match og
-// fremhæves både på kortet og i listen.
+// afstand) slår ens igennem. Filtrene huskes efter genstart. Matchnings rækkefølge og Anbefalet
+// bygger på Rangeringspris (Ærlig årspris + Afstandstillæg), som aldrig vises. Anbefalet er
+// lavest Rangeringspris blandt sikre match og fremhæves både på kortet og i listen.
 export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [selectedId, setSelectedId] = useState(null);
