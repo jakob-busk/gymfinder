@@ -1030,6 +1030,26 @@ const GlobalStyle = StyleSheet.create({
     gap: 8,
     marginBottom: 18,
   },
+  // De aktive Filtre som små piller under Filtre-knappen på Find.
+  filterPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: -8,
+    marginBottom: 18,
+  },
+  filterPill: {
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: shape.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  filterPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
+  },
   sheetBackdrop: {
     flex: 1,
     backgroundColor: colors.backdrop,

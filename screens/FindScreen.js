@@ -1,6 +1,6 @@
 // Ansvarlig: Christian
 import { useContext, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
@@ -15,7 +15,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
 import { discountProfileText, loosenFilterSuggestions } from '../data/findView';
-import { activeFilterCount } from '../data/filterSettings';
+import { activeFilterCount, activeFilterLabels } from '../data/filterSettings';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
@@ -33,6 +33,7 @@ export default function FindScreen({ navigation }) {
   const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(user.preferences);
   const loading = centerData.loading || filterSettings.loading;
   const filterCount = activeFilterCount(filters);
+  const filterLabels = activeFilterLabels(filters);
 
   const { centers, recommendedId } = matchCenters({
     centers: loading ? [] : centerData.centers,
@@ -144,6 +145,22 @@ export default function FindScreen({ navigation }) {
           onPress={() => navigation.navigate('Filtre')}
         />
       </View>
+      {/* De aktive Filtre som små piller, så man kan se, hvad listen er filtreret på. Kun
+          visning; et tryk åbner Filtre. */}
+      {filterLabels.length > 0 && (
+        <Pressable
+          style={GlobalStyle.filterPills}
+          onPress={() => navigation.navigate('Filtre')}
+          accessibilityRole="button"
+          accessibilityLabel={`Aktive Filtre: ${filterLabels.join(', ')}. Åbner Filtre.`}
+        >
+          {filterLabels.map((label) => (
+            <View key={label} style={GlobalStyle.filterPill}>
+              <Text style={GlobalStyle.filterPillText}>{label}</Text>
+            </View>
+          ))}
+        </Pressable>
+      )}
     </>
   );
 
