@@ -7,7 +7,8 @@ import { UserContext } from '../../data/UserContext';
 import { useCenterData } from '../../services/CenterData';
 
 // Trin 4 (valgfrit): Nuværende medlemskab. Med en månedspris kan vi vise, hvad du kan spare.
-// "Spring over" betyder "Ingen".
+// "Spring over" vises kun, så længe der ikke er gemt et medlemskab, og går bare videre (den
+// nulstiller ikke noget).
 export default function CurrentMembershipScreen({ navigation }) {
   const { user, setUser } = useContext(UserContext);
   const { chains } = useCenterData();
@@ -18,20 +19,18 @@ export default function CurrentMembershipScreen({ navigation }) {
     setUser((current) => ({ ...current, currentMembership }));
   };
 
-  const handleSkip = () => {
-    setCurrentMembership(null);
-    navigation.navigate('Præferencer');
-  };
+  const goNext = () => navigation.navigate('Præferencer');
+  const nothingChosen = user.currentMembership == null;
 
   return (
     <OnboardingStep
       step={4}
       title="Er du medlem et sted i dag?"
       intro="Skriv hvad du betaler om måneden, så viser vi, hvor meget du kan spare ved at skifte."
-      onNext={() => navigation.navigate('Præferencer')}
+      onNext={goNext}
       nextDisabled={!complete}
       nextDisabledReason="Skriv din månedspris, eller vælg Ingen."
-      onSkip={handleSkip}
+      onSkip={nothingChosen ? goNext : undefined}
     >
       <CurrentMembershipEditor
         currentMembership={user.currentMembership}
