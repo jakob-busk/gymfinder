@@ -37,8 +37,7 @@ Kun to flader og to farver oven på dem. Ingen mint, ingen pasteller, ingen sand
 - **Kortpins:** Anbefalet er en stor papirprik med tyk blæk-ring (24 px), andre Centre er små
   blækprikker med papirkant (14 px), "du er her" er en violet pin. På web er Anbefalet en papirpille
   med blæk-kant, de andre blæk-piller. Forklaringen under kortet bruger de samme prikker.
-- **Bånd og fanepriser:** stjernen i Velkomst-båndet og prisen på det aktive Tilbud er dæmpet lys
-  på blæk.
+- **Fanepriser:** prisen på det aktive Tilbud er dæmpet lys på blæk.
 
 Advarsler (fx "Prisen stiger, når du fylder 30") har ingen egen farve: lyst papir, blæk-kant og et
 `alert-circle-outline`-ikon ved titlen. Kortstilen (Android) er neutral creme/grå uden farvede veje.
@@ -128,32 +127,53 @@ trintæller, kortforklaring og løbenumre skrives med stort begyndelsesbogstav (
 farve. `kicker` har derfor hverken `textTransform: 'uppercase'` eller positiv spærring, og
 gruppeoverskrifter (Maks. afstand, Krav, Maskiner) er små Fredoka-titler i blæk.
 
-## Nielsen-rettelser (del A)
+## Nielsen-rettelser
 
-Én commit pr. fund, så hver kan rulles tilbage for sig. Del B (onboarding, Velkomst, Ronnie,
-konto, Om, Filtre, Profil m.m.) ligger på `proto/styling-7-nielsen-b`.
+Én commit pr. fund, så hvert fund kan rulles tilbage for sig (`git revert <hash>`). Del A (Find,
+kort, pin-boks, Centerdetalje, Favoritter, kvittering, prisformat) er lavet direkte på
+`proto/styling-7-blanding`. Del B (onboarding, Velkomst, animationer, Ronnie, konto, Om, Filtre,
+Profil, tekster) er lavet på `proto/styling-7-nielsen-b` og flettet ind med `--no-ff` i `91685f7`,
+så B's commits har deres egne hashes. `npm test` og nat-jobbets tests er grønne, og
+`npx expo export --platform web` bygger.
 
-| Fund | Commit | Rettelse |
-|---|---|---|
-| L14 | `5e4f289` | Ét prisformat: `formatNumber`/`formatKr`/`formatPrice` (1.234 kr., 249 kr. pr. md.), også i Prisalarmens beskeder |
-| L7 | `eb37182` | Afstand med decimalkomma (`formatDistance`, "2,4 km") |
-| L1 | `2f2f5cd` | Kortet: ingen løbenumre, ingen "Se detaljer"; hele kortet åbner Centerdetalje (pil ved titlen); "De første 3 mdr." flyttet |
-| L2 | `835f785` | "for {Tilbud} · med {Rabat}" ved prisen og "Tilmeld {Tilbud}" |
-| L5 | `85c64c9` | "kr." + "ærlig årspris · gns. pr. md." ⓘ på kort, pin-boks og Favoritter |
-| L6 | `6b4b1b7` | Forklaring af Anbefalet (ⓘ ved mærket); InfoButton kan stå på blæk |
-| L3 | `a57bf20` | "Priser regnet med: … · Ret" øverst på Find |
-| L11 | `328f549` | "Henter Centre …" i stedet for "0 Centre" |
-| L12 | `8cd2002` | Aktive Filtre som små piller under Filtre-knappen |
-| L9 | `595f52c` | Centerdetalje: pris og Tilmeld øverst, advarsler før knappen, udregningen foldet sammen |
-| L15 | `2535ad3` | "Se detaljer" som samme knap i pin-boks og Favoritter; "Luk" som knap; "dette Center" |
-| F2 | `8708188` | Timeout på centerdata (8 sek.) og "Ingen forbindelse" med "Prøv igen" |
-| L17 | `e5ed8f2` | Eksempeldata-beskeden siger hvorfor og har "Prøv igen"; tomt Center har "Tilbage til Find" |
-| L8 | `974e0e8` | Abonnementstype som "Landsdækkende" / "Lokalt Center" på kvitteringen |
-| F1 | `e1dc280` | "Fjernet fra Favoritter · Fortryd" i 5 sek.; fortryd gendanner Prisalarm og startpris |
+| Fund | Commit | Del | Rettelse | Valg |
+|---|---|---|---|---|
+| Titellinje | `b1a5be3` | A | [logo-pille] [pin] [Centrets navn] på én linje på kort, pin-boks, Centerdetalje og Favoritter | Skærmlæsere hører "Kæde, Centernavn" én gang; pin og logo er skjult |
+| Titellinje | `7a35f94` | A | Navnet uden Kæde ("Lyngby" ved Fitness X-logoet) og afstemte størrelser i tre varianter | `centerDisplayName` med test; LOOP-alias; fuldt navn uden logo |
+| Tagline | `1ab3b7e` | B | Velkomst: "Fitnesscentret, der reelt er bedst for dig." | Markeringen står på " bedst " |
+| L1 | `2f2f5cd` | A | Kortet: ingen løbenumre og ingen "Se detaljer"; hele kortet åbner Centerdetalje | Pil ved titlen viser tryk-området; kortet er ikke selv et element for skærmlæsere, så ♥ og Tilmeld kan nås |
+| L2 | `835f785` | A | "for {Tilbud} · med {Rabat}" ved prisen og "Tilmeld {Tilbud}" | `offerBasisText`; Makkerpris tæller som Rabat |
+| L3 | `a57bf20` | A | "Priser regnet med: … · Ret" øverst på Find | "Ret" åbner Redigér profil → Rabatprofil (Profil-forsiden lægges nedenunder) |
+| L4 | `ae8ad5e` | B | Kortere animationer (Reveal 340 ms, kun 3 forskudte), respekterer "reducer bevægelse" | Ny `useReduceMotion`; gælder også del A's kort, Centerdetalje og Favoritter |
+| L5 | `85c64c9` | A | "kr." + "ærlig årspris · gns. pr. md." ⓘ på kort, pin-boks og Favoritter | |
+| L6 | `6b4b1b7` | A | Forklaring af Anbefalet med ⓘ ved mærket | Skrevet efter reglen i Matchning (lavest blandt sikre match); `InfoButton` fik `onInk` |
+| L7 | `eb37182` | A | Afstand med decimalkomma: "2,4 km" | `formatDistance` |
+| L8 | `974e0e8` | A | Kvitteringen: "Landsdækkende" / "Lokalt Center" | Kun visning; data siger stadig "Lokal center" |
+| L8 | `9d1c35e` | B | "Flere centre" → "Landsdækkende" i Præferencer, Filtre, "Ikke oplyst" og tippet på Find | |
+| L8 | `9440792` | A | Filter-pillen på Find hedder også "Landsdækkende" | Rettet efter fletningen |
+| L9 | `595f52c` | A | Centerdetalje: pris og Tilmeld øverst, advarsler før knappen, udregningen foldet sammen | "De første 3 mdr." står her nu |
+| L10 | `2905ad6` | B | Fejltekster uden udviklersprog | Tekniske noter i `console.warn` |
+| L11 | `328f549` | A | "Henter Centre …" i stedet for "0 Centre" | |
+| L12 | `8cd2002` | A | Aktive Filtre som små piller under Filtre-knappen | Kun visning; tryk åbner Filtre |
+| L13 | `9e3867e` | B | "Opret konto" primær, "Fortsæt anonymt" tekstknap | `components/confirm.js` (`window.confirm` på web) |
+| L14 | `5e4f289` | A | Ét prisformat: 1.234 kr., 249 kr. pr. md. (også Prisalarmens beskeder) | `formatNumber`/`formatKr`/`formatPrice`; nat-jobbets tests rettet |
+| L14 | `4085cc3` | A | Det fælles prisformat også i B's Profil og Prisalarm-felter | Rettet efter fletningen; tærskelfeltet accepterer "50 kr. pr. md." |
+| L15 | `2535ad3` | A | "Se detaljer" ens i pin-boks og Favoritter; "Luk" som knap; "dette Center" | Ronnies "Se {navn}" er B's og uændret |
+| L16 | `1fa2ded` | B | Det kørende bånd på Velkomst er fjernet | `Marquee.js` slettet |
+| L17 | `e5ed8f2` | A | Eksempeldata-beskeden siger hvorfor og har "Prøv igen"; tomt Center har "Tilbage til Find" | `sampleDataNotice` |
+| L17 | `dbaffa9` | B | Forklaringer ved spærrede knapper og fagord; sortering kun på Find; "Om GymFinder" | "Kontakt" mangler en e-mail |
+| F1 | `e1dc280` | A | "Fjernet fra Favoritter · Fortryd" i 5 sek.; gendanner Prisalarm og startpris | "Fjern" på Favoritter spørger ikke længere ja/nej; global `UndoToast` i App.js |
+| F2 | `8708188` | A | Timeout på centerdata (8 sek.) og "Ingen forbindelse" med "Prøv igen" | Timeouten har ingen automatisk test |
+| F3 | `41ac484` | B | Tomt eller ugyldigt prisfelt nulstiller Nuværende medlemskab og siger det | |
+| F4 | `34775a6` | B | "Spring over" nulstiller ikke længere valg | Vises kun, så længe intet er valgt |
+| F5 | `4f8c782` | B | Viser om profilen er gemt på kontoen eller kun på telefonen | `saveStatus` fra `useUserProfile` |
+| F6 | `8a7fa86` | B | "Filtre nulstillet · Fortryd" og "Ny samtale" i Spørg Ronnie | Egen Fortryd-række i Filtre (ikke `UndoToast`) |
+| F7 | `99cc033` | B | Prisalarmen husker den sidste tærskel | Kun mens kortet er åbent |
 
-Bemærk: `components/useProfileSections.js` (del B) bruger stadig `formatKr(...)/md` og viser derfor
-"299 kr./md". Den bør skifte til `formatPrice` ved fletningen. Timeouten i `useCenterData` har ingen
-automatisk test (hooket er ikke testet i forvejen).
+Fletningen havde ingen tekstkonflikter. Ved overlap er begge sider beholdt: `App.js` har både den
+globale Fortryd-besked og B's topbjælke i onboarding, `components/Reveal.js` bruger B's kortere
+varighed også på del A's skærme, og `data/findView.js` har både B's "Slå Landsdækkende fra" og del
+A's Rabatprofil- og eksempeldata-tekster.
 
 ## Taget fra 2 (Tribune)
 
@@ -195,8 +215,8 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1670 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
-ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
+Før (variant 2): 1407. Efter: 1712 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne fra del A og B; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
 
@@ -212,3 +232,5 @@ ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne; p
   forskyder kun de første 3 elementer med 50 ms; knapperne på Velkomst animeres ikke.
 - Animationer er kun bundlet på web, ikke afprøvet på fysisk enhed.
 - `expo-linear-gradient` er stadig installeret, men bruges ikke.
+- Der er to Fortryd-mønstre: den globale `UndoToast` (Favoritter) og en Fortryd-række over knapperne
+  i Filtre (del B). De kunne samles til ét.
