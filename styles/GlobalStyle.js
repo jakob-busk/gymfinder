@@ -107,7 +107,7 @@ const display = (size, tracking = -0.015) => ({
 const figure = (size, tracking = -0.03) => ({
   fontFamily: fonts.figure,
   fontSize: size,
-  lineHeight: Math.round(size * 1.02),
+  lineHeight: Math.round(size * 1.2),
   letterSpacing: size * tracking,
   color: colors.text,
   fontVariant: ['tabular-nums'],
@@ -431,7 +431,7 @@ const GlobalStyle = StyleSheet.create({
   },
   cardPrice: {
     ...figure(44, -0.03),
-    lineHeight: 45,
+    lineHeight: 53,
   },
   cardPriceUnitBox: {
     paddingBottom: 6,
