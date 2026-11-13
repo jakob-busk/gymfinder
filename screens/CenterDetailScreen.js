@@ -10,7 +10,13 @@ import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferReceipt from '../components/OfferReceipt';
 import Reveal from '../components/Reveal';
-import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
+import {
+  facilityRows,
+  formatKr,
+  formatPrice,
+  matchCenter,
+  turns30Notice,
+} from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
@@ -86,7 +92,7 @@ export default function CenterDetailScreen({ navigation, route }) {
           <Text style={GlobalStyle.bodyText}>
             Du fylder 30 i {ageNotice.birthdayMonth}. Fra måned {ageNotice.fromPeriod} stiger prisen
             på {ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}
-            {formatKr(ageNotice.priceAfter)}/md. Det er regnet med i din ærlige årspris.
+            {formatPrice(ageNotice.priceAfter)}. Det er regnet med i din ærlige årspris.
           </Text>
         </View>
       )}
@@ -98,10 +104,10 @@ export default function CenterDetailScreen({ navigation, route }) {
             <InfoButton term="savingSuggestion" />
           </View>
           <Text style={GlobalStyle.bodyText}>
-            Bliv {suggestion.label} for {suggestion.membershipPricePerYear} kr/år og spar{' '}
-            {formatKr(Math.round(suggestion.savingPerYear))}/år her (
+            Bliv {suggestion.label} for {formatPrice(suggestion.membershipPricePerYear, 'år')} og
+            spar {formatPrice(Math.round(suggestion.savingPerYear), 'år')} her (
             {offerNames[suggestion.offerId]} til{' '}
-            {formatKr(Math.round(suggestion.honestYearlyPrice))}/md).
+            {formatPrice(Math.round(suggestion.honestYearlyPrice))}).
           </Text>
         </View>
       ))}
@@ -143,7 +149,7 @@ export default function CenterDetailScreen({ navigation, route }) {
                 <Text
                   style={[GlobalStyle.offerTabPrice, active && GlobalStyle.offerTabPriceActive]}
                 >
-                  {Math.round(priced.honestYearlyPrice)} kr/md
+                  {formatPrice(Math.round(priced.honestYearlyPrice))}
                 </Text>
               </Pressable>
             );
@@ -162,7 +168,7 @@ export default function CenterDetailScreen({ navigation, route }) {
 
       {match.savingPerMonth > 0 && selected === bestOffer && (
         <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
-          Du sparer {formatKr(Math.round(match.savingPerMonth))}/md i forhold til dit nuværende
+          Du sparer {formatPrice(Math.round(match.savingPerMonth))} i forhold til dit nuværende
           medlemskab.
         </Text>
       )}

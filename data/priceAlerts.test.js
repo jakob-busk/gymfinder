@@ -88,11 +88,11 @@ describe('tærskel', () => {
 
   test('beskrives på dansk for Favorit og Nuværende medlemskab', () => {
     expect(describePriceAlert({ thresholdPerMonth: 50 })).toBe(
-      'Besked, når prisen falder mindst 50 kr/md.',
+      'Besked, når prisen falder mindst 50 kr. pr. md.',
     );
     expect(describePriceAlert({ thresholdPerMonth: null })).toBe('Besked ved ethvert prisfald.');
     expect(describePriceAlert({ thresholdPerMonth: 50 }, 'currentMembership')).toBe(
-      'Besked, når et Tilbud er mindst 50 kr/md billigere end dit nuværende medlemskab.',
+      'Besked, når et Tilbud er mindst 50 kr. pr. md. billigere end dit nuværende medlemskab.',
     );
   });
 });
@@ -422,11 +422,11 @@ describe('fælles', () => {
 
     expect(favoriteMessage).toEqual({
       title: 'Prisfald: SATS Nørrebro',
-      body: 'Ærlig årspris er faldet 51 kr/md til 249 kr/md.',
+      body: 'Ærlig årspris er faldet 51 kr. pr. md. til 249 kr. pr. md.',
       data: { centerId: 'a', kind: 'favorite' },
     });
-    expect(membershipMessage.title).toBe('Spar 150 kr/md');
-    expect(membershipMessage.body).toContain('PureGym Amager koster 199 kr/md');
+    expect(membershipMessage.title).toBe('Spar 150 kr. pr. md.');
+    expect(membershipMessage.body).toContain('PureGym Amager koster 199 kr. pr. md.');
     expect(membershipMessage.data).toEqual({ centerId: 'b', kind: 'currentMembership' });
 
     const smallDrop = priceAlertMessage({
@@ -437,7 +437,7 @@ describe('fælles', () => {
       previousPrice: 300,
       savingPerMonth: 0.5,
     });
-    expect(smallDrop.body).toBe('Ærlig årspris er faldet 0,50 kr/md til 300 kr/md.');
+    expect(smallDrop.body).toBe('Ærlig årspris er faldet 0,50 kr. pr. md. til 300 kr. pr. md.');
   });
 
   test('læser Centrets id fra en notifikation', () => {

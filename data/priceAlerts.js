@@ -26,7 +26,7 @@
 // Notifikationer (lokale og push fra nat-jobbet) har data: { centerId, kind }, så et tryk åbner
 // Centerdetalje for det Center. kind er 'favorite' eller 'currentMembership'.
 
-import { formatKr, matchCenter } from './centerDetail.js';
+import { formatPrice, matchCenter } from './centerDetail.js';
 import { matchCenters } from './matchning.js';
 
 // Forudfyldt tærskel, når en Prisalarm slås til.
@@ -61,13 +61,13 @@ export function thresholdText(priceAlert) {
 // Hvad en Prisalarm gør, som en sætning til UI. kind er 'favorite' eller 'currentMembership'.
 export function describePriceAlert(priceAlert, kind = 'favorite') {
   const threshold = normalizeThreshold(priceAlert?.thresholdPerMonth);
-  const amount = threshold == null ? null : `${formatKr(threshold)}/md`;
+  const amount = threshold == null ? null : formatPrice(threshold);
   if (kind === 'currentMembership') {
     return amount
       ? `Besked, når et Tilbud er mindst ${amount} billigere end dit nuværende medlemskab.`
       : 'Besked, når et Tilbud er billigere end dit nuværende medlemskab.';
   }
-  return amount ? `Besked, når prisen falder mindst ${amount}.` : 'Besked ved ethvert prisfald.';
+  return amount ? `Besked, når prisen falder mindst ${amount}` : 'Besked ved ethvert prisfald.';
 }
 
 // Beløb afrundet til hele øre.
@@ -214,17 +214,17 @@ export function hasAnyPriceAlert({ favorites, currentMembershipAlert }) {
   return Object.values(favorites ?? {}).some((favorite) => Boolean(favorite?.priceAlert));
 }
 
-// Hele kroner i beskeden; en Besparelse under 1 kr vises i øre, så der ikke står "0 kr".
-const kr = (amount) => formatKr(Math.abs(amount) < 1 ? toOere(amount) : Math.round(amount));
+// Hele kroner pr. md. i beskeden; en Besparelse under 1 kr. vises i øre, så der ikke står "0 kr.".
+const perMonth = (amount) => formatPrice(Math.abs(amount) < 1 ? toOere(amount) : Math.round(amount));
 
 // Beskeden for en opfyldt alarm: { title, body, data: { centerId, kind } }.
 export function priceAlertMessage(trigger) {
   const data = { centerId: trigger.centerId, kind: trigger.kind };
   if (trigger.kind === 'currentMembership') {
     return {
-      title: `Spar ${kr(trigger.savingPerMonth)}/md`,
+      title: `Spar ${perMonth(trigger.savingPerMonth)}`,
       body:
-        `${trigger.centerName} koster ${kr(trigger.honestYearlyPrice)}/md i ærlig årspris. ` +
+        `${trigger.centerName} koster ${perMonth(trigger.honestYearlyPrice)} i ærlig årspris. ` +
         'Det er billigere end dit nuværende medlemskab.',
       data,
     };
@@ -232,8 +232,8 @@ export function priceAlertMessage(trigger) {
   return {
     title: `Prisfald: ${trigger.centerName}`,
     body:
-      `Ærlig årspris er faldet ${kr(trigger.savingPerMonth)}/md ` +
-      `til ${kr(trigger.honestYearlyPrice)}/md.`,
+      `Ærlig årspris er faldet ${perMonth(trigger.savingPerMonth)} ` +
+      `til ${perMonth(trigger.honestYearlyPrice)}`,
     data,
   };
 }

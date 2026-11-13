@@ -12,7 +12,7 @@ import Reveal from '../components/Reveal';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
-import { formatKr } from '../data/centerDetail';
+import { formatNumber, formatPrice } from '../data/centerDetail';
 import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoriteRows } from '../data/favorites';
 import { changeCurrentMembershipThreshold, newCurrentMembershipAlert } from '../data/priceAlerts';
@@ -36,11 +36,11 @@ const NO_PUSH_MESSAGES = {
 
 function PriceChange({ priceChange }) {
   if (priceChange == null || Math.abs(priceChange) < MIN_VISIBLE_CHANGE) return null;
-  const amount = formatKr(Math.round(Math.abs(priceChange)));
+  const amount = formatPrice(Math.round(Math.abs(priceChange)));
   if (priceChange < 0) {
-    return <Text style={GlobalStyle.priceDropText}>{amount}/md billigere end da du gemte den</Text>;
+    return <Text style={GlobalStyle.priceDropText}>{amount} billigere end da du gemte den</Text>;
   }
-  return <Text style={GlobalStyle.priceRiseText}>{amount}/md dyrere end da du gemte den</Text>;
+  return <Text style={GlobalStyle.priceRiseText}>{amount} dyrere end da du gemte den</Text>;
 }
 
 // Favoritter og Prisalarmer: brugerens gemte Centre med den aktuelle laveste Ærlig årspris blandt
@@ -132,9 +132,11 @@ export default function FavoritesScreen({ navigation }) {
             {row.match ? (
               <>
                 <View style={GlobalStyle.cardPriceRow}>
-                  <Text style={GlobalStyle.bigPrice}>{Math.round(row.honestYearlyPrice)}</Text>
+                  <Text style={GlobalStyle.bigPrice}>
+                    {formatNumber(Math.round(row.honestYearlyPrice))}
+                  </Text>
                   <View style={GlobalStyle.cardPriceUnitBox}>
-                    <Text style={GlobalStyle.cardPriceUnit}>kr/md</Text>
+                    <Text style={GlobalStyle.cardPriceUnit}>kr. pr. md.</Text>
                     <View style={GlobalStyle.inlineRow}>
                       <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
                       <InfoButton term="honestYearlyPrice" />
@@ -184,7 +186,8 @@ export default function FavoritesScreen({ navigation }) {
     return (
       <>
         <Text style={GlobalStyle.distanceText}>
-          Du betaler {formatKr(membership.monthlyPrice)}/md{chainName ? ` hos ${chainName}` : ''}.
+          Du betaler {formatPrice(membership.monthlyPrice)}
+          {chainName ? ` hos ${chainName}.` : ''}
         </Text>
         <PriceAlertEditor
           kind="currentMembership"

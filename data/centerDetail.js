@@ -22,13 +22,26 @@ const MONTH_NAMES = [
   'december',
 ];
 
-// Beløb i kroner med dansk tegnsætning: 1.234 kr, 224,50 kr.
-export function formatKr(amount) {
+// Appens ene prisformat (dansk norm): tusindtalspunktum, decimalkomma, "kr." og "pr. md.".
+// Flertal af måned er "mdr.", og "ærlig årspris" skrives med småt midt i en sætning.
+
+// Et tal med dansk tegnsætning uden enhed, fx de store pristal: 1.234, 224,50.
+export function formatNumber(amount) {
   const rounded = Math.round(amount * 100) / 100;
   const [whole, decimals] = Math.abs(rounded).toFixed(2).split('.');
   const withDots = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   const sign = rounded < 0 ? '-' : '';
-  return `${sign}${withDots}${decimals === '00' ? '' : `,${decimals}`} kr`;
+  return `${sign}${withDots}${decimals === '00' ? '' : `,${decimals}`}`;
+}
+
+// Et beløb i kroner: 1.234 kr., 224,50 kr.
+export function formatKr(amount) {
+  return `${formatNumber(amount)} kr.`;
+}
+
+// En pris pr. periode: 249 kr. pr. md., 3.000 kr. pr. år, 99 kr. pr. 30 dage. Afrunder ikke selv.
+export function formatPrice(amount, per = 'md.') {
+  return `${formatKr(amount)} pr. ${per}`;
 }
 
 // Matchning for ét Center uden Filtre, så Centerdetalje viser alle Centrets Tilbud, også dem
@@ -86,7 +99,7 @@ export function priceBreakdown(pricedOffer) {
   const yearTotal = signupFee + paymentsTotal;
   return {
     rows: rows.filter((row) => row.share > 0),
-    perPeriod: monthly ? 'md' : '30 dage',
+    perPeriod: monthly ? 'md.' : '30 dage',
     signupFee,
     paymentsTotal,
     yearTotal,
@@ -95,7 +108,7 @@ export function priceBreakdown(pricedOffer) {
 }
 
 // Linjerne på kvitteringen på Centerdetalje: måneder i træk med samme pris og samme slags pris
-// samles på én linje, fx "Måned 2–12 · Standardpris · 11 × 279 kr". En betaling, der kun delvist
+// samles på én linje, fx "Måned 2–12 · Standardpris · 11 × 279 kr.". En betaling, der kun delvist
 // falder inden for året (ved betaling pr. 30 dage), står altid alene.
 // rows er priceBreakdown(...).rows. Returnerer [{ key, label, kindLabel, total, count, share }].
 export function receiptLines(rows) {
@@ -154,14 +167,14 @@ export function turns30Notice(birthDate, pricedOffer) {
 // Oprettelsesgebyr, Admingebyr og Binding som korte tekster.
 export function feeSummary(pricedOffer) {
   const { signupFee, adminFee, bindingMonths } = pricedOffer;
-  const perPeriod = pricedOffer.paymentsPerYear === MONTHS_IN_YEAR ? 'md' : '30 dage';
+  const perPeriod = pricedOffer.paymentsPerYear === MONTHS_IN_YEAR ? 'md.' : '30 dage';
   let binding = 'Ikke oplyst';
   if (bindingMonths === 0) binding = 'Ingen';
   else if (bindingMonths != null) binding = `${bindingMonths} mdr.`;
 
   return {
     signupFee: signupFee > 0 ? formatKr(signupFee) : 'Gratis',
-    adminFee: adminFee > 0 ? `${formatKr(adminFee)} pr. ${perPeriod}` : 'Ingen',
+    adminFee: adminFee > 0 ? formatPrice(adminFee, perPeriod) : 'Ingen',
     binding,
   };
 }

@@ -4,6 +4,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import CenterTitle from './CenterTitle';
 import NotStatedRow from './NotStatedRow';
+import { formatNumber } from '../data/centerDetail';
 import { centerKeywords } from '../data/findView';
 
 // Boksen der vises på kortet, når man trykker på en Center-pin: titel (logo, pin, navn), Ærlig årspris (stort tal),
@@ -26,9 +27,9 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
         )}
       </View>
       <View style={GlobalStyle.cardPriceRow}>
-        <Text style={GlobalStyle.bigPrice}>{Math.round(match.honestYearlyPrice)}</Text>
+        <Text style={GlobalStyle.bigPrice}>{formatNumber(Math.round(match.honestYearlyPrice))}</Text>
         <View style={GlobalStyle.cardPriceUnitBox}>
-          <Text style={GlobalStyle.cardPriceUnit}>kr/md</Text>
+          <Text style={GlobalStyle.cardPriceUnit}>kr. pr. md.</Text>
           <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
         </View>
       </View>

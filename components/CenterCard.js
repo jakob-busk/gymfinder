@@ -7,9 +7,8 @@ import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
 import Reveal from './Reveal';
+import { formatNumber, formatPrice } from '../data/centerDetail';
 import { openSignupPage } from '../services/Signup';
-
-const kr = (amount) => `${Math.round(amount)} kr`;
 
 // Kort for ét Center i listen: løbenummer, navn, Ærlig årspris for det billigste Tilbud for
 // brugeren som et stort tal, og kun to handlinger: "Se detaljer" (åbner Centerdetalje, ligesom et
@@ -53,10 +52,12 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
 
         <View style={GlobalStyle.cardPriceRow}>
           <Text style={[GlobalStyle.cardPrice, ink && GlobalStyle.priceOnInk]}>
-            {Math.round(match.honestYearlyPrice)}
+            {formatNumber(Math.round(match.honestYearlyPrice))}
           </Text>
           <View style={GlobalStyle.cardPriceUnitBox}>
-            <Text style={[GlobalStyle.cardPriceUnit, ink && GlobalStyle.textOnInk]}>kr/md</Text>
+            <Text style={[GlobalStyle.cardPriceUnit, ink && GlobalStyle.textOnInk]}>
+              kr. pr. md.
+            </Text>
             <View style={GlobalStyle.inlineRow}>
               <Text style={[GlobalStyle.cardPriceCaption, ink && GlobalStyle.mutedOnInk]}>
                 ærlig årspris
@@ -66,12 +67,13 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
           </View>
         </View>
         <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
-          De første 3 mdr. {kr(match.quarterlyPrice)}/md
+          De første 3 mdr. {formatPrice(Math.round(match.quarterlyPrice))}
         </Text>
         <NotStatedRow notStated={match.notStated} onInk={ink} />
         {match.savingPerMonth != null && match.savingPerMonth > 0 && (
           <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
-            Du sparer {kr(match.savingPerMonth)}/md i forhold til dit nuværende medlemskab
+            Du sparer {formatPrice(Math.round(match.savingPerMonth))} i forhold til dit nuværende
+            medlemskab
           </Text>
         )}
 
