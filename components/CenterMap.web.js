@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 
 // Web-udgave af kortet. react-native-maps virker ikke i en browser, så her vises en pin pr.
-// Center som knapper i stedet. Bruges kun, når appen køres på web (localhost).
+// Center som små piller i stedet (lime for Anbefalet, blæk for de andre). Bruges kun, når appen køres på web (localhost).
 export default function CenterMap({ matches, recommendedId, onSelect }) {
   return (
     <View style={[GlobalStyle.map, GlobalStyle.webMap]}>
@@ -22,8 +22,14 @@ export default function CenterMap({ matches, recommendedId, onSelect }) {
                 { backgroundColor: isRecommended ? colors.recommendedPin : colors.centerPin },
               ]}
             >
-              <Text style={GlobalStyle.webMapPinText} numberOfLines={1}>
-                📍 {center.name}
+              <Text
+                style={[
+                  GlobalStyle.webMapPinText,
+                  isRecommended && GlobalStyle.webMapPinTextRecommended,
+                ]}
+                numberOfLines={1}
+              >
+                {center.name}
               </Text>
             </Pressable>
           );

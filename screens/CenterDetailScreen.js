@@ -7,6 +7,7 @@ import ButtonComponent from '../components/ButtonComponent';
 import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferReceipt from '../components/OfferReceipt';
+import Reveal from '../components/Reveal';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
@@ -18,7 +19,8 @@ import { openSignupPage } from '../services/Signup';
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
 // for brugeren valgt. "Tilmeld dig ..." åbner tilmeldingen til det valgte Tilbud. Viser også
 // 30-års-advarsel, Spar mere-forslag, faciliteter og "Spørg Ronnie om dette center".
-// ♥ i titelrækken gør Centret til Favorit.
+// ♥ i titelrækken gør Centret til Favorit. Kvitteringen toner ind på ny, når et andet Tilbud
+// vælges, så skiftet kan ses.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
@@ -109,7 +111,7 @@ export default function CenterDetailScreen({ navigation, route }) {
         </Text>
         <FavoriteButton center={center} chain={chain} />
       </View>
-      <Text style={[GlobalStyle.mutedText, GlobalStyle.spacedBelow]}>
+      <Text style={GlobalStyle.detailHeroMeta}>
         {[chain?.name, center.address, distance].filter(Boolean).join(' · ')}
       </Text>
 
@@ -132,7 +134,9 @@ export default function CenterDetailScreen({ navigation, route }) {
                 <Text style={[GlobalStyle.offerTabText, active && GlobalStyle.offerTabTextActive]}>
                   {priced.offer.name}
                 </Text>
-                <Text style={GlobalStyle.offerTabPrice}>
+                <Text
+                  style={[GlobalStyle.offerTabPrice, active && GlobalStyle.offerTabPriceActive]}
+                >
                   {Math.round(priced.honestYearlyPrice)} kr/md
                 </Text>
               </Pressable>
@@ -141,12 +145,14 @@ export default function CenterDetailScreen({ navigation, route }) {
         </ScrollView>
       )}
 
-      <OfferReceipt
-        pricedOffer={selected}
-        chain={chain}
-        user={user}
-        isCheapest={selected === bestOffer && offers.length > 1}
-      />
+      <Reveal key={selected.offer.id} distance={16}>
+        <OfferReceipt
+          pricedOffer={selected}
+          chain={chain}
+          user={user}
+          isCheapest={selected === bestOffer && offers.length > 1}
+        />
+      </Reveal>
 
       {match.savingPerMonth > 0 && selected === bestOffer && (
         <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
@@ -181,11 +187,11 @@ export default function CenterDetailScreen({ navigation, route }) {
         {facilities.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
       </View>
       <View style={GlobalStyle.facilityGrid}>
-        {facilities.map((row) => (
-          <View key={row.key} style={GlobalStyle.facilityCell}>
+        {facilities.map((row, index) => (
+          <Reveal key={row.key} index={index} distance={12} style={GlobalStyle.facilityCell}>
             <Text style={GlobalStyle.mapLegend}>{row.label}</Text>
             <Text style={GlobalStyle.feeValue}>{row.value}</Text>
-          </View>
+          </Reveal>
         ))}
       </View>
     </ScrollView>

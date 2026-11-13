@@ -22,14 +22,14 @@ export default function CenterMap({ userLocation, matches, recommendedId, onSele
   }, [pinKey, userLocation?.latitude, userLocation?.longitude]);
 
   return (
-    // Android (Google Maps) får en mørk kortstil. Apple Maps kan ikke styles, så iPhone viser
-    // bare kortet i mørk tilstand.
+    // Android (Google Maps) får en lys, afdæmpet kortstil. Apple Maps kan ikke styles, så iPhone
+    // viser bare kortet i lys tilstand.
     <MapView
       ref={mapRef}
       style={GlobalStyle.map}
       initialRegion={region}
       customMapStyle={brand.mapStyle}
-      userInterfaceStyle="dark"
+      userInterfaceStyle={brand.mapInterfaceStyle}
     >
       {userLocation && (
         <Marker

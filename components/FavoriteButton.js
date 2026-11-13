@@ -1,19 +1,29 @@
-import { useContext } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { useContext, useRef } from 'react';
+import { Alert, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle, { colors } from '../styles/GlobalStyle';
+import GlobalStyle, { colors, motion } from '../styles/GlobalStyle';
 import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoritePrice } from '../data/favorites';
 import { UserContext } from '../data/UserContext';
 
 // ♥ på et Center: gør Centret til Favorit eller fjerner det igen. Ved ♥ gemmes brugerens
 // aktuelle Ærlig årspris for Centret, så et senere prisfald kan måles mod den.
-export default function FavoriteButton({ center, chain }) {
+// Hjertet sidder i en rund knap og slår et lille slag, når det trykkes. onInk bruges i den mørke
+// blok (det Anbefalede Center).
+export default function FavoriteButton({ center, chain, onInk = false }) {
   const { user, favorites } = useContext(UserContext);
   const active = favorites.isFavorite(center.id);
+  const beat = useRef(new Animated.Value(1)).current;
 
   const handlePress = async () => {
+    beat.setValue(0.7);
+    Animated.spring(beat, {
+      toValue: 1,
+      speed: 14,
+      bounciness: 16,
+      useNativeDriver: motion.native,
+    }).start();
     const price = favoritePrice({
       center,
       chains: chain ? [chain] : [],
@@ -31,13 +41,15 @@ export default function FavoriteButton({ center, chain }) {
   return (
     <Pressable
       onPress={handlePress}
-      hitSlop={8}
-      style={GlobalStyle.favoriteButton}
+      hitSlop={6}
+      style={[GlobalStyle.favoriteButton, onInk && GlobalStyle.favoriteButtonOnInk]}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       accessibilityLabel={active ? 'Fjern fra Favoritter' : 'Gem som Favorit'}
     >
-      <Ionicons name={active ? 'heart' : 'heart-outline'} size={26} color={colors.favorite} />
+      <Animated.View style={{ transform: [{ scale: beat }] }}>
+        <Ionicons name={active ? 'heart' : 'heart-outline'} size={21} color={colors.favorite} />
+      </Animated.View>
     </Pressable>
   );
 }

@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
+import Reveal from '../components/Reveal';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
 import { RONNIE_SUGGESTIONS, ronnieErrorMessage, ronnieMatches } from '../data/ronnie';
@@ -30,7 +31,8 @@ import { loadRemainingRonnieQuestions, recordRonnieQuestion } from '../services/
 // brugerens Ærlig årspris. Ronnie kender de 20 nærmeste Centre, der matcher brugerens Filtre
 // (plus det Center, man spørger om fra Centerdetalje). Spørger man om et andet sted i landet, slår
 // han stedet op og får de nærmeste Centre dér. Hele samtalen sendes med hver gang, så han husker
-// den. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner.
+// den. Under hvert svar er der en "Se [center] →"-knap pr. Center, han nævner. Nye beskeder
+// glider ind nedefra, og forslagene falder på plads ét efter ét.
 // Hver bruger kan stille RONNIE_WEEKLY_LIMIT spørgsmål om ugen (se data/ronnieUsage.js). Derefter
 // holder Ronnie fri resten af ugen, og der sendes intet til OpenAI.
 export default function AskRonnieScreen({ navigation, route }) {
@@ -184,7 +186,7 @@ export default function AskRonnieScreen({ navigation, route }) {
       {sending && (
         <View style={GlobalStyle.bubbleRow}>
           <RonnieMascot size="avatar" />
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={colors.text} />
         </View>
       )}
 
@@ -216,14 +218,16 @@ export default function AskRonnieScreen({ navigation, route }) {
   const renderMessage = ({ item: message }) => {
     if (message.role === 'user') {
       return (
-        <View style={[GlobalStyle.bubble, GlobalStyle.bubbleUser]}>
-          <Text style={GlobalStyle.bubbleUserText}>{message.content}</Text>
-        </View>
+        <Reveal distance={14}>
+          <View style={[GlobalStyle.bubble, GlobalStyle.bubbleUser]}>
+            <Text style={GlobalStyle.bubbleUserText}>{message.content}</Text>
+          </View>
+        </Reveal>
       );
     }
 
     return (
-      <View>
+      <Reveal distance={14}>
         <View style={GlobalStyle.bubbleRow}>
           <RonnieMascot size="avatar" />
           <View style={[GlobalStyle.bubble, GlobalStyle.bubbleRonnie]}>
@@ -244,7 +248,7 @@ export default function AskRonnieScreen({ navigation, route }) {
             ))}
           </View>
         )}
-      </View>
+      </Reveal>
     );
   };
 
@@ -278,15 +282,16 @@ export default function AskRonnieScreen({ navigation, route }) {
                     </View>
                   </View>
                   <View style={[GlobalStyle.choiceList, GlobalStyle.chatSuggestions]}>
-                    {RONNIE_SUGGESTIONS.map((suggestion) => (
-                      <ButtonComponent
-                        key={suggestion}
-                        title={suggestion}
-                        type="ghost"
-                        icon="chatbubble-ellipses-outline"
-                        onPress={() => handleSend(suggestion)}
-                        disabled={sending || loading || weekOff}
-                      />
+                    {RONNIE_SUGGESTIONS.map((suggestion, index) => (
+                      <Reveal key={suggestion} index={index + 2} distance={12}>
+                        <ButtonComponent
+                          title={suggestion}
+                          type="ghost"
+                          icon="chatbubble-ellipses-outline"
+                          onPress={() => handleSend(suggestion)}
+                          disabled={sending || loading || weekOff}
+                        />
+                      </Reveal>
                     ))}
                   </View>
                 </>

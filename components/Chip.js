@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 
-// Et mærke, man slår til og fra, fx en maskine i Filtre. Valgt får et flueben og en tynd ramme.
+// Et mærke, man slår til og fra, fx en maskine i Filtre. Valgt bliver sort med et
+// lime flueben.
 export default function Chip({ label, selected, onPress }) {
   return (
     <Pressable
@@ -12,7 +13,7 @@ export default function Chip({ label, selected, onPress }) {
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
     >
-      {selected && <Ionicons name="checkmark" size={15} color={colors.primary} />}
+      {selected && <Ionicons name="checkmark" size={15} color={colors.accent} />}
       <Text style={[GlobalStyle.chipText, selected && GlobalStyle.chipTextSelected]}>{label}</Text>
     </Pressable>
   );

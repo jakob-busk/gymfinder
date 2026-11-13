@@ -7,6 +7,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import InfoButton from '../components/InfoButton';
 import PriceAlertEditor from '../components/PriceAlertEditor';
+import Reveal from '../components/Reveal';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
@@ -46,7 +47,8 @@ function PriceChange({ priceChange }) {
 // Tryk på et Center åbner Centerdetalje, og en Favorit kan fjernes. Prisalarm kan slås til på
 // hver Favorit og på Nuværende medlemskab med valgfri tærskel. Første gang en alarm slås til,
 // spørges om lov til notifikationer, og push-tokenet gemmes på brugeren. Alt gemmes under
-// brugerens uid i Firebase og huskes efter genstart.
+// brugerens uid i Firebase og huskes efter genstart. Kortene toner ind forskudt, og prisen står
+// som et stort tal.
 export default function FavoritesScreen({ navigation }) {
   const { user, favorites, membershipAlert, authUser, account, accountsAvailable } =
     useContext(UserContext);
@@ -115,46 +117,57 @@ export default function FavoritesScreen({ navigation }) {
     ]);
   };
 
-  const renderRow = ({ item: row }) => (
-    <View style={GlobalStyle.card}>
-      <View style={GlobalStyle.favoriteRow}>
-        <Pressable
-          style={GlobalStyle.favoriteInfo}
-          disabled={!row.match}
-          onPress={() => showDetails(row.centerId)}
-          accessibilityRole="button"
-        >
-          <Text style={GlobalStyle.cardTitle}>{row.center?.name ?? 'Ukendt Center'}</Text>
-          {row.chain && <Text style={GlobalStyle.distanceText}>{row.chain.name}</Text>}
-          {row.match ? (
-            <>
-              <View style={GlobalStyle.inlineRow}>
-                <Text style={GlobalStyle.priceText}>
-                  {formatKr(Math.round(row.honestYearlyPrice))}/md (ærlig årspris)
-                </Text>
-                <InfoButton term="honestYearlyPrice" />
-              </View>
-              <PriceChange priceChange={row.priceChange} />
-              <Text style={GlobalStyle.link}>Se mere →</Text>
-            </>
-          ) : (
-            <Text style={GlobalStyle.notStatedText}>
-              {row.center
-                ? 'Centret har ingen Tilbud lige nu.'
-                : 'Centret findes ikke længere i GymFinder.'}
-            </Text>
-          )}
-        </Pressable>
-        <ButtonComponent title="Fjern" type="text" size="small" onPress={() => handleRemove(row)} />
+  const renderRow = ({ item: row, index }) => (
+    <Reveal index={index + 1}>
+      <View style={GlobalStyle.card}>
+        <View style={GlobalStyle.favoriteRow}>
+          <Pressable
+            style={GlobalStyle.favoriteInfo}
+            disabled={!row.match}
+            onPress={() => showDetails(row.centerId)}
+            accessibilityRole="button"
+          >
+            <Text style={GlobalStyle.cardTitle}>{row.center?.name ?? 'Ukendt Center'}</Text>
+            {row.chain && <Text style={GlobalStyle.distanceText}>{row.chain.name}</Text>}
+            {row.match ? (
+              <>
+                <View style={GlobalStyle.cardPriceRow}>
+                  <Text style={GlobalStyle.bigPrice}>{Math.round(row.honestYearlyPrice)}</Text>
+                  <View style={GlobalStyle.cardPriceUnitBox}>
+                    <Text style={GlobalStyle.cardPriceUnit}>kr/md</Text>
+                    <View style={GlobalStyle.inlineRow}>
+                      <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
+                      <InfoButton term="honestYearlyPrice" />
+                    </View>
+                  </View>
+                </View>
+                <PriceChange priceChange={row.priceChange} />
+                <Text style={GlobalStyle.link}>Se mere →</Text>
+              </>
+            ) : (
+              <Text style={GlobalStyle.notStatedText}>
+                {row.center
+                  ? 'Centret har ingen Tilbud lige nu.'
+                  : 'Centret findes ikke længere i GymFinder.'}
+              </Text>
+            )}
+          </Pressable>
+          <ButtonComponent
+            title="Fjern"
+            type="text"
+            size="small"
+            onPress={() => handleRemove(row)}
+          />
+        </View>
+        {row.match && (
+          <PriceAlertEditor
+            priceAlert={row.favorite.priceAlert}
+            onSave={(thresholdPerMonth) => handleFavoriteAlert(row, thresholdPerMonth)}
+            onDisable={() => favorites.setPriceAlert(row.centerId, null)}
+          />
+        )}
       </View>
-      {row.match && (
-        <PriceAlertEditor
-          priceAlert={row.favorite.priceAlert}
-          onSave={(thresholdPerMonth) => handleFavoriteAlert(row, thresholdPerMonth)}
-          onDisable={() => favorites.setPriceAlert(row.centerId, null)}
-        />
-      )}
-    </View>
+    </Reveal>
   );
 
   const renderMembership = () => {
@@ -206,10 +219,12 @@ export default function FavoritesScreen({ navigation }) {
               'du sletter appen.'}
         </Text>
       )}
-      <View style={GlobalStyle.card}>
-        <Text style={GlobalStyle.cardTitle}>Nuværende medlemskab</Text>
-        {renderMembership()}
-      </View>
+      <Reveal>
+        <View style={GlobalStyle.card}>
+          <Text style={GlobalStyle.cardTitle}>Nuværende medlemskab</Text>
+          {renderMembership()}
+        </View>
+      </Reveal>
     </View>
   );
 

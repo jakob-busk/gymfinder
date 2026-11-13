@@ -1,65 +1,90 @@
 // Ansvarlig: Jakob
 import { useContext } from 'react';
-import { Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle, { brand, colors } from '../../styles/GlobalStyle';
+import GlobalStyle from '../../styles/GlobalStyle';
 import BrandLogo from '../../components/BrandLogo';
 import ButtonComponent from '../../components/ButtonComponent';
+import Marquee from '../../components/Marquee';
+import Reveal from '../../components/Reveal';
 import RonnieMascot from '../../components/RonnieMascot';
 import { UserContext } from '../../data/UserContext';
 
 // Det GymFinder kan, i tre korte punkter.
 const POINTS = [
-  ['pricetag', 'Én ærlig årspris med alle gebyrer, kampagner og dine Rabatter regnet med'],
-  ['map', 'Centre tæt på dig, sorteret efter hvad du reelt betaler'],
-  ['notifications', 'Besked, når et Center bliver billigere'],
+  'Én ærlig årspris med alle gebyrer, kampagner og dine Rabatter regnet med',
+  'Centre tæt på dig, sorteret efter hvad du reelt betaler',
+  'Besked, når et Center bliver billigere',
 ];
 
-// Velkomst: logo, Ronnie stort på nattehimlen, hvad GymFinder kan, og "Kom i gang" før brugeren
-// giver oplysninger. Har brugeren allerede en konto (fx på en ny telefon), kan onboarding
-// springes over med Log ind.
+// Det, der regnes med i en Ærlig årspris, løber forbi på båndet.
+const MARQUEE_WORDS = ['Ærlig årspris', 'Oprettelsesgebyr', 'Admingebyr', 'Kampagnepris', 'Rabat'];
+
+// Velkomst: logo, en stor overskrift som på en plakat, Ronnie på sin sol, et bånd med det, der
+// regnes med i prisen, hvad GymFinder kan, og "Kom i gang" før brugeren giver oplysninger.
+// Delene falder på plads ét efter ét. Har brugeren allerede en konto (fx på en ny telefon), kan
+// onboarding springes over med Log ind.
 export default function WelcomeScreen({ navigation }) {
   const { accountsAvailable } = useContext(UserContext);
 
   return (
-    <LinearGradient colors={brand.heroGradient} style={GlobalStyle.fill}>
-      <SafeAreaView style={GlobalStyle.welcome} edges={['top', 'bottom']}>
-        <View style={GlobalStyle.welcomeTop}>
-          <BrandLogo size="large" />
-          <Text style={GlobalStyle.welcomeTagline}>
-            Fitnesscentret, der reelt er billigst for dig.
-          </Text>
-        </View>
+    <View style={GlobalStyle.welcomeRoot}>
+      <SafeAreaView style={GlobalStyle.fill} edges={['top', 'bottom']}>
+        <ScrollView
+          contentContainerStyle={GlobalStyle.welcome}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={GlobalStyle.welcomeTop}>
+            <Reveal>
+              <BrandLogo size="large" />
+            </Reveal>
+            <Reveal index={1} distance={30}>
+              <Text style={GlobalStyle.welcomeTagline}>
+                {/* "billigst" står på en lime markering; mellemrummene ligger inden i, så den får luft. */}
+                Fitnesscentret, der reelt er
+                <Text style={GlobalStyle.welcomeHighlight}>{' billigst '}</Text>
+                for dig.
+              </Text>
+            </Reveal>
+          </View>
 
-        <RonnieMascot size="large" pose="vinker" />
+          <Reveal index={3}>
+            <RonnieMascot size="large" pose="vinker" style={GlobalStyle.welcomeRonnie} />
+          </Reveal>
 
-        <View style={GlobalStyle.welcomePoints}>
-          {POINTS.map(([icon, text]) => (
-            <View key={icon} style={GlobalStyle.welcomePoint}>
-              <Ionicons name={icon} size={18} color={colors.accentText} />
-              <Text style={GlobalStyle.welcomePointText}>{text}</Text>
-            </View>
-          ))}
-        </View>
+          <Reveal index={4}>
+            <Marquee words={MARQUEE_WORDS} />
+          </Reveal>
 
-        <View style={GlobalStyle.welcomeActions}>
-          <ButtonComponent
-            title="Kom i gang"
-            type="primary"
-            onPress={() => navigation.navigate('Adresse')}
-          />
-          {accountsAvailable && (
+          <View style={GlobalStyle.welcomePoints}>
+            {POINTS.map((text, index) => (
+              <Reveal key={text} index={5 + index} distance={12}>
+                <View style={GlobalStyle.welcomePoint}>
+                  <Text style={GlobalStyle.welcomePointNumber}>0{index + 1}</Text>
+                  <Text style={GlobalStyle.welcomePointText}>{text}</Text>
+                </View>
+              </Reveal>
+            ))}
+          </View>
+
+          <Reveal index={8} style={GlobalStyle.welcomeActions}>
             <ButtonComponent
-              title="Jeg har allerede en konto"
-              type="text"
-              onPress={() => navigation.navigate('Log ind')}
+              title="Kom i gang"
+              type="primary"
+              full
+              onPress={() => navigation.navigate('Adresse')}
             />
-          )}
-        </View>
+            {accountsAvailable && (
+              <ButtonComponent
+                title="Jeg har allerede en konto"
+                type="text"
+                onPress={() => navigation.navigate('Log ind')}
+              />
+            )}
+          </Reveal>
+        </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }

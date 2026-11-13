@@ -5,7 +5,7 @@ import ButtonComponent from './ButtonComponent';
 import NotStatedRow from './NotStatedRow';
 import { centerKeywords } from '../data/findView';
 
-// Boksen der vises på kortet, når man trykker på en Center-pin: Kæde, Ærlig årspris,
+// Boksen der vises på kortet, når man trykker på en Center-pin: Kæde, Ærlig årspris (stort tal),
 // Distance, nøgleord og "Ikke oplyst" for aktive Filtre, hvor det er ukendt.
 // onShowDetails åbner Centerdetalje, onClose lukker boksen.
 export default function CenterPinInfo({ match, isRecommended, onShowDetails, onClose }) {
@@ -23,9 +23,13 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
         )}
       </View>
       <Text style={GlobalStyle.distanceText}>{center.name}</Text>
-      <Text style={GlobalStyle.priceText}>
-        {Math.round(match.honestYearlyPrice)} kr/md (ærlig årspris)
-      </Text>
+      <View style={GlobalStyle.cardPriceRow}>
+        <Text style={GlobalStyle.bigPrice}>{Math.round(match.honestYearlyPrice)}</Text>
+        <View style={GlobalStyle.cardPriceUnitBox}>
+          <Text style={GlobalStyle.cardPriceUnit}>kr/md</Text>
+          <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
+        </View>
+      </View>
       <Text style={GlobalStyle.distanceText}>
         {match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : 'Afstand ukendt'}
         {keywords.length > 0 ? ` · ${keywords.join(', ')}` : ''}

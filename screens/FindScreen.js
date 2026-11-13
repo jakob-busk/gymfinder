@@ -140,9 +140,10 @@ export default function FindScreen({ navigation }) {
         ListEmptyComponent={renderStatus()}
         contentContainerStyle={GlobalStyle.scrollEnd}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <CenterCard
             match={item}
+            index={index}
             isRecommended={item.center.id === recommendedId}
             onShowDetails={() => showDetails(item.center.id)}
           />
