@@ -79,12 +79,10 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
             {formatNumber(Math.round(match.honestYearlyPrice))}
           </Text>
           <View style={GlobalStyle.cardPriceUnitBox}>
-            <Text style={[GlobalStyle.cardPriceUnit, ink && GlobalStyle.textOnInk]}>
-              kr. pr. md.
-            </Text>
+            <Text style={[GlobalStyle.cardPriceUnit, ink && GlobalStyle.textOnInk]}>kr.</Text>
             <View style={GlobalStyle.inlineRow}>
               <Text style={[GlobalStyle.cardPriceCaption, ink && GlobalStyle.mutedOnInk]}>
-                ærlig årspris
+                ærlig årspris · gns. pr. md.
               </Text>
               <InfoButton term="honestYearlyPrice" />
             </View>

@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
+import InfoButton from './InfoButton';
 import CenterTitle from './CenterTitle';
 import NotStatedRow from './NotStatedRow';
 import { formatDistance, formatNumber } from '../data/centerDetail';
@@ -29,8 +30,11 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
       <View style={GlobalStyle.cardPriceRow}>
         <Text style={GlobalStyle.bigPrice}>{formatNumber(Math.round(match.honestYearlyPrice))}</Text>
         <View style={GlobalStyle.cardPriceUnitBox}>
-          <Text style={GlobalStyle.cardPriceUnit}>kr. pr. md.</Text>
-          <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
+          <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
+          <View style={GlobalStyle.inlineRow}>
+            <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
+            <InfoButton term="honestYearlyPrice" />
+          </View>
         </View>
       </View>
       <Text style={GlobalStyle.distanceText}>

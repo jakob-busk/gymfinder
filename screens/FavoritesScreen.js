@@ -136,9 +136,9 @@ export default function FavoritesScreen({ navigation }) {
                     {formatNumber(Math.round(row.honestYearlyPrice))}
                   </Text>
                   <View style={GlobalStyle.cardPriceUnitBox}>
-                    <Text style={GlobalStyle.cardPriceUnit}>kr. pr. md.</Text>
+                    <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
                     <View style={GlobalStyle.inlineRow}>
-                      <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
+                      <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
                       <InfoButton term="honestYearlyPrice" />
                     </View>
                   </View>
