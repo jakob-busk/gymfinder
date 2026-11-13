@@ -22,8 +22,8 @@ export default function DiscountProfileScreen({ navigation }) {
   return (
     <OnboardingStep
       step={3}
-      title="Har du ret til en Rabat?"
-      intro="Vælg dem, der passer på dig. Så regner vi automatisk de Rabatter med, du har ret til."
+      title="Har du ret til en rabat?"
+      intro="Vælg dem, der passer på dig. Så regner vi automatisk de rabatter med, du har ret til."
       onNext={goNext}
       onSkip={nothingChosen ? goNext : undefined}
     >

@@ -151,6 +151,7 @@ describe('Forespørgsel til OpenAI', () => {
       tilbud: [
         {
           navn: 'Basis',
+          abonnementstype: 'lokalt center',
           aerligAarsprisKrPrMd: 170,
           billigsteMulighed: 'studierabat',
           oprettelsesgebyrKr: 120,
@@ -159,10 +160,22 @@ describe('Forespørgsel til OpenAI', () => {
         },
       ],
     });
-    expect(systemPrompt).toContain('Anbefal KUN Centre fra listen');
-    expect(systemPrompt).toContain('Ærlig årspris');
+    expect(systemPrompt).toContain('Anbefal KUN centre fra listen');
+    expect(systemPrompt).toContain('ærlig årspris');
     expect(systemPrompt).toContain('Studerende');
-    expect(systemPrompt).toContain('299 kr/md');
+    expect(systemPrompt).toContain('299 kr. pr. md.');
+  });
+
+  test('system-prompten beder Ronnie bruge appens ord og skrivemåde', () => {
+    expect(systemPrompt).toContain(
+      'Sprog: Skriv almindeligt dansk med de samme ord som resten af GymFinder.',
+    );
+    expect(systemPrompt).toContain('Stort bogstav kun først i en sætning.');
+    expect(systemPrompt).toMatch(/"center", "kæde",\s+"abonnement", "ærlig årspris"/);
+    expect(systemPrompt).toContain('Sig "abonnement" (ikke tilbud)');
+    // Selve prompten skriver også ordlistens begreber med småt midt i sætninger.
+    const instructions = systemPrompt.split('\n').slice(0, -1).join('\n');
+    expect(instructions).not.toMatch(/[a-zæøå,] (Centre|Center|Tilbud|Ærlig|Binding|Rabat|Filtre)\b/);
   });
 
   test('hele samtalen sendes med i rækkefølge, Ronnies svar i samme JSON-form', () => {

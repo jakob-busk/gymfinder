@@ -24,7 +24,7 @@ export const RONNIE_CENTER_LIMIT = 20;
 
 // Færdige forslag, der vises før første besked.
 export const RONNIE_SUGGESTIONS = [
-  'Hvad er det billigste Center for mig?',
+  'Hvad er det billigste center for mig?',
   'Jeg vil have sauna og ingen binding. Hvad passer til mig?',
   'Hvor tæt på mig kan jeg træne billigst med holdtræning?',
   'Jeg har sommerhus i Hornbæk. Hvor kan jeg træne billigst dér?',
@@ -35,7 +35,7 @@ export const RONNIE_MAX_LOOKUP_ROUNDS = 2;
 
 // Det færdige spørgsmål, når man trykker "Spørg Ronnie om dette center" på Centerdetalje.
 export function centerQuestion(centerName) {
-  return `Er ${centerName} et godt valg for mig? Hvordan er Ærlig årspris i forhold til Centrene tæt på mig?`;
+  return `Er ${centerName} et godt valg for mig? Hvordan er den ærlige årspris i forhold til centrene tæt på mig?`;
 }
 
 // De Centre, Ronnie kender i samtalen: de RONNIE_CENTER_LIMIT nærmeste, der matcher brugerens

@@ -98,7 +98,7 @@ export async function getPushToken({ ask = false } = {}) {
 
 // Viser opfyldte Prisalarmer ([{ title, body, data }] fra priceAlertMessage) som lokale
 // notifikationer. Kan modulet ikke bruges (Expo Go på Android), eller er der ingen tilladelse,
-// vises den første som en besked i appen med "Se Center" i stedet.
+// vises den første som en besked i appen med "Se centret" i stedet.
 export async function showPriceAlerts(messages, onOpenCenter) {
   if (messages.length === 0) return;
   if (Notifications && (await hasNotificationPermission())) {
@@ -112,13 +112,13 @@ export async function showPriceAlerts(messages, onOpenCenter) {
   }
   const [first] = messages;
   const others = messages.length - 1;
-  const word = others === 1 ? 'Prisalarm' : 'Prisalarmer';
+  const word = others === 1 ? 'prisalarm' : 'prisalarmer';
   const more = others > 0 ? ` (og ${others} ${word} mere)` : '';
-  // "Se Center" eller "Luk" (confirmAction virker også på web).
+  // "Se centret" eller "Luk" (confirmAction virker også på web).
   confirmAction({
     title: first.title,
     message: `${first.body}${more}`,
-    confirmText: 'Se Center',
+    confirmText: 'Se centret',
     cancelText: 'Luk',
   }).then((open) => {
     if (open) onOpenCenter(first.data.centerId);

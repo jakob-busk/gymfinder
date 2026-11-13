@@ -203,7 +203,7 @@ export default function AskRonnieScreen({ navigation, route }) {
             <Text style={GlobalStyle.bodyText}>{ronnieErrorMessage({ code: 'missingKey' })}</Text>
           </View>
           <Text style={[GlobalStyle.mutedText, GlobalStyle.spacedBelow]}>
-            Indtil da kan du finde det Center med den laveste Ærlig årspris på Find.
+            Indtil da kan du finde det center med den laveste ærlige årspris på Find.
           </Text>
           <ButtonComponent title="Gå til Find" type="primary" icon="search" onPress={goToFind} />
         </ScrollView>
@@ -337,7 +337,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                     <View style={[GlobalStyle.bubbleRonnie, GlobalStyle.greetingBubble]}>
                       <View style={[GlobalStyle.bubbleTail, GlobalStyle.bubbleTailLeft]} />
                       <Text style={GlobalStyle.bubbleText}>
-                        Hej, jeg er Ronnie! Spørg mig om priser og Centre nær dig.
+                        Hej, jeg er Ronnie! Spørg mig om priser og centre nær dig.
                       </Text>
                     </View>
                   </View>
@@ -364,7 +364,7 @@ export default function AskRonnieScreen({ navigation, route }) {
         {pendingQuestion && (
           <View style={GlobalStyle.chatPendingQuestion}>
             <ButtonComponent
-              title="Brug det færdige spørgsmål om Centret"
+              title="Brug det færdige spørgsmål om centret"
               type="ghost"
               size="small"
               icon="chatbubble-ellipses-outline"

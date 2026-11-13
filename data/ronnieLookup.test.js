@@ -175,7 +175,7 @@ describe('Svaret til Ronnie', () => {
   test('ingen Centre i nærheden siges ærligt', async () => {
     const content = JSON.parse(lookupToolContent(await lookup('Hornbæk', { centers: [] })));
     expect(content.status).toBe('found');
-    expect(content.besked).toMatch(/Ingen Centre inden for 25 km/);
+    expect(content.besked).toMatch(/Ingen centre inden for 25 km/);
   });
 });
 

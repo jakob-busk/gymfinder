@@ -60,7 +60,7 @@ export default function FinishScreen() {
       {accountsAvailable && (
         <>
           <Text style={GlobalStyle.stepIntro}>
-            Opret en konto, så følger dine oplysninger, Favoritter og Prisalarmer med, hvis du
+            Opret en konto, så følger dine oplysninger, favoritter og prisalarmer med, hvis du
             skifter telefon.
           </Text>
           <AccountForm

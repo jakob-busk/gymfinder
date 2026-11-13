@@ -24,13 +24,13 @@ export default function AddressScreen({ navigation }) {
     <OnboardingStep
       step={1}
       title="Hvor bor du?"
-      intro="Vi bruger din adresse til at vise afstanden til Centrene. Du kan også bruge din placering."
+      intro="Vi bruger din adresse til at vise afstanden til centrene. Du kan også bruge din placering."
       onNext={() => navigation.navigate('Fødselsdato')}
       nextDisabled={user.location == null}
       nextDisabledReason="Vælg en adresse fra listen, eller brug din placering."
     >
       <RonnieHint pose="peger">
-        Jeg bruger kun din adresse til at regne afstanden til Centrene ud.
+        Jeg bruger kun din adresse til at regne afstanden til centrene ud.
       </RonnieHint>
       <AddressField address={user.address} location={user.location} onChange={handleAddress} />
     </OnboardingStep>

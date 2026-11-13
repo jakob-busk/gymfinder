@@ -42,7 +42,7 @@ export const DISCOUNT_GROUP_DESCRIPTIONS = {
   student: 'Du har et gyldigt studiekort.',
   senior: 'Du får folkepension eller førtidspension.',
   aeldreSagen: 'Du er medlem af Ældre Sagen.',
-  partner: 'Du vil melde dig ind sammen med en anden og se Makkerpris pr. person.',
+  partner: 'Du vil melde dig ind sammen med en anden og se makkerpris pr. person.',
 };
 
 const MAX_AGE = 120;

@@ -26,7 +26,7 @@ export default function LoginScreen() {
           <Text style={GlobalStyle.title}>Velkommen tilbage</Text>
           <Text style={GlobalStyle.stepIntro}>
             Log ind med den e-mail og adgangskode, du gemte din profil med. Så får du dine
-            oplysninger, Favoritter og Prisalarmer tilbage. Det, du har udfyldt på denne telefon
+            oplysninger, favoritter og prisalarmer tilbage. Det, du har udfyldt på denne telefon
             uden konto, bliver erstattet af din konto.
           </Text>
           <AccountForm mode="login" onSubmit={logIn} />
