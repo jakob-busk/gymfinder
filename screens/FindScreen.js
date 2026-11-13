@@ -5,9 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
-import CenterCard from '../components/CenterCard';
 import CenterMap from '../components/CenterMap';
 import CenterPinInfo from '../components/CenterPinInfo';
+// PROTOTYPE — ét kort pr. Kæde (fjernes igen, når en variant er valgt).
+import ChainResultsPrototype, { CHAIN_VARIANTS } from '../components/ChainResultsPrototype';
+import PrototypeSwitcher from '../components/PrototypeSwitcher';
 import MapLegend from '../components/MapLegend';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
@@ -29,6 +31,8 @@ import { useFilterSettings } from '../services/FilterSettings';
 export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [selectedId, setSelectedId] = useState(null);
+  // PROTOTYPE: hvilken variant af kæde-listen der vises.
+  const [variant, setVariant] = useState('A');
   const centerData = useCenterData();
   const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(user.preferences);
   const loading = centerData.loading || filterSettings.loading;
@@ -133,21 +137,26 @@ export default function FindScreen({ navigation }) {
   return (
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
       <ScreenHeader logo />
+      {/* PROTOTYPE: listen er ét element, der renderer kæde-kortene for den valgte variant.
+          Før: data={centers} med ét CenterCard pr. Center. */}
       <FlatList
-        data={centers}
-        keyExtractor={(match) => match.center.id}
+        data={centers.length > 0 ? ['chains'] : []}
+        keyExtractor={(item) => item}
+        extraData={variant}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={renderStatus()}
         contentContainerStyle={GlobalStyle.scrollEnd}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <CenterCard
-            match={item}
-            isRecommended={item.center.id === recommendedId}
-            onShowDetails={() => showDetails(item.center.id)}
+        renderItem={() => (
+          <ChainResultsPrototype
+            variant={variant}
+            matches={centers}
+            filters={filters}
+            onShowDetails={showDetails}
           />
         )}
       />
+      <PrototypeSwitcher variants={CHAIN_VARIANTS} current={variant} onChange={setVariant} />
     </SafeAreaView>
   );
 }

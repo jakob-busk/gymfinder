@@ -1,12 +1,13 @@
 // Ansvarlig: Christian
 import { useContext, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
-import ButtonComponent from '../components/ButtonComponent';
-import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
-import OfferReceipt from '../components/OfferReceipt';
+import CenterDetailPrototype, {
+  CENTER_DETAIL_VARIANTS,
+} from '../components/CenterDetailPrototype';
+import PrototypeSwitcher from '../components/PrototypeSwitcher';
 import { facilityRows, formatKr, matchCenter, turns30Notice } from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
 import { UserContext } from '../data/UserContext';
@@ -19,11 +20,14 @@ import { openSignupPage } from '../services/Signup';
 // for brugeren valgt. "Tilmeld dig ..." åbner tilmeldingen til det valgte Tilbud. Viser også
 // 30-års-advarsel, Spar mere-forslag, faciliteter og "Spørg Ronnie om dette center".
 // ♥ i titelrækken gør Centret til Favorit.
+// PROTOTYPE: indholdet vises lige nu som en af varianterne i components/CenterDetailPrototype.js.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
   const { centers, chains, loading } = useCenterData();
   const [selectedOfferId, setSelectedOfferId] = useState(null);
+  // PROTOTYPE: hvilken variant af Centerdetalje der vises.
+  const [variant, setVariant] = useState('A');
   const center = centers.find((entry) => entry.id === centerId);
 
   const match = useMemo(
@@ -101,93 +105,31 @@ export default function CenterDetailScreen({ navigation, route }) {
     </>
   );
 
+  // PROTOTYPE: varianterne af Centerdetalje (se components/CenterDetailPrototype.js).
   return (
-    <ScrollView style={GlobalStyle.screen} contentContainerStyle={GlobalStyle.stepContent}>
-      <View style={GlobalStyle.titleRow}>
-        <Text style={[GlobalStyle.title, GlobalStyle.shrinkText, GlobalStyle.screenHeaderTitle]}>
-          {center.name}
-        </Text>
-        <FavoriteButton center={center} chain={chain} />
-      </View>
-      <Text style={[GlobalStyle.mutedText, GlobalStyle.spacedBelow]}>
-        {[chain?.name, center.address, distance].filter(Boolean).join(' · ')}
-      </Text>
-
-      {offers.length > 1 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={GlobalStyle.offerTabs}
-        >
-          {offers.map((priced) => {
-            const active = priced === selected;
-            return (
-              <Pressable
-                key={priced.offer.id}
-                style={[GlobalStyle.offerTab, active && GlobalStyle.offerTabActive]}
-                onPress={() => setSelectedOfferId(priced.offer.id)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-              >
-                <Text style={[GlobalStyle.offerTabText, active && GlobalStyle.offerTabTextActive]}>
-                  {priced.offer.name}
-                </Text>
-                <Text style={GlobalStyle.offerTabPrice}>
-                  {Math.round(priced.honestYearlyPrice)} kr/md
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      )}
-
-      <OfferReceipt
-        pricedOffer={selected}
+    <View style={GlobalStyle.screen}>
+      <CenterDetailPrototype
+        variant={variant}
+        center={center}
         chain={chain}
+        match={match}
         user={user}
-        isCheapest={selected === bestOffer && offers.length > 1}
+        offers={offers}
+        bestOffer={bestOffer}
+        selected={selected}
+        onSelect={setSelectedOfferId}
+        facilities={facilities}
+        distance={distance}
+        notices={notices}
+        hasNotices={Boolean(ageNotice) || match.savingSuggestions.length > 0}
+        onSignup={() => openSignupPage(center, chain, selected)}
+        onAskRonnie={handleAskRonnie}
       />
-
-      {match.savingPerMonth > 0 && selected === bestOffer && (
-        <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
-          Du sparer {formatKr(Math.round(match.savingPerMonth))}/md i forhold til dit nuværende
-          medlemskab.
-        </Text>
-      )}
-
-      <View style={[GlobalStyle.choiceList, GlobalStyle.paragraph]}>
-        <ButtonComponent
-          title={`Tilmeld dig ${selected.offer.name}`}
-          type="primary"
-          icon="open-outline"
-          full
-          onPress={() => openSignupPage(center, chain, selected)}
-        />
-        <Text style={[GlobalStyle.mapLegend, GlobalStyle.centeredText]}>
-          Åbner {selected.offer.name} på {chain?.name ?? 'kædens'} egen side.
-        </Text>
-        <ButtonComponent
-          title="Spørg Ronnie om dette center"
-          type="text"
-          ronnie
-          onPress={handleAskRonnie}
-        />
-      </View>
-
-      {notices}
-
-      <View style={GlobalStyle.inlineRow}>
-        <Text style={GlobalStyle.sectionLabel}>Faciliteter</Text>
-        {facilities.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
-      </View>
-      <View style={GlobalStyle.facilityGrid}>
-        {facilities.map((row) => (
-          <View key={row.key} style={GlobalStyle.facilityCell}>
-            <Text style={GlobalStyle.mapLegend}>{row.label}</Text>
-            <Text style={GlobalStyle.feeValue}>{row.value}</Text>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+      <PrototypeSwitcher
+        variants={CENTER_DETAIL_VARIANTS}
+        current={variant}
+        onChange={setVariant}
+      />
+    </View>
   );
 }
