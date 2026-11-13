@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import CenterTitle from '../components/CenterTitle';
+import { confirmAction } from '../components/confirm';
 import InfoButton from '../components/InfoButton';
 import OfflineNotice from '../components/OfflineNotice';
 import PriceAlertEditor from '../components/PriceAlertEditor';
@@ -100,23 +101,21 @@ export default function FavoritesScreen({ navigation }) {
     await registerPush();
   };
 
-  const handleRemove = (row) => {
+  // Ja/nej før Favoritten fjernes (confirmAction virker også på web).
+  const handleRemove = async (row) => {
     const name = row.center?.name ?? 'Centret';
-    Alert.alert('Fjern Favorit?', `${name} fjernes fra dine Favoritter.`, [
-      { text: 'Annuller', style: 'cancel' },
-      {
-        text: 'Fjern',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await favorites.removeFavorite(row.centerId);
-          } catch (error) {
-            console.error('Fjern Favorit fejlede:', error);
-            Alert.alert('Kunne ikke fjerne Favorit', TRY_AGAIN_MESSAGE);
-          }
-        },
-      },
-    ]);
+    const confirmed = await confirmAction({
+      title: 'Fjern Favorit?',
+      message: `${name} fjernes fra dine Favoritter.`,
+      confirmText: 'Fjern',
+    });
+    if (!confirmed) return;
+    try {
+      await favorites.removeFavorite(row.centerId);
+    } catch (error) {
+      console.error('Fjern Favorit fejlede:', error);
+      Alert.alert('Kunne ikke fjerne Favorit', TRY_AGAIN_MESSAGE);
+    }
   };
 
   const renderRow = ({ item: row, index }) => (

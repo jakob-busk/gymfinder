@@ -232,5 +232,6 @@ ikonrække, pin-prikker, kædelogo-pillen, titellinjen og Nielsen-rettelserne fr
   forskyder kun de første 3 elementer med 50 ms; knapperne på Velkomst animeres ikke.
 - Animationer er kun bundlet på web, ikke afprøvet på fysisk enhed.
 - `expo-linear-gradient` er stadig installeret, men bruges ikke.
-- "Fjern" på Favoritter bruger `Alert.alert` med to knapper, som ikke vises på web
-  (react-native-web). Del B's `components/confirm.js` (`window.confirm` på web) kunne bruges dér.
+- Ja/nej-spørgsmål (Fjern Favorit, Log ud, Start forfra, Prisalarm ved åbning) bruger
+  `components/confirm.js`, så de også vises på web. Beskeder med kun én knap (fx "Kunne ikke …")
+  bruger stadig `Alert.alert` og vises ikke på web.

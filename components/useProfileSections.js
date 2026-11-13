@@ -9,6 +9,7 @@ import BirthDateField from './BirthDateField';
 import DiscountProfilePicker from './DiscountProfilePicker';
 import CurrentMembershipEditor from './CurrentMembershipEditor';
 import PreferencesEditor from './PreferencesEditor';
+import { confirmAction } from './confirm';
 import { formatPrice } from '../data/centerDetail';
 import { DISCOUNT_GROUPS } from '../data/matchning';
 import { formatBirthDate } from '../data/userProfile';
@@ -66,46 +67,37 @@ export function useProfileSections(navigation) {
     Alert.alert('Din profil er gemt', 'Du kan nu logge ind med din e-mail på en anden telefon.');
   };
 
-  const handleLogOut = () => {
-    Alert.alert(
-      'Log ud?',
-      'Dine oplysninger fjernes fra denne telefon, men ligger stadig på din konto. Du kan ' +
+  // Ja/nej før log ud (confirmAction virker også på web).
+  const handleLogOut = async () => {
+    const confirmed = await confirmAction({
+      title: 'Log ud?',
+      message:
+        'Dine oplysninger fjernes fra denne telefon, men ligger stadig på din konto. Du kan ' +
         'logge ind igen når som helst.',
-      [
-        { text: 'Annuller', style: 'cancel' },
-        {
-          text: 'Log ud',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logOut();
-            } catch (error) {
-              Alert.alert('Kunne ikke logge ud', accountErrorMessage(error));
-            }
-          },
-        },
-      ],
-    );
+      confirmText: 'Log ud',
+    });
+    if (!confirmed) return;
+    try {
+      await logOut();
+    } catch (error) {
+      Alert.alert('Kunne ikke logge ud', accountErrorMessage(error));
+    }
   };
 
   // Kun under udvikling (Expo Go): starter forfra med onboarding som en ny anonym bruger, så
   // onboarding kan testes igen. Den gamle anonyme brugers data bliver liggende i databasen.
-  const handleStartOver = () => {
-    const message = 'Dine oplysninger fjernes fra telefonen, og onboarding starter igen.';
-    Alert.alert('Start forfra?', message, [
-      { text: 'Annuller', style: 'cancel' },
-      {
-        text: 'Start forfra',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logOut();
-          } catch (error) {
-            Alert.alert('Kunne ikke starte forfra', accountErrorMessage(error));
-          }
-        },
-      },
-    ]);
+  const handleStartOver = async () => {
+    const confirmed = await confirmAction({
+      title: 'Start forfra?',
+      message: 'Dine oplysninger fjernes fra telefonen, og onboarding starter igen.',
+      confirmText: 'Start forfra',
+    });
+    if (!confirmed) return;
+    try {
+      await logOut();
+    } catch (error) {
+      Alert.alert('Kunne ikke starte forfra', accountErrorMessage(error));
+    }
   };
 
   const renderAccount = () => {
