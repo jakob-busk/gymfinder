@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Text, TextInput, View } from 'react-native';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
@@ -19,15 +19,22 @@ const FIELD_LABELS = {
 
 // Prisalarm på en Favorit eller på Nuværende medlemskab (kind = 'favorite' | 'currentMembership'):
 // slå til med en valgfri tærskel (forudfyldt 50 kr/md, tomt felt = ethvert fald), ret tærsklen
-// eller slå fra. Vises som en kontakt nederst i kortet. onSave(thresholdPerMonth | null) og onDisable() gemmer og må afvise ved fejl.
+// eller slå fra. Vises som en kontakt nederst i kortet. onSave(thresholdPerMonth | null) og
+// onDisable() gemmer og må afvise ved fejl. Slås alarmen fra og til igen, er den sidste tærskel
+// forudfyldt i stedet for standarden.
 export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave, onDisable }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  // Den sidste Prisalarm, der var slået til, så tærsklen huskes, når den slås fra og til igen.
+  const lastAlert = useRef(priceAlert ?? null);
+  useEffect(() => {
+    if (priceAlert) lastAlert.current = priceAlert;
+  }, [priceAlert]);
 
   const startEditing = () => {
-    setText(thresholdText(priceAlert));
+    setText(thresholdText(priceAlert ?? lastAlert.current));
     setError(null);
     setEditing(true);
   };
