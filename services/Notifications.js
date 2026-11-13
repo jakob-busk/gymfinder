@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Alert, AppState, Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { isRunningInExpoGo } from 'expo';
 import Constants from 'expo-constants';
 
@@ -12,6 +12,7 @@ import {
   markFavoriteNotified,
   priceAlertMessage,
 } from '../data/priceAlerts';
+import { confirmAction } from '../components/confirm';
 import { savePushToken } from './PriceAlerts';
 
 // Notifikationer til Prisalarmer: tilladelse, Expo push-token, lokale beskeder og tryk på en
@@ -113,10 +114,15 @@ export async function showPriceAlerts(messages, onOpenCenter) {
   const others = messages.length - 1;
   const word = others === 1 ? 'Prisalarm' : 'Prisalarmer';
   const more = others > 0 ? ` (og ${others} ${word} mere)` : '';
-  Alert.alert(first.title, `${first.body}${more}`, [
-    { text: 'Luk', style: 'cancel' },
-    { text: 'Se Center', onPress: () => onOpenCenter(first.data.centerId) },
-  ]);
+  // "Se Center" eller "Luk" (confirmAction virker også på web).
+  confirmAction({
+    title: first.title,
+    message: `${first.body}${more}`,
+    confirmText: 'Se Center',
+    cancelText: 'Luk',
+  }).then((open) => {
+    if (open) onOpenCenter(first.data.centerId);
+  });
 }
 
 // Kalder onOpenCenter(centerId), når brugeren trykker på en Prisalarm, både mens appen kører og

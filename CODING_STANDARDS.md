@@ -4,4 +4,5 @@
 - Hver skærm starter med `// Ansvarlig: <navn>`.
 - Nøgler og hemmeligheder ligger kun i `.env` (`EXPO_PUBLIC_*`) eller i GitHub Secrets. De commits aldrig.
 - Firebase-, fetch- og AI-kald ligger i `database/` eller `services/`, ikke i skærmene. Styles ligger i `styles/GlobalStyle.js`.
+- Ingen tekst i versaler: hverken `textTransform: 'uppercase'`, versaler skrevet direkte i teksten eller bred spærring. Labels og mærker skrives med stort begyndelsesbogstav og skilles ud med vægt, størrelse og farve.
 - Logik, der skal testes, skrives som rene funktioner: Jest i appen (`npm test`) og `node:test` i `scraper/`.

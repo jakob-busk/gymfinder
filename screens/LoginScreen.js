@@ -5,12 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import AccountForm from '../components/AccountForm';
-import RonnieMascot from '../components/RonnieMascot';
 import { UserContext } from '../data/UserContext';
 
 // Log ind på en eksisterende konto, fx på en ny telefon. Nås fra velkomsten i onboarding og fra
 // Profil. Når login lykkes, skifter appen selv til kontoens profil; er onboarding gennemført på
-// kontoen, springes den over, og Find vises.
+// kontoen, springes den over, og Find vises. Ronnie er ikke med her, da han kun er med ved godt nyt.
 export default function LoginScreen() {
   const { logIn } = useContext(UserContext);
 
@@ -24,7 +23,6 @@ export default function LoginScreen() {
           contentContainerStyle={GlobalStyle.stepContent}
           keyboardShouldPersistTaps="handled"
         >
-          <RonnieMascot size="small" />
           <Text style={GlobalStyle.title}>Velkommen tilbage</Text>
           <Text style={GlobalStyle.stepIntro}>
             Log ind med den e-mail og adgangskode, du gemte din profil med. Så får du dine

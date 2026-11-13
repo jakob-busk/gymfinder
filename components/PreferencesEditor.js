@@ -8,11 +8,16 @@ import { MACHINES } from '../data/const';
 import { MAX_DISTANCE_OPTIONS } from '../data/userProfile';
 
 // Præferencer, der kan slås til og fra. De er udgangspunktet for Filtre på Find.
+// multiCenterAccess er Abonnementstypen "Landsdækkende" (modsat "Lokalt Center").
 const PREFERENCE_TOGGLES = [
   { key: 'sauna', label: 'Sauna' },
   { key: 'groupClasses', label: 'Holdtræning' },
   { key: 'open24h', label: 'Døgnåbent' },
-  { key: 'multiCenterAccess', label: 'Adgang til flere centre' },
+  {
+    key: 'multiCenterAccess',
+    label: 'Landsdækkende',
+    description: 'Adgang til alle Kædens Centre, ikke kun ét Lokalt Center',
+  },
   { key: 'noBinding', label: 'Ingen binding' },
 ];
 
@@ -41,11 +46,12 @@ export default function PreferencesEditor({ preferences, onChange }) {
 
       <Text style={GlobalStyle.groupTitle}>Krav</Text>
       <View style={GlobalStyle.group}>
-        {PREFERENCE_TOGGLES.map(({ key, label }, index) => (
+        {PREFERENCE_TOGGLES.map(({ key, label, description }, index) => (
           <View key={key}>
             {index > 0 && <View style={GlobalStyle.groupDivider} />}
             <ToggleRow
               label={label}
+              description={description}
               value={Boolean(preferences[key])}
               onChange={(value) => update(key, value)}
             />

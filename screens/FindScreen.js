@@ -1,6 +1,6 @@
 // Ansvarlig: Christian
 import { useContext, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
@@ -9,13 +9,18 @@ import CenterCard from '../components/CenterCard';
 import CenterMap from '../components/CenterMap';
 import CenterPinInfo from '../components/CenterPinInfo';
 import MapLegend from '../components/MapLegend';
+import OfflineNotice from '../components/OfflineNotice';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
 import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
-import { loosenFilterSuggestions } from '../data/findView';
-import { activeFilterCount } from '../data/filterSettings';
+import {
+  discountProfileText,
+  loosenFilterSuggestions,
+  sampleDataNotice,
+} from '../data/findView';
+import { activeFilterCount, activeFilterLabels } from '../data/filterSettings';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
@@ -33,6 +38,7 @@ export default function FindScreen({ navigation }) {
   const { filters, sortBy, setSortBy, ...filterSettings } = useFilterSettings(user.preferences);
   const loading = centerData.loading || filterSettings.loading;
   const filterCount = activeFilterCount(filters);
+  const filterLabels = activeFilterLabels(filters);
 
   const { centers, recommendedId } = matchCenters({
     centers: loading ? [] : centerData.centers,
@@ -47,10 +53,20 @@ export default function FindScreen({ navigation }) {
   const selected = centers.find((match) => match.center.id === selectedId);
 
   const showDetails = (centerId) => navigation.navigate('CenterDetaljer', { centerId });
+  // "Ret" ved Rabatprofilen åbner den samme redigering som under Profil. initial: false lægger
+  // Profil-forsiden nedenunder, så tilbage-knappen virker, selv om Profil ikke er åbnet endnu.
+  const editDiscountProfile = () =>
+    navigation.navigate('Profil', {
+      screen: 'Redigér profil',
+      params: { section: 'discountProfile' },
+      initial: false,
+    });
   const filterLabel = filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre';
-  const legendText =
-    `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
-    (filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : '');
+  // Mens der hentes, står der ikke "0 Centre", men at Centrene er på vej.
+  const legendText = loading
+    ? 'Henter Centre …'
+    : `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
+      (filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : '');
 
   // Mens Centrene hentes, eller når ingen matcher: Ronnie i stedet for listen.
   const renderStatus = () => {
@@ -91,14 +107,32 @@ export default function FindScreen({ navigation }) {
     return null;
   };
 
+  // Eksempeldata: hvorfor, og "Prøv igen", hvis databasen ikke kunne læses.
   const notice = centerData.source === 'sample' && !centerData.loading && (
-    <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
+    <View style={GlobalStyle.sampleNotice}>
+      <Text style={GlobalStyle.noticeText}>
+        {sampleDataNotice({
+          configured: centerData.configured,
+          failed: Boolean(centerData.error),
+        })}
+      </Text>
+      {centerData.configured && (
+        <ButtonComponent title="Prøv igen" type="ghost" size="small" onPress={centerData.retry} />
+      )}
+    </View>
   );
 
-  // Kort, forklaring og sortering/Filtre øverst i listen.
+  // Rabatprofil, kort, forklaring og sortering/Filtre øverst i listen.
   const listHeader = (
     <>
       {notice}
+      {/* Hvilken Rabatprofil priserne er regnet med, så man kan se det uden at åbne Profil. */}
+      <View style={GlobalStyle.discountLine}>
+        <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
+          {discountProfileText(user.discountProfile)}
+        </Text>
+        <ButtonComponent title="Ret" type="text" size="small" onPress={editDiscountProfile} />
+      </View>
       <View style={GlobalStyle.mapBox}>
         <CenterMap
           userLocation={user.location}
@@ -127,8 +161,34 @@ export default function FindScreen({ navigation }) {
           onPress={() => navigation.navigate('Filtre')}
         />
       </View>
+      {/* De aktive Filtre som små piller, så man kan se, hvad listen er filtreret på. Kun
+          visning; et tryk åbner Filtre. */}
+      {filterLabels.length > 0 && (
+        <Pressable
+          style={GlobalStyle.filterPills}
+          onPress={() => navigation.navigate('Filtre')}
+          accessibilityRole="button"
+          accessibilityLabel={`Aktive Filtre: ${filterLabels.join(', ')}. Åbner Filtre.`}
+        >
+          {filterLabels.map((label) => (
+            <View key={label} style={GlobalStyle.filterPill}>
+              <Text style={GlobalStyle.filterPillText}>{label}</Text>
+            </View>
+          ))}
+        </Pressable>
+      )}
     </>
   );
+
+  // Uden forbindelse: besked og "Prøv igen" i stedet for kort og liste.
+  if (centerData.offline) {
+    return (
+      <SafeAreaView style={GlobalStyle.container} edges={['top']}>
+        <ScreenHeader logo />
+        <OfflineNotice onRetry={centerData.retry} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
@@ -140,9 +200,10 @@ export default function FindScreen({ navigation }) {
         ListEmptyComponent={renderStatus()}
         contentContainerStyle={GlobalStyle.scrollEnd}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <CenterCard
             match={item}
+            index={index}
             isRecommended={item.center.id === recommendedId}
             onShowDetails={() => showDetails(item.center.id)}
           />

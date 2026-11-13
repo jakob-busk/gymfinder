@@ -18,8 +18,8 @@ export default function ToggleRow({ label, description, value, onChange, right }
         value={value}
         onValueChange={onChange}
         trackColor={{ true: colors.primary, false: colors.borderStrong }}
-        thumbColor="#FFFFFF"
-        activeThumbColor="#FFFFFF"
+        thumbColor={colors.surface}
+        activeThumbColor={colors.surface}
         ios_backgroundColor={colors.borderStrong}
         accessibilityLabel={label}
       />

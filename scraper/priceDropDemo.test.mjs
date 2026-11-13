@@ -86,7 +86,7 @@ describe('runPriceDropDemo', () => {
         sound: 'default',
         channelId: 'default',
         title: 'Prisfald: Test Center',
-        body: 'Ærlig årspris er faldet 50 kr/md til 250 kr/md.',
+        body: 'Ærlig årspris er faldet 50 kr. pr. md. til 250 kr. pr. md.',
         data: { centerId: 'test-1', kind: 'favorite' },
       },
     ]);

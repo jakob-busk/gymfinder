@@ -1,17 +1,17 @@
-// Appens skrifter, som App.js henter ved opstart: Inter til tekst, Audiowide til titler og
-// Monoton til logoet. Navnene bruges som fontFamily i GlobalStyle.js.
-import { Monoton_400Regular } from '@expo-google-fonts/monoton/400Regular';
-import { Audiowide_400Regular } from '@expo-google-fonts/audiowide/400Regular';
-import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
-import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
-import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
-import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+// Appens skrifter, som App.js henter ved opstart: Nunito til al tekst og alle priser (runde ender,
+// men tydelige tal i lige kolonner) og Fredoka til titler og logoet (rund og varm). Kun de vægte,
+// stilen bruger: Nunito 400/600 til tekst og 700 til pristal, Fredoka 500/600 til titler.
+// Navnene bruges som fontFamily i GlobalStyle.js.
+import { Fredoka_500Medium } from '@expo-google-fonts/fredoka/500Medium';
+import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka/600SemiBold';
+import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
+import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
+import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
 
 export const APP_FONTS = {
-  Monoton_400Regular,
-  Audiowide_400Regular,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
+  Fredoka_500Medium,
+  Fredoka_600SemiBold,
+  Nunito_400Regular,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
 };

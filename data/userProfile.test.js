@@ -37,7 +37,7 @@ describe('fødselsdato', () => {
 
   test.each([
     ['', 'Udfyld din fødselsdato.'],
-    ['12031997', 'Skriv fødselsdatoen som DD-MM-ÅÅÅÅ, fx 12-03-1997.'],
+    ['12031997', 'Skriv fødselsdatoen som dd-mm-åååå, fx 12-03-1997.'],
     ['31-02-1997', 'Den dato findes ikke.'],
     ['29-02-2001', 'Den dato findes ikke.'],
     ['23-10-2026', 'Fødselsdatoen kan ikke ligge i fremtiden.'],

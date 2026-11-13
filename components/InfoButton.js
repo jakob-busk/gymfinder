@@ -7,8 +7,9 @@ import ButtonComponent from './ButtonComponent';
 import { EXPLANATIONS } from '../data/explanations';
 
 // ⓘ ved et fagord. Et tryk åbner en infoboks med forklaringen fra data/explanations.js.
-// term er en nøgle i EXPLANATIONS, fx 'honestYearlyPrice'.
-export default function InfoButton({ term }) {
+// term er en nøgle i EXPLANATIONS, fx 'honestYearlyPrice'. onInk gør ikonet lyst på blæk-blokken,
+// hvor violet ikke kan ses.
+export default function InfoButton({ term, onInk = false }) {
   const [visible, setVisible] = useState(false);
   const explanation = EXPLANATIONS[term];
 
@@ -22,7 +23,11 @@ export default function InfoButton({ term }) {
         accessibilityRole="button"
         accessibilityLabel={`Hvad betyder ${explanation.title}?`}
       >
-        <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
+        <Ionicons
+          name="information-circle-outline"
+          size={18}
+          color={onInk ? colors.onInk : colors.primary}
+        />
       </Pressable>
 
       <Modal

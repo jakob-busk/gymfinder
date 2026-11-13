@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Text, TextInput, View } from 'react-native';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
@@ -13,21 +13,28 @@ const OFF_DESCRIPTIONS = {
 };
 
 const FIELD_LABELS = {
-  favorite: 'Sig til, når prisen falder mindst (kr/md):',
-  currentMembership: 'Sig til, når et Tilbud er mindst så meget billigere (kr/md):',
+  favorite: 'Sig til, når prisen falder mindst (kr. pr. md.):',
+  currentMembership: 'Sig til, når et Tilbud er mindst så meget billigere (kr. pr. md.):',
 };
 
 // Prisalarm på en Favorit eller på Nuværende medlemskab (kind = 'favorite' | 'currentMembership'):
 // slå til med en valgfri tærskel (forudfyldt 50 kr/md, tomt felt = ethvert fald), ret tærsklen
-// eller slå fra. Vises som en kontakt nederst i kortet. onSave(thresholdPerMonth | null) og onDisable() gemmer og må afvise ved fejl.
+// eller slå fra. Vises som en kontakt nederst i kortet. onSave(thresholdPerMonth | null) og
+// onDisable() gemmer og må afvise ved fejl. Slås alarmen fra og til igen, er den sidste tærskel
+// forudfyldt i stedet for standarden.
 export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave, onDisable }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  // Den sidste Prisalarm, der var slået til, så tærsklen huskes, når den slås fra og til igen.
+  const lastAlert = useRef(priceAlert ?? null);
+  useEffect(() => {
+    if (priceAlert) lastAlert.current = priceAlert;
+  }, [priceAlert]);
 
   const startEditing = () => {
-    setText(thresholdText(priceAlert));
+    setText(thresholdText(priceAlert ?? lastAlert.current));
     setError(null);
     setEditing(true);
   };
@@ -70,7 +77,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
           placeholder="Ethvert fald"
           placeholderTextColor={colors.muted}
           keyboardType="decimal-pad"
-          accessibilityLabel="Tærskel i kr pr. måned"
+          accessibilityLabel="Tærskel i kr. pr. md."
         />
         {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
         <Text style={GlobalStyle.mutedText}>Lad feltet stå tomt for besked ved ethvert fald.</Text>
