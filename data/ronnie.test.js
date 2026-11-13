@@ -225,11 +225,23 @@ describe('Ronnies svar', () => {
 });
 
 describe('Fejl og nøgle', () => {
+  let warn;
+  beforeEach(() => {
+    warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => warn.mockRestore());
+
   test('HTTP-status bliver til venlige danske fejltekster', () => {
-    expect(ronnieErrorMessage(ronnieErrorFromResponse(401))).toMatch(/Nøglen er ugyldig/);
+    expect(ronnieErrorMessage(ronnieErrorFromResponse(401))).toMatch(/kan ikke svare lige nu/);
     expect(ronnieErrorMessage(ronnieErrorFromResponse(429))).toMatch(/for mange spørgsmål/);
     expect(ronnieErrorMessage(ronnieErrorFromResponse(500))).toMatch(/kunne ikke svare/);
-    expect(ronnieErrorMessage(new RonnieError('missingKey'))).toMatch(/ikke sat op/);
+    expect(ronnieErrorMessage(new RonnieError('missingKey'))).toMatch(/kan ikke svare/);
+  });
+
+  test('tekniske detaljer står i konsollen, ikke i teksten til brugeren', () => {
+    expect(ronnieErrorMessage(new RonnieError('missingKey'))).not.toMatch(/OpenAI|README|nøgle/i);
+    expect(ronnieErrorMessage(ronnieErrorFromResponse(401))).not.toMatch(/OpenAI|nøgle/i);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('README'));
   });
 
   test('ukendte fejl (fx ingen forbindelse) regnes som forbindelsesfejl', () => {

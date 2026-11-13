@@ -29,6 +29,12 @@ describe('validateAccountForm', () => {
 });
 
 describe('accountErrorMessage', () => {
+  let warn;
+  beforeEach(() => {
+    warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => warn.mockRestore());
+
   const EMAIL_IN_USE = 'Der findes allerede en konto med den e-mail. Log ind i stedet.';
 
   test.each([
@@ -45,22 +51,32 @@ describe('accountErrorMessage', () => {
     expect(accountErrorMessage(new Error('boom'))).toBe('Noget gik galt. Prøv igen om lidt.');
   });
 
-  test('en ukendt fejlkode vises, så fejlen kan findes', () => {
+  test('en ukendt fejlkode giver en generel tekst og skrives i konsollen', () => {
     expect(accountErrorMessage({ code: 'auth/noget-nyt' })).toBe(
-      'Noget gik galt (fejlkode: auth/noget-nyt). Prøv igen om lidt.',
+      'Noget gik galt. Prøv igen om lidt.',
     );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('auth/noget-nyt'));
   });
 
   test.each([
-    ['auth/operation-not-allowed', 'Email/Password'],
-    ['auth/admin-restricted-operation', 'Nye konti er slået fra'],
-    ['auth/configuration-not-found', 'Login er ikke sat op'],
-    ['auth/invalid-api-key', 'sat forkert op'],
-    ['auth/api-key-not-valid.-please-pass-a-valid-api-key.', 'sat forkert op'],
-    ['auth/password-does-not-meet-requirements', 'opfylder ikke kravene'],
-    ['PERMISSION_DENIED', 'Databasen afviste'],
-  ])('opsætningsfejlen %s forklares på dansk', (code, text) => {
-    expect(accountErrorMessage({ code })).toContain(text);
+    ['auth/operation-not-allowed', 'Konto virker ikke lige nu', 'Sign-in method'],
+    ['auth/admin-restricted-operation', 'Nye konti kan ikke oprettes', 'oprettelse af brugere'],
+    ['auth/configuration-not-found', 'Konto virker ikke lige nu', 'Authentication'],
+    ['auth/invalid-api-key', 'Konto virker ikke lige nu', 'API-nøgle'],
+    ['auth/api-key-not-valid.-please-pass-a-valid-api-key.', 'Konto virker ikke', 'API-nøgle'],
+    ['PERMISSION_DENIED', 'gemt på telefonen', 'Realtime Database'],
+  ])('opsætningsfejlen %s har en brugertekst og en teknisk note i konsollen', (code, text, hint) => {
+    const message = accountErrorMessage({ code });
+    expect(message).toContain(text);
+    expect(message).not.toMatch(/Firebase|fejlkode|auth\//);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(hint));
+  });
+
+  test('brugerfejl skrives ikke i konsollen', () => {
+    expect(accountErrorMessage({ code: 'auth/password-does-not-meet-requirements' })).toContain(
+      'opfylder ikke kravene',
+    );
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 
