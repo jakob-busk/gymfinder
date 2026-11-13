@@ -204,6 +204,7 @@ export default function FindScreen({ navigation }) {
         renderItem={({ item, index }) => (
           <ChainCard
             chainMatch={item}
+            filters={filters}
             index={index}
             isRecommended={item.best.center.id === recommendedId}
             onShowDetails={showDetails}
