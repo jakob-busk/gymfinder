@@ -68,7 +68,6 @@ function matchFor(db, { centerId, discountProfile = [], today = NIGHT_1 }) {
     chains,
     user: { birthDate: '1990-05-01', discountProfile, currentMembership: null },
     filters: {},
-    sortBy: 'honestYearlyPrice',
     location: { latitude: 55.6761, longitude: 12.5683 },
     today,
   });

@@ -5,7 +5,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import RonnieMascot from '../components/RonnieMascot';
 
 // Om GymFinder: hvad GymFinder er, og "Sådan virker det" (Anbefalet, hvor priserne kommer fra,
-// affiliate og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og sorteringen
+// affiliate og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og rækkefølgen
 // regnes i data/matchning.js ud fra pris, Filtre og afstand, og priserne hentes af den natlige
 // scraper (scraper/, docs/adr/0001).
 export default function AboutScreen() {
@@ -25,8 +25,7 @@ export default function AboutScreen() {
         Anbefalet er det Tilbud med den laveste Ærlig årspris blandt de Centre, der med sikkerhed
         opfylder dine Filtre. Ærlig årspris er det, du reelt betaler i gennemsnit pr. måned over et
         år, med Oprettelsesgebyr, Admingebyr, Kampagnepriser og dine Rabatter regnet med. Centre,
-        hvor noget er "Ikke oplyst", kan ikke blive Anbefalet. Anbefalet er det samme, uanset hvilken
-        sortering du vælger.
+        hvor noget er "Ikke oplyst", kan ikke blive Anbefalet.
       </Text>
 
       <Text style={GlobalStyle.groupTitle}>Hvor kommer priserne fra?</Text>

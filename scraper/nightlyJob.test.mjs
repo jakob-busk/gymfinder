@@ -150,7 +150,6 @@ describe('normal kørsel', () => {
       chains,
       user: { birthDate: '1990-05-01', discountProfile: [], currentMembership: null },
       filters: {},
-      sortBy: 'honestYearlyPrice',
       location: { latitude: 55.6761, longitude: 12.5683 },
       today: NIGHT_1,
     });

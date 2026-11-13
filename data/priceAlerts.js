@@ -183,7 +183,6 @@ export function currentMembershipAlertTrigger({ alert, centers, chains, user, to
     chains,
     user,
     filters: maxDistanceKm == null ? {} : { maxDistanceKm },
-    sortBy: 'honestYearlyPrice',
     location: user?.location ?? null,
     today,
   });

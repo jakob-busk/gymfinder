@@ -12,6 +12,7 @@ import { buildRonnieSystemPrompt, ronnieResponseFormat } from './ronniePrompt.js
 import {
   findCentersNearPlace,
   lookupToolContent,
+  nearestFirst,
   placeNameFromToolCall,
   ronnieLookupTool,
 } from './ronnieLookup.js';
@@ -44,15 +45,8 @@ export function centerQuestion(centerName) {
 // et stednavn op for at finde Centre.
 export function ronnieMatches({ centers, chains, user, filters, today, includeCenterIds = [] }) {
   const location = user?.location ?? null;
-  const nearest = matchCenters({
-    centers,
-    chains,
-    user,
-    filters,
-    sortBy: 'distance',
-    location,
-    today,
-  }).centers.slice(0, RONNIE_CENTER_LIMIT);
+  const { centers: matches } = matchCenters({ centers, chains, user, filters, location, today });
+  const nearest = nearestFirst(matches).slice(0, RONNIE_CENTER_LIMIT);
 
   const known = new Set(nearest.map((match) => match.center.id));
   const extraCenters = (centers ?? []).filter(

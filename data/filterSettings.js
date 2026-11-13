@@ -1,15 +1,12 @@
-// Filtre og sortering på Find: hvilke Filtre og hvilken sortering der gælder, ud fra det, der er
-// gemt på telefonen, og brugerens Præferencer. Ren JavaScript uden React Native eller Expo, så
-// den kan testes direkte.
+// Filtre på Find: hvilke Filtre der gælder, ud fra det, der er gemt på telefonen, og brugerens
+// Præferencer. Ren JavaScript uden React Native eller Expo, så den kan testes direkte.
 //
-// Gemt form (AsyncStorage): { filters: Filtre | null, sortBy: string | null }.
+// Gemt form (AsyncStorage): { filters: Filtre | null }. Ældre versioner gemte også en sortering
+// (sortBy); den ignoreres.
 // filters = null betyder, at brugeren ikke har rettet Filtrene, så de følger Præferencerne
 // (også når Præferencerne ændres på Profil). Nulstil sletter det gemte.
 
-import { SORT_OPTIONS } from './matchning.js';
 import { EMPTY_PREFERENCES } from './userProfile.js';
-
-export const DEFAULT_SORT = 'honestYearlyPrice';
 
 const TOGGLE_KEYS = ['sauna', 'groupClasses', 'open24h', 'multiCenterAccess', 'noBinding'];
 
@@ -35,18 +32,13 @@ function normalizeFilters(value) {
   };
 }
 
-function isValidSort(sortBy) {
-  return SORT_OPTIONS.some((option) => option.id === sortBy);
-}
-
-// Gemt indstilling + Præferencer → { filters, sortBy, isCustom }.
+// Gemt indstilling + Præferencer → { filters, isCustom }.
 // isCustom = brugeren har rettet Filtrene, så de ikke længere følger Præferencerne.
 export function resolveFilterSettings(stored, preferences) {
   const saved = stored && typeof stored === 'object' ? stored : {};
   const hasCustomFilters = saved.filters != null && typeof saved.filters === 'object';
   return {
     filters: normalizeFilters(hasCustomFilters ? saved.filters : preferences),
-    sortBy: isValidSort(saved.sortBy) ? saved.sortBy : DEFAULT_SORT,
     isCustom: hasCustomFilters,
   };
 }

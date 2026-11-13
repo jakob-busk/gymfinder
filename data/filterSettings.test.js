@@ -1,50 +1,44 @@
-import {
-  DEFAULT_SORT,
-  activeFilterCount,
-  activeFilterLabels,
-  resolveFilterSettings,
-} from './filterSettings';
+import { activeFilterCount, activeFilterLabels, resolveFilterSettings } from './filterSettings';
 import { EMPTY_PREFERENCES } from './userProfile';
 
-// Adfærdstests for hvilke Filtre og hvilken sortering Find bruger.
+// Adfærdstests for hvilke Filtre Find bruger.
 
 const PREFERENCES = { ...EMPTY_PREFERENCES, sauna: true, machines: ['Bænkpres'], maxDistanceKm: 5 };
 
 describe('resolveFilterSettings', () => {
-  test('uden gemte Filtre er udgangspunktet Præferencerne og Ærlig årspris', () => {
+  test('uden gemte Filtre er udgangspunktet Præferencerne', () => {
     expect(resolveFilterSettings(null, PREFERENCES)).toEqual({
       filters: PREFERENCES,
-      sortBy: 'honestYearlyPrice',
       isCustom: false,
     });
-    expect(DEFAULT_SORT).toBe('honestYearlyPrice');
   });
 
   test('gemte Filtre vinder over Præferencerne', () => {
     const stored = {
       filters: { ...EMPTY_PREFERENCES, open24h: true, noBinding: true, maxDistanceKm: 50 },
-      sortBy: 'distance',
     };
     expect(resolveFilterSettings(stored, PREFERENCES)).toEqual({
       filters: { ...EMPTY_PREFERENCES, open24h: true, noBinding: true, maxDistanceKm: 50 },
-      sortBy: 'distance',
       isCustom: true,
     });
   });
 
-  test('kun gemt sortering: Filtrene følger stadig Præferencerne', () => {
+  test('en sortering gemt af en tidligere version ignoreres uden fejl', () => {
+    const stored = { filters: { ...EMPTY_PREFERENCES, open24h: true }, sortBy: 'distance' };
+    expect(resolveFilterSettings(stored, PREFERENCES)).toEqual({
+      filters: { ...EMPTY_PREFERENCES, open24h: true },
+      isCustom: true,
+    });
     expect(resolveFilterSettings({ filters: null, sortBy: 'priceDesc' }, PREFERENCES)).toEqual({
       filters: PREFERENCES,
-      sortBy: 'priceDesc',
       isCustom: false,
     });
   });
 
-  test('ukendt sortering og ufuldstændige Filtre falder tilbage til standard', () => {
-    const stored = { filters: { sauna: 'ja', machines: null, maxDistanceKm: -3 }, sortBy: 'rating' };
+  test('ufuldstændige Filtre falder tilbage til standard', () => {
+    const stored = { filters: { sauna: 'ja', machines: null, maxDistanceKm: -3 } };
     expect(resolveFilterSettings(stored, PREFERENCES)).toEqual({
       filters: EMPTY_PREFERENCES,
-      sortBy: 'honestYearlyPrice',
       isCustom: true,
     });
   });

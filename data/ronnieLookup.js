@@ -38,6 +38,12 @@ export const ronnieLookupTool = {
   },
 };
 
+// Ronnie kender de nærmeste Centre: Matchnings Centre sorteret efter Distance, nærmeste først.
+// Uden Distance sidst; uafgjort afgøres af Matchnings rækkefølge (Ærlig årspris, Center-id).
+export function nearestFirst(matches) {
+  return [...matches].sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+}
+
 function isInDenmark({ latitude, longitude }) {
   return (
     latitude >= DENMARK_BOUNDS.minLat &&
@@ -80,15 +86,15 @@ export async function findCentersNearPlace({
   if (!location) return result('unknownPlace');
   if (!isInDenmark(location)) return result('outsideDenmark', location);
 
-  const matches = matchCenters({
+  const { centers: found } = matchCenters({
     centers,
     chains,
     user,
     filters: { ...filters, maxDistanceKm: RONNIE_LOOKUP_RADIUS_KM },
-    sortBy: 'distance',
     location,
     today,
-  }).centers.slice(0, RONNIE_LOOKUP_LIMIT);
+  });
+  const matches = nearestFirst(found).slice(0, RONNIE_LOOKUP_LIMIT);
   return result('found', location, matches);
 }
 
