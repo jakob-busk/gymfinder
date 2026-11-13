@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalStyle from '../../styles/GlobalStyle';
 import BrandLogo from '../../components/BrandLogo';
 import ButtonComponent from '../../components/ButtonComponent';
-import Marquee from '../../components/Marquee';
 import Reveal from '../../components/Reveal';
 import RonnieMascot from '../../components/RonnieMascot';
 import { UserContext } from '../../data/UserContext';
@@ -18,13 +17,10 @@ const POINTS = [
   'Besked, når et Center bliver billigere',
 ];
 
-// Det, der regnes med i en Ærlig årspris, løber forbi på båndet.
-const MARQUEE_WORDS = ['Ærlig årspris', 'Oprettelsesgebyr', 'Admingebyr', 'Kampagnepris', 'Rabat'];
-
-// Velkomst: logo, en stor overskrift som på en plakat, Ronnie på sin cirkel med en hilsen, et bånd
-// med det, der regnes med i prisen, hvad GymFinder kan, og "Kom i gang" før brugeren giver
-// oplysninger. De øverste dele falder hurtigt på plads; knapperne står der fra start. Har brugeren
-// allerede en konto (fx på en ny telefon), kan onboarding springes over med Log ind.
+// Velkomst: logo, en stor overskrift som på en plakat, Ronnie på sin cirkel med en hilsen, hvad
+// GymFinder kan, og "Kom i gang" før brugeren giver oplysninger. De øverste dele falder hurtigt på
+// plads; knapperne står der fra start. Har brugeren allerede en konto (fx på en ny telefon), kan
+// onboarding springes over med Log ind.
 export default function WelcomeScreen({ navigation }) {
   const { accountsAvailable } = useContext(UserContext);
 
@@ -56,10 +52,6 @@ export default function WelcomeScreen({ navigation }) {
               <Text style={GlobalStyle.welcomeBubbleText}>Hej, jeg er Ronnie!</Text>
             </View>
             <RonnieMascot size="large" pose="vinker" />
-          </Reveal>
-
-          <Reveal index={3}>
-            <Marquee words={MARQUEE_WORDS} />
           </Reveal>
 
           <View style={GlobalStyle.welcomePoints}>

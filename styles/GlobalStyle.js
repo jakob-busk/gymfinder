@@ -610,9 +610,8 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
     marginTop: 6,
   },
-  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin cirkel med en taleboble, et skråt bånd med
-  // prisbegreber,
-  // tre nummererede punkter og knapperne nederst.
+  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin cirkel med en taleboble, tre nummererede
+  // punkter og knapperne nederst. Lidt mere luft mellem delene, nu hvor båndet er væk.
   welcomeRoot: {
     flex: 1,
     backgroundColor: colors.background,
@@ -624,7 +623,7 @@ const GlobalStyle = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     justifyContent: 'space-between',
-    gap: 18,
+    gap: 24,
   },
   welcomeTop: {
     gap: 22,
@@ -685,28 +684,6 @@ const GlobalStyle = StyleSheet.create({
   },
   welcomeActions: {
     gap: 6,
-  },
-  // Det skrå bånd, der løber hen over Velkomst (en stille, levende detalje).
-  marquee: {
-    backgroundColor: colors.ink,
-    marginHorizontal: -48,
-    paddingVertical: 10,
-    overflow: 'hidden',
-    transform: [{ rotate: '-3deg' }],
-  },
-  marqueeTrack: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-  },
-  marqueeText: {
-    flexShrink: 0,
-    fontFamily: fonts.display,
-    fontSize: 20,
-    letterSpacing: -0.1,
-    color: colors.onInk,
-  },
-  marqueeStar: {
-    color: colors.onInkMuted,
   },
   // Onboarding: et trin med fremdriftsbjælke, stor titel, indhold og knapperne nederst.
   stepContent: {
