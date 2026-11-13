@@ -25,9 +25,10 @@ import { openSignupPage } from '../services/Signup';
 // Kort for én Kæde i listen på Find (chainMatch er et ChainMatch fra Matchning). Kortet viser
 // Kædens bedste Center: titel (logo, pin, navn), afstand, Ærlig årspris for det Tilbud, Centret er
 // rangeret på (det billigste, der med sikkerhed matcher, eller det billigste, hvis intet gør; se
-// chainCardOffer), som et stort tal med Tilbuddets navn (og Rabat), facilitetsmærker (ønskede
-// først, højst 6 og "+N mere"; filters er de aktive Filtre), "Ikke oplyst" for binding,
-// abonnementstype og maskiner og "Du sparer". ♥ og "Tilmeld {Tilbud}" gælder Kædens bedste Center
+// chainCardOffer), som et stort tal med Tilbuddets adgang og produktnavn (og Rabat),
+// facilitetsmærker (ønskede først, højst 6 og "+N mere"; filters er de aktive Filtre),
+// "Ikke oplyst" for binding,
+// abonnementstype og maskiner og "Du sparer". ♥ og "Tilmeld" gælder Kædens bedste Center
 // og samme Tilbud. Titlen og "Om centret"
 // åbner Centerdetalje. Nederst kan Kædens andre matchende Centre foldes ud; hver række viser kort
 // navn, afstand, ærlig årspris og højst 4 facilitetsmærker og åbner Centerdetalje (rækkerne har ingen Tilmeld). Det
@@ -93,7 +94,7 @@ export default function ChainCard({
         <HonestPrice amount={shown.honestYearlyPrice} size="card" onInk={ink} />
         {/* Hvilket Tilbud prisen og Tilmeld gælder, og om en Rabat er regnet med. */}
         <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
-          {offerBasisText(shown.priced)}
+          {offerBasisText(shown.priced, chain?.name)}
         </Text>
         <FacilityTags result={facilityTags(center, filters)} onInk={ink} expandable />
         <NotStatedRow notStated={notStatedWithoutFacilities(shown.notStated)} onInk={ink} />
@@ -113,7 +114,7 @@ export default function ChainCard({
             onPress={showBest}
           />
           <ButtonComponent
-            title={`Tilmeld ${shown.priced.offer.name}`}
+            title="Tilmeld"
             type="primary"
             size="small"
             icon="open-outline"

@@ -17,8 +17,11 @@ import {
   formatKr,
   formatNumber,
   formatPrice,
+  chainGenitive,
   matchCenter,
+  offerAccessPhrase,
   offerBasisText,
+  offerLabels,
   turns30Notice,
 } from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
@@ -28,11 +31,13 @@ import { openSignupPage } from '../services/Signup';
 
 // Centerdetalje: titel (Kæde og navn), adresse og Distance, og Centrets Tilbud som faner. Øverst
 // står prisen for det valgte Tilbud (Ærlig årspris og de første 3 mdr.), så 30-års-advarsel og
-// Spar mere-forslag, og derefter "Tilmeld dig ...", der åbner tilmeldingen til det valgte Tilbud.
+// Spar mere-forslag, og derefter "Tilmeld dig", der åbner tilmeldingen til det valgte Tilbud.
+// Tilbuddene beskrives ved den adgang, de giver (fx "Kun dette center"), med Kædens produktnavn
+// som ekstra info (se offerLabels).
 // Udregningen bag prisen (kvitteringen, se OfferReceipt) er foldet sammen under "Se udregningen".
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
 // for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Nederst står tabellen "Om centret"
-// (adresse, Abonnementstyper, Binding for det valgte Tilbud og faciliteter) og "Spørg Ronnie". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
+// (adresse, adgang, Binding for det valgte Tilbud og faciliteter) og "Spørg Ronnie". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
@@ -84,12 +89,17 @@ export default function CenterDetailScreen({ navigation, route }) {
   const ageNotice =
     turns30Notice(user.birthDate, bestOffer) ??
     offers.map((priced) => turns30Notice(user.birthDate, priced)).find(Boolean);
-  const offerNames = Object.fromEntries(
-    offers.map((priced) => [priced.offer.id, priced.offer.name]),
-  );
+  // Tilbuddene beskrives ved den adgang, de giver; produktnavnet står kun som ekstra info.
+  const labels = offerLabels(offers, chain?.name);
+  const ageOffer = ageNotice && offers.find((priced) => priced.offer.id === ageNotice.offerId);
+  const ageOfferText =
+    ageOffer &&
+    `${offerAccessPhrase(ageOffer.offer, chain?.name)}${
+      labels[ageOffer.offer.id]?.ambiguous ? ` (${ageOffer.offer.name})` : ''
+    }`;
 
   const selected = offers.find((priced) => priced.offer.id === selectedOfferId) ?? bestOffer;
-  const aboutRows = aboutCenterRows({ center, offers, selectedOffer: selected });
+  const aboutRows = aboutCenterRows({ center, chain, offers, selectedOffer: selected });
   const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
@@ -112,7 +122,7 @@ export default function CenterDetailScreen({ navigation, route }) {
           </View>
           <Text style={GlobalStyle.bodyText}>
             Du fylder 30 i {ageNotice.birthdayMonth}. Fra måned {ageNotice.fromPeriod} stiger prisen
-            på {ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}
+            for {ageOfferText ?? ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}
             {formatPrice(ageNotice.priceAfter)}. Det er regnet med i din ærlige årspris.
           </Text>
         </View>
@@ -127,8 +137,7 @@ export default function CenterDetailScreen({ navigation, route }) {
           <Text style={GlobalStyle.bodyText}>
             Bliv {suggestion.label} for {formatPrice(suggestion.membershipPricePerYear, 'år')} og
             spar {formatPrice(Math.round(suggestion.savingPerYear), 'år')} her (
-            {offerNames[suggestion.offerId]} til{' '}
-            {formatPrice(Math.round(suggestion.honestYearlyPrice))}).
+            {formatPrice(Math.round(suggestion.honestYearlyPrice))} her).
           </Text>
         </View>
       ))}
@@ -165,8 +174,15 @@ export default function CenterDetailScreen({ navigation, route }) {
                 accessibilityState={{ selected: active }}
               >
                 <Text style={[GlobalStyle.offerTabText, active && GlobalStyle.offerTabTextActive]}>
-                  {priced.offer.name}
+                  {labels[priced.offer.id].label}
                 </Text>
+                {labels[priced.offer.id].ambiguous && (
+                  <Text
+                    style={[GlobalStyle.offerTabPrice, active && GlobalStyle.offerTabPriceActive]}
+                  >
+                    {priced.offer.name}
+                  </Text>
+                )}
                 <Text
                   style={[GlobalStyle.offerTabPrice, active && GlobalStyle.offerTabPriceActive]}
                 >
@@ -193,7 +209,7 @@ export default function CenterDetailScreen({ navigation, route }) {
               </View>
             </View>
           </View>
-          <Text style={GlobalStyle.mutedText}>{offerBasisText(selected)}</Text>
+          <Text style={GlobalStyle.mutedText}>{offerBasisText(selected, chain?.name)}</Text>
           <Text style={GlobalStyle.mutedText}>
             De første 3 mdr.: {formatPrice(Math.round(selected.quarterlyPrice))}
           </Text>
@@ -212,14 +228,14 @@ export default function CenterDetailScreen({ navigation, route }) {
 
       <View style={GlobalStyle.choiceList}>
         <ButtonComponent
-          title={`Tilmeld dig ${selected.offer.name}`}
+          title="Tilmeld dig"
           type="primary"
           icon="open-outline"
           full
           onPress={() => openSignupPage(center, chain, selected)}
         />
         <Text style={[GlobalStyle.mapLegend, GlobalStyle.centeredText]}>
-          Åbner {selected.offer.name} på {chain?.name ?? 'kædens'} egen side.
+          Åbner {chainGenitive(chain?.name)} egen side.
         </Text>
       </View>
 

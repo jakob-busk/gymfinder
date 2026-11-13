@@ -9,7 +9,7 @@ import {
   partnerInfo,
   priceBreakdown,
   receiptLines,
-  subscriptionTypeLabel,
+  offerAccessLabel,
   capitalize,
 } from '../data/centerDetail';
 
@@ -39,12 +39,14 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
   const breakdown = priceBreakdown(pricedOffer);
   const fees = feeSummary(pricedOffer);
   const partner = partnerInfo(user, pricedOffer);
+  // Titlen er den adgang, Tilbuddet giver; Kædens produktnavn står under som ekstra info.
+  const accessLabel = offerAccessLabel(offer, chain?.name);
 
   return (
     <View style={GlobalStyle.receipt}>
       <Text style={GlobalStyle.receiptKicker}>Kvittering · et år hos {chain?.name ?? 'kæden'}</Text>
       <View style={GlobalStyle.cardHeader}>
-        <Text style={[GlobalStyle.cardTitle, GlobalStyle.shrinkText]}>{offer.name}</Text>
+        <Text style={[GlobalStyle.cardTitle, GlobalStyle.shrinkText]}>{accessLabel}</Text>
         {isCheapest && (
           <View style={GlobalStyle.badge}>
             <Text style={GlobalStyle.badgeText}>Billigst her</Text>
@@ -53,7 +55,7 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
       </View>
       <Text style={GlobalStyle.mutedText}>
         {capitalize(
-          [subscriptionTypeLabel(offer.subscriptionType), `med ${yearlyOption.label}`]
+          [accessLabel === offer.name ? null : offer.name, `med ${yearlyOption.label}`]
             .filter(Boolean)
             .join(' · '),
         )}
