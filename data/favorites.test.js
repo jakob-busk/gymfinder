@@ -106,6 +106,17 @@ describe('tilføj og fjern', () => {
     expect(removeFavorite(two, 'a')).toEqual({ b: two.b });
     expect(one).not.toHaveProperty('b');
   });
+
+  test('fortryd lægger den fjernede Favorit tilbage uændret, med Prisalarm og startpris', () => {
+    const saved = {
+      ...newFavorite({ honestYearlyPrice: 249 }),
+      priceAlert: { thresholdPerMonth: 25 },
+    };
+    const before = addFavorite({}, 'a', saved);
+    const removed = removeFavorite(before, 'a');
+
+    expect(addFavorite(removed, 'a', saved)).toEqual(before);
+  });
 });
 
 describe('fromStoredFavorites', () => {

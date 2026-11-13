@@ -1489,6 +1489,34 @@ const GlobalStyle = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 18,
   },
+  // Beskeden nederst med "Fortryd" (fx efter at have fjernet en Favorit), over fanebjælken.
+  toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 96,
+    alignItems: 'center',
+  },
+  toastInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: colors.ink,
+    borderRadius: shape.pill,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  toastText: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    color: colors.onInk,
+  },
+  toastAction: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: colors.onInk,
+    textDecorationLine: 'underline',
+  },
   // Favoritter: ♥-knappen og rækkerne på Favoritter-skærmen.
   shrinkText: {
     flexShrink: 1,

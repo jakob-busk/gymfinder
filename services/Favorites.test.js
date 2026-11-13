@@ -102,6 +102,23 @@ test('at fjerne en Favorit sletter kun dens sti', async () => {
   expect(Object.keys(mockDatabase.data)).toEqual(['Users/u1/favorites/b']);
 });
 
+test('fortryd: en fjernet Favorit gemmes igen med Prisalarm og startpris', async () => {
+  const withAlert = { ...FAVORITE, priceAlert: { thresholdPerMonth: 25 } };
+  await storeFavorite('u1', { a: withAlert }, 'a');
+
+  await storeFavorite('u1', {}, 'a');
+  expect(mockDatabase.data).toEqual({});
+
+  await storeFavorite('u1', { a: withAlert }, 'a');
+  expect(mockDatabase.data).toEqual({
+    'Users/u1/favorites/a': {
+      addedAt: '2026-10-22T10:00:00.000Z',
+      honestYearlyPrice: 249,
+      priceAlert: { thresholdPerMonth: 25 },
+    },
+  });
+});
+
 test('Favoritterne følger kontoen: en ny telefon får dem fra databasen', async () => {
   mockDatabase.data['Users/u1/favorites/a'] = FAVORITE;
 

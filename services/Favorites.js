@@ -110,6 +110,8 @@ export async function clearLocalFavorites(uid) {
 //   isFavorite       (centerId) => true/false
 //   toggleFavorite   (centerId, honestYearlyPrice) gør Centret til Favorit eller fjerner det
 //   removeFavorite   (centerId)
+//   restoreFavorite  (centerId, favorite) lægger en fjernet Favorit tilbage, som den var (med
+//                    Prisalarm og startpris), når brugeren trykker "Fortryd"
 //   setPriceAlert    (centerId, { thresholdPerMonth } | null, honestYearlyPrice) slår
 //                    Prisalarmen til (målt fra prisen lige nu) eller fra (se data/priceAlerts.js)
 //   updateFavorite   (centerId, favorite) erstatter én Favorit, fx efter en Prisalarm-besked
@@ -155,6 +157,11 @@ export function useFavorites({ authReady, uid }) {
     [change],
   );
 
+  const restoreFavorite = useCallback(
+    (centerId, favorite) => change(centerId, addFavorite(latest.current, centerId, favorite)),
+    [change],
+  );
+
   const setPriceAlert = useCallback(
     (centerId, priceAlert, honestYearlyPrice) =>
       change(
@@ -181,9 +188,19 @@ export function useFavorites({ authReady, uid }) {
       isFavorite,
       toggleFavorite,
       removeFavorite: handleRemove,
+      restoreFavorite,
       setPriceAlert,
       updateFavorite,
     }),
-    [favorites, loading, isFavorite, toggleFavorite, handleRemove, setPriceAlert, updateFavorite],
+    [
+      favorites,
+      loading,
+      isFavorite,
+      toggleFavorite,
+      handleRemove,
+      restoreFavorite,
+      setPriceAlert,
+      updateFavorite,
+    ],
   );
 }
