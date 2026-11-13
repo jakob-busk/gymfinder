@@ -106,6 +106,26 @@ export function notStatedWithoutFacilities(notStated) {
   return (notStated ?? []).filter((key) => !FACILITY_FILTERS.includes(key));
 }
 
+// Det Tilbud, et kort på Find viser og linker til: det Tilbud, Centret er rangeret på
+// (rankedOffer fra Matchning). For et sikkert match er det det billigste Tilbud, der med
+// sikkerhed matcher, så kortet viser det samme Tilbud, som Kædens bedste Center og Anbefalet
+// er valgt på; ellers er det Centrets billigste Tilbud. Returnerer { priced, honestYearlyPrice,
+// notStated, savingPerMonth } for det Tilbud (savingPerMonth er null uden Nuværende medlemskab).
+export function chainCardOffer(match) {
+  const priced = match.rankedOffer ?? match.bestOffer;
+  const isBest = priced === match.bestOffer;
+  return {
+    priced,
+    honestYearlyPrice: priced.honestYearlyPrice,
+    // Et sikkert Tilbud har intet "Ikke oplyst", og det har Centret heller ikke.
+    notStated: isBest ? match.notStated : [],
+    savingPerMonth:
+      match.savingPerMonth == null
+        ? null
+        : match.savingPerMonth + match.honestYearlyPrice - priced.honestYearlyPrice,
+  };
+}
+
 const FILTER_SUGGESTIONS = {
   sauna: 'Slå sauna fra',
   groupClasses: 'Slå holdtræning fra',

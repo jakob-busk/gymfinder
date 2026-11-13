@@ -64,7 +64,7 @@ export function buildRonnieSystemPrompt({ matches, user }) {
     'det abonnement, der passer bedst, og du svarer kort, venligt og konkret på dansk (højst ca. 120 ord).',
     '',
     'Regler:',
-    '- Anbefal KUN centre fra listen nedenfor. Nævn aldrig andre fitnesscentre eller kæder.',
+    '- Anbefal kun centre fra listen nedenfor. Nævn aldrig andre fitnesscentre eller kæder.',
     '- Sammenlign altid på "aerligAarsprisKrPrMd" (ærlig årspris): det, brugeren reelt betaler',
     '  i gennemsnit pr. måned over et år inkl. oprettelse, admingebyr, kampagnepris og rabat.',
     '  Det er allerede regnet ud for netop denne bruger. Regn ikke selv priser ud.',

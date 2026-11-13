@@ -819,6 +819,71 @@ describe('Kæder', () => {
     expect(result.recommendedId).toBe('a2');
   });
 
+  test('Centre med sikre match rangeres på deres billigste sikre Tilbud, også de andre i Kæden', () => {
+    // a1: billigste Tilbud (99) har ukendt Binding; det sikre koster 299 -> 299.
+    // a2: 259 -> 259 (Kædens bedste Center). a3: 279 -> 279.
+    // På det billigste Tilbud ville a1 stå før a3; på det sikre står a3 først.
+    const result = run({
+      filters: { noBinding: true },
+      centers: [
+        center({
+          id: 'a1',
+          offers: [
+            offer({ id: 'ukendt-binding', standardPrice: 99, bindingMonths: null }),
+            offer({ id: 'fri', standardPrice: 299, bindingMonths: 0 }),
+          ],
+        }),
+        center({ id: 'a2', offers: [offer({ id: 'a2-fri', standardPrice: 259 })] }),
+        center({ id: 'a3', offers: [offer({ id: 'a3-fri', standardPrice: 279 })] }),
+      ],
+    });
+    expect(ids(result.centers)).toEqual(['a2', 'a3', 'a1']);
+    expect(ids(result.chains[0].others)).toEqual(['a3', 'a1']);
+    const a1 = result.centers.find((entry) => entry.center.id === 'a1');
+    expect(a1.rankedOffer.offer.id).toBe('fri');
+    expect(a1.rankingPrice).toBeCloseTo(299);
+    // bestOffer er stadig det billigste Tilbud for brugeren.
+    expect(a1.bestOffer.offer.id).toBe('ukendt-binding');
+  });
+
+  test('Kædens bedste Center rangeres på det Tilbud, der er Anbefalet', () => {
+    const result = run({
+      filters: { noBinding: true },
+      centers: [
+        center({
+          id: 'a1',
+          offers: [
+            offer({ id: 'ukendt-binding', standardPrice: 99, bindingMonths: null }),
+            offer({ id: 'fri', standardPrice: 249, bindingMonths: 0 }),
+          ],
+        }),
+      ],
+    });
+    const { best } = result.chains[0];
+    expect(best.rankedOffer.offer.id).toBe('fri');
+    expect(result.chains[0].rankingPrice).toBeCloseTo(249);
+    expect(result.recommendedOfferId).toBe(best.rankedOffer.offer.id);
+  });
+
+  test('et Center med kun "Ikke oplyst" rangeres på sit billigste Tilbud', () => {
+    const result = run({
+      filters: { noBinding: true },
+      centers: [
+        center({
+          offers: [
+            offer({ id: 'ukendt-binding', standardPrice: 99, bindingMonths: null }),
+            offer({ id: 'binding', standardPrice: 59, bindingMonths: 6 }),
+          ],
+        }),
+      ],
+    });
+    const match = result.centers[0];
+    expect(match.isSureMatch).toBe(false);
+    expect(match.rankedOffer).toBe(match.bestOffer);
+    expect(match.rankedOffer.offer.id).toBe('ukendt-binding');
+    expect(match.rankingPrice).toBeCloseTo(99);
+  });
+
   test('en Kæde med kun "Ikke oplyst" er med, står efter sikre match og er ikke Anbefalet', () => {
     // a (kun ukendt): 99 og 149 -> billigst, men står sidst. b (sikker): 299.
     const result = run({

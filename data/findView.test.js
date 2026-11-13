@@ -1,6 +1,7 @@
 import {
   DEFAULT_LOCATION,
   centerKeywords,
+  chainCardOffer,
   discountProfileText,
   facilityTags,
   sampleDataNotice,
@@ -283,5 +284,50 @@ describe('otherCentersLabel', () => {
 
   test('uden Kædens navn står der "kæden"', () => {
     expect(otherCentersLabel(2, { name: null })).toBe('2 andre centre i kæden');
+  });
+});
+
+describe('chainCardOffer', () => {
+  const priced = (id, honestYearlyPrice, notStated = []) => ({
+    offer: { id, name: id },
+    honestYearlyPrice,
+    notStated,
+  });
+
+  test('viser det sikre Tilbud, Centret er rangeret på, med dets pris og Besparelse', () => {
+    const cheapest = priced('ukendt-binding', 99, ['binding']);
+    const sure = priced('fri', 249);
+    const match = {
+      bestOffer: cheapest,
+      rankedOffer: sure,
+      honestYearlyPrice: 99,
+      notStated: ['binding'],
+      isSureMatch: true,
+      savingPerMonth: 300 - 99,
+    };
+    expect(chainCardOffer(match)).toEqual({
+      priced: sure,
+      honestYearlyPrice: 249,
+      notStated: [],
+      savingPerMonth: 51,
+    });
+  });
+
+  test('uden sikre Tilbud vises det billigste Tilbud med dets "Ikke oplyst"', () => {
+    const cheapest = priced('ukendt-binding', 99, ['binding']);
+    const match = {
+      bestOffer: cheapest,
+      rankedOffer: cheapest,
+      honestYearlyPrice: 99,
+      notStated: ['binding'],
+      isSureMatch: false,
+      savingPerMonth: null,
+    };
+    expect(chainCardOffer(match)).toEqual({
+      priced: cheapest,
+      honestYearlyPrice: 99,
+      notStated: ['binding'],
+      savingPerMonth: null,
+    });
   });
 });
