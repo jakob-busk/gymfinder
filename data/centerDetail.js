@@ -3,7 +3,12 @@
 // Expo, så den kan testes direkte. Alle priser kommer fra Matchning (data/matchning.js); her
 // regnes intet nyt, der kun stilles op, så udregningen kan vises og stemmer med Ærlig årspris.
 
-import { FACILITY_FILTERS, NOT_STATED_LABELS, matchCenters } from './matchning.js';
+import {
+  DISCOUNT_GROUPS,
+  FACILITY_FILTERS,
+  NOT_STATED_LABELS,
+  matchCenters,
+} from './matchning.js';
 
 const MONTHS_IN_YEAR = 12;
 
@@ -115,15 +120,33 @@ export function chainGenitive(chainName) {
   return /[sxz]$/i.test(chainName) ? `${chainName}'` : `${chainName}s`;
 }
 
-// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: adgangen først og Kædens
-// produktnavn bagefter som ekstra info, fx "Kun dette center · Core", og "· med studierabat",
-// når en Rabat (eller Makkerpris) er regnet med i Ærlig årspris.
+// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: adgangen, fx "Kun dette center",
+// og "· med studierabat", når en Rabat (eller Makkerpris) er regnet med i Ærlig årspris. Kædens
+// produktnavn ("Core", "Voksen") står ikke her; det står på kvitteringen og på fanerne, når to
+// Tilbud ellers ville se ens ud (se offerLabels).
 export function offerBasisText(pricedOffer, chainName) {
   const option = pricedOffer.yearlyOption;
   const label = offerAccessLabel(pricedOffer.offer, chainName);
-  const productName = label === pricedOffer.offer.name ? null : pricedOffer.offer.name;
   const discount = option?.discountGroup ? `med ${option.label}` : null;
-  return [label, productName, discount].filter(Boolean).join(' · ');
+  return [label, discount].filter(Boolean).join(' · ');
+}
+
+// Spar mere-forslaget som én tekst: prisen med Rabatten, prisen uden, hvad medlemskabet koster,
+// og hvad brugeren sparer om året, når medlemskabet er trukket fra (Besparelse minus
+// medlemspris). suggestion er et Spar mere-forslag fra Matchning; savingPerYear er den
+// Besparelse, Rabatten giver over et år, så prisen uden er honestYearlyPrice + savingPerYear / 12.
+export function savingSuggestionText(suggestion) {
+  const { discountGroup, membershipPricePerYear, honestYearlyPrice, savingPerYear } = suggestion;
+  const option = DISCOUNT_GROUPS[discountGroup]?.optionLabel ?? 'rabatten';
+  const withoutDiscount = honestYearlyPrice + savingPerYear / MONTHS_IN_YEAR;
+  const netSaving = savingPerYear - membershipPricePerYear;
+  return (
+    `Med ${option} betaler du ${formatPrice(Math.round(honestYearlyPrice))} her i stedet for ` +
+    // "kr." slutter sætningen, så der kommer ikke et punktum mere.
+    `${formatKr(Math.round(withoutDiscount))} Medlemskabet koster ` +
+    `${formatKr(membershipPricePerYear)} om året, så du sparer ` +
+    `${formatKr(Math.round(netSaving))} om året.`
+  );
 }
 
 // Matchning for ét Center uden Filtre, så Centerdetalje viser alle Centrets Tilbud, også dem
@@ -192,8 +215,10 @@ export function priceBreakdown(pricedOffer) {
 
 // Linjerne på kvitteringen på Centerdetalje: måneder i træk med samme pris og samme slags pris
 // samles på én linje, fx "Måned 2–12 · Normalpris · 11 × 279 kr.". En betaling, der kun delvist
-// falder inden for året (ved betaling pr. 30 dage), står altid alene.
-// rows er priceBreakdown(...).rows. Returnerer [{ key, label, kindLabel, total, count, share }].
+// falder inden for året (ved betaling pr. 30 dage), står altid alene som "Betaling 13 (kun en del
+// af den)" med det beløb, der tælles med, fx "40 kr.".
+// rows er priceBreakdown(...).rows.
+// Returnerer [{ key, label, kindLabel, total, count, share, value }]; value er beløbet til højre.
 export function receiptLines(rows) {
   const lines = [];
   for (const row of rows) {
@@ -216,14 +241,31 @@ export function receiptLines(rows) {
         kindLabel: row.kindLabel,
         total: row.total,
         share: row.share,
+        counted: row.counted,
         count: 1,
       });
     }
   }
-  return lines.map(({ unit, from, to, ...line }) => ({
-    ...line,
-    label: `${unit} ${from === to ? from : `${from}–${to}`}`,
-  }));
+  return lines.map(({ unit, from, to, counted, ...line }) => {
+    const partial = line.share < 1;
+    const label = `${unit} ${from === to ? from : `${from}–${to}`}`;
+    return {
+      ...line,
+      label: partial ? `${label} (kun en del af den)` : label,
+      value: partial ? formatKr(Math.round(counted)) : `${line.count} × ${formatKr(line.total)}`,
+    };
+  });
+}
+
+// Forklaringen under kvitteringen, når Kæden trækker pr. 30 dage i stedet for pr. måned, så der
+// falder 13 betalinger på et år (den sidste kun delvist). null ved betaling pr. måned.
+// breakdown er priceBreakdown(...).
+export function billingNote(breakdown, chainName) {
+  if (breakdown.perPeriod !== '30 dage') return null;
+  return (
+    `${chainName || 'Kæden'} trækker hver 30. dag, ikke hver måned. ` +
+    `Derfor betaler du ${breakdown.rows.length} gange på et år.`
+  );
 }
 
 // Advarsel, når brugeren fylder 30 inden for året, og prisen for den billigste mulighed stiger
@@ -248,7 +290,8 @@ export function turns30Notice(birthDate, pricedOffer) {
   };
 }
 
-// Oprettelsesgebyr, Admingebyr og Binding som korte tekster.
+// Oprettelsesgebyr, Admingebyr og Binding som korte tekster. adminFeeNote står under Admingebyret
+// på kvitteringen, kun når der er et (null ved "Ingen").
 export function feeSummary(pricedOffer) {
   const { signupFee, adminFee, bindingMonths } = pricedOffer;
   const perPeriod = pricedOffer.paymentsPerYear === MONTHS_IN_YEAR ? 'md.' : '30 dage';
@@ -259,6 +302,7 @@ export function feeSummary(pricedOffer) {
   return {
     signupFee: signupFee > 0 ? formatKr(signupFee) : 'Gratis',
     adminFee: adminFee > 0 ? formatPrice(adminFee, perPeriod) : 'Ingen',
+    adminFeeNote: adminFee > 0 ? 'Allerede regnet med ovenfor' : null,
     binding,
   };
 }
@@ -290,15 +334,25 @@ export function partnerInfo(user, pricedOffer) {
   };
 }
 
+// Rækkerne har status 'stated' eller 'notStated' (Ikke oplyst), så skærmen kan se det ud fra data
+// og ikke ved at sammenligne den viste tekst.
+const STATED = 'stated';
+const NOT_STATED = 'notStated';
+
 // Faciliteter og maskiner som Ja / Nej / Ikke oplyst. Navnet står alene i rækken, så det får stort
-// begyndelsesbogstav (fx "Sauna").
+// begyndelsesbogstav (fx "Sauna"). Returnerer [{ key, label, value, status }].
 export function facilityRows(center) {
   const rows = FACILITY_FILTERS.map((facility) => {
     const value = center?.facilities?.[facility];
     let text = 'Ikke oplyst';
     if (value === true) text = 'Ja';
     else if (value === false) text = 'Nej';
-    return { key: facility, label: capitalize(NOT_STATED_LABELS[facility]), value: text };
+    return {
+      key: facility,
+      label: capitalize(NOT_STATED_LABELS[facility]),
+      value: text,
+      status: typeof value === 'boolean' ? STATED : NOT_STATED,
+    };
   });
 
   const machines = center?.machines;
@@ -306,12 +360,20 @@ export function facilityRows(center) {
     key: 'machines',
     label: capitalize(NOT_STATED_LABELS.machines),
     value: machines == null ? 'Ikke oplyst' : machines.join(', ') || 'Ingen',
+    status: machines == null ? NOT_STATED : STATED,
   });
   return rows;
 }
 
+// Dansk opremsning med "eller" før det sidste: "a", "a eller b", "a, b eller c".
+function joinWithOr(items) {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} eller ${items[items.length - 1]}`;
+}
+
 // Den adgang Centrets Tilbud giver (fra deres Abonnementstyper) uden dubletter, lokalt center
-// først: "Kun dette center, alle PureGym-centre". Ukendte typer vises, som de står.
+// først: "Kun dette center eller alle PureGym-centre". Ukendte typer vises, som de står.
+// null, når ingen Abonnementstype kendes.
 function accessSummary(offers, chainName) {
   const known = Object.keys(SUBSCRIPTION_TYPE_LABELS);
   const types = [
@@ -320,27 +382,31 @@ function accessSummary(offers, chainName) {
     const rank = (type) => (known.includes(type) ? known.indexOf(type) : known.length);
     return rank(a) - rank(b);
   });
-  if (types.length === 0) return 'Ikke oplyst';
-  return capitalize(types.map((type) => accessText(type, chainName) ?? type).join(', '));
+  if (types.length === 0) return null;
+  return capitalize(joinWithOr(types.map((type) => accessText(type, chainName) ?? type)));
 }
 
 // Tabellen "Om centret" på Centerdetalje: adresse, Adgang (fra Abonnementstyperne), Binding for
 // det valgte Tilbud og faciliteter (Ja / Nej / Ikke oplyst). Maskiner er kun med, når de kendes.
 // Viser kun data, vi har. offers og selectedOffer er prissatte Tilbud fra Matchning; chain er
 // Centrets Kæde (til "Alle PureGym-centre").
-// Returnerer [{ key, label, value }].
+// Returnerer [{ key, label, value, status }]; status er 'notStated', når Kæden ikke har oplyst
+// det (så viser skærmen forklaringen på "Ikke oplyst" under tabellen).
 export function aboutCenterRows({ center, chain, offers = [], selectedOffer }) {
   const facilities = facilityRows(center).filter(
     (row) => row.key !== 'machines' || center?.machines != null,
   );
+  const row = (key, label, value) => ({
+    key,
+    label,
+    value: value ?? 'Ikke oplyst',
+    status: value == null ? NOT_STATED : STATED,
+  });
+  const bindingMonths = selectedOffer?.bindingMonths;
   return [
-    { key: 'address', label: 'Adresse', value: center?.address || 'Ikke oplyst' },
-    { key: 'access', label: 'Adgang', value: accessSummary(offers, chain?.name) },
-    {
-      key: 'binding',
-      label: 'Binding',
-      value: selectedOffer ? feeSummary(selectedOffer).binding : 'Ikke oplyst',
-    },
+    row('address', 'Adresse', center?.address || null),
+    row('access', 'Adgang', accessSummary(offers, chain?.name)),
+    row('binding', 'Binding', bindingMonths == null ? null : feeSummary(selectedOffer).binding),
     ...facilities,
   ];
 }

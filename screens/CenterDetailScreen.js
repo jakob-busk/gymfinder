@@ -22,6 +22,7 @@ import {
   offerAccessPhrase,
   offerBasisText,
   offerLabels,
+  savingSuggestionText,
   turns30Notice,
 } from '../data/centerDetail';
 import { centerQuestion } from '../data/ronnie';
@@ -30,10 +31,10 @@ import { useCenterData } from '../services/CenterData';
 import { openSignupPage } from '../services/Signup';
 
 // Centerdetalje: titel (Kæde og navn), adresse og Distance, og Centrets Tilbud som faner. Øverst
-// står prisen for det valgte Tilbud (Ærlig årspris og de første 3 mdr.), så 30-års-advarsel og
+// står prisen for det valgte Tilbud (Ærlig årspris og de første 3 måneder), så 30-års-advarsel og
 // Spar mere-forslag, og derefter "Tilmeld dig", der åbner tilmeldingen til det valgte Tilbud.
-// Tilbuddene beskrives ved den adgang, de giver (fx "Kun dette center"), med Kædens produktnavn
-// som ekstra info (se offerLabels).
+// Tilbuddene beskrives ved den adgang, de giver (fx "Kun dette center"); Kædens produktnavn står
+// kun på fanen, når to Tilbud ellers ville se ens ud (se offerLabels), og på kvitteringen.
 // Udregningen bag prisen (kvitteringen, se OfferReceipt) er foldet sammen under "Se udregningen".
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
 // for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Nederst står tabellen "Om centret"
@@ -100,6 +101,7 @@ export default function CenterDetailScreen({ navigation, route }) {
 
   const selected = offers.find((priced) => priced.offer.id === selectedOfferId) ?? bestOffer;
   const aboutRows = aboutCenterRows({ center, chain, offers, selectedOffer: selected });
+  const hasNotStated = aboutRows.some((row) => row.status === 'notStated');
   const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
@@ -134,11 +136,7 @@ export default function CenterDetailScreen({ navigation, route }) {
             <Text style={GlobalStyle.infoTitle}>Spar mere</Text>
             <InfoButton term="savingSuggestion" />
           </View>
-          <Text style={GlobalStyle.bodyText}>
-            Bliv {suggestion.label} for {formatPrice(suggestion.membershipPricePerYear, 'år')} og
-            spar {formatPrice(Math.round(suggestion.savingPerYear), 'år')} her (
-            {formatPrice(Math.round(suggestion.honestYearlyPrice))} her).
-          </Text>
+          <Text style={GlobalStyle.bodyText}>{savingSuggestionText(suggestion)}</Text>
         </View>
       ))}
     </>
@@ -194,25 +192,30 @@ export default function CenterDetailScreen({ navigation, route }) {
         </ScrollView>
       )}
 
-      {/* Prisen for det valgte Tilbud øverst, så den og Tilmeld ses med det samme. */}
-      <Reveal key={selected.offer.id} distance={12}>
+      {/* Prisen for det valgte Tilbud øverst, så den og Tilmeld ses med det samme. Prisen og
+          kvitteringen har hver sin key: med samme key kunne React forveksle de to Reveal, når
+          kvitteringen lukkes, så prisblokken stod der to gange. */}
+      <Reveal key={`pris-${selected.offer.id}`} distance={12}>
         <View style={GlobalStyle.detailPrice}>
           <View style={GlobalStyle.cardPriceRow}>
             <Text style={GlobalStyle.cardPrice}>
               {formatNumber(Math.round(selected.honestYearlyPrice))}
             </Text>
             <View style={GlobalStyle.cardPriceUnitBox}>
-              <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
+              <Text style={GlobalStyle.cardPriceUnit}>kr. pr. md.</Text>
               <View style={GlobalStyle.inlineRow}>
-                <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
+                <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris</Text>
                 <InfoButton term="honestYearlyPrice" />
               </View>
             </View>
           </View>
           <Text style={GlobalStyle.mutedText}>{offerBasisText(selected, chain?.name)}</Text>
-          <Text style={GlobalStyle.mutedText}>
-            De første 3 mdr.: {formatPrice(Math.round(selected.quarterlyPrice))}
-          </Text>
+          <View style={GlobalStyle.inlineRow}>
+            <Text style={GlobalStyle.mutedText}>
+              De første 3 måneder: {formatPrice(Math.round(selected.quarterlyPrice))} i snit
+            </Text>
+            <InfoButton term="quarterlyPrice" />
+          </View>
         </View>
       </Reveal>
 
@@ -247,7 +250,7 @@ export default function CenterDetailScreen({ navigation, route }) {
         onPress={() => setShowReceipt((open) => !open)}
       />
       {showReceipt && (
-        <Reveal key={selected.offer.id} distance={16} style={GlobalStyle.paragraph}>
+        <Reveal key={`udregning-${selected.offer.id}`} distance={16} style={GlobalStyle.paragraph}>
           <OfferReceipt
             pricedOffer={selected}
             chain={chain}
@@ -257,12 +260,10 @@ export default function CenterDetailScreen({ navigation, route }) {
         </Reveal>
       )}
 
-      {/* Tabellen "Om centret": kun data, vi har. Bindingen følger det valgte Tilbud. */}
-      <View style={GlobalStyle.inlineRow}>
-        <Text style={GlobalStyle.sectionLabel}>Om centret</Text>
-        {aboutRows.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
-      </View>
-      <View style={[GlobalStyle.aboutTable, GlobalStyle.paragraph]}>
+      {/* Tabellen "Om centret": kun data, vi har. Bindingen følger det valgte Tilbud. Under
+          tabellen forklares "Ikke oplyst", kun når en række ikke er oplyst. */}
+      <Text style={GlobalStyle.sectionLabel}>Om centret</Text>
+      <View style={[GlobalStyle.aboutTable, !hasNotStated && GlobalStyle.paragraph]}>
         {aboutRows.map((row, index) => (
           <View
             key={row.key}
@@ -273,6 +274,12 @@ export default function CenterDetailScreen({ navigation, route }) {
           </View>
         ))}
       </View>
+      {hasNotStated && (
+        <View style={[GlobalStyle.inlineRow, GlobalStyle.paragraph]}>
+          <Text style={GlobalStyle.mapLegend}>Ikke oplyst = kæden har ikke sagt det</Text>
+          <InfoButton term="notStated" />
+        </View>
+      )}
 
       {/* Ronnie står nederst, langt fra prisen: han er aldrig med ved priser. */}
       <ButtonComponent
