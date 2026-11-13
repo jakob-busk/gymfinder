@@ -15,6 +15,7 @@ export const LOAD_TIMEOUT_MS = 8000;
 // Lytter på Kæder, Centre og Tilbud i Realtime Database og returnerer dem i Matchnings form.
 // Ændres data (fx af nat-jobbet), opdateres appen med det samme.
 // source er 'firebase' eller 'sample' (eksempeldata, når databasen ikke er sat op eller tom).
+// configured er false uden Firebase-nøgler (så vises altid eksempeldata).
 // offline er true, når data ikke kom inden LOAD_TIMEOUT_MS (typisk ingen forbindelse); retry()
 // prøver igen. Kommer data senere alligevel, forsvinder offline af sig selv.
 export function useCenterData() {
@@ -73,5 +74,5 @@ export function useCenterData() {
     [database, error],
   );
 
-  return { ...data, loading, error, offline, retry };
+  return { ...data, loading, error, offline, retry, configured: rtdb != null };
 }

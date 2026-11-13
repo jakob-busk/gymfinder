@@ -81,3 +81,25 @@ export function discountProfileText(discountProfile) {
     .filter(Boolean);
   return labels.length > 0 ? `Priser regnet med: ${labels.join(', ')}` : 'Priser uden Rabat';
 }
+
+// Beskeden på Find, når der vises eksempeldata i stedet for de rigtige priser, med grunden.
+// configured = appen har Firebase-nøgler; failed = databasen kunne ikke læses (så kan man prøve
+// igen). Ellers er databasen tom.
+export function sampleDataNotice({ configured, failed }) {
+  if (!configured) {
+    return (
+      'Viser eksempeldata, fordi appen ikke er forbundet til GymFinders database. Priserne er ' +
+      'derfor ikke de rigtige.'
+    );
+  }
+  if (failed) {
+    return (
+      'Viser eksempeldata, fordi GymFinders database ikke kunne læses lige nu. Priserne er ' +
+      'derfor ikke de rigtige.'
+    );
+  }
+  return (
+    'Viser eksempeldata, fordi der endnu ikke er hentet priser fra Kæderne. Priserne er derfor ' +
+    'ikke de rigtige.'
+  );
+}

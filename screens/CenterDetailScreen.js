@@ -68,6 +68,14 @@ export default function CenterDetailScreen({ navigation, route }) {
         <Text style={GlobalStyle.emptyText}>
           {center ? 'Centret har ingen Tilbud lige nu.' : 'Centret blev ikke fundet.'}
         </Text>
+        <View style={GlobalStyle.emptyState}>
+          <ButtonComponent
+            title="Tilbage til Find"
+            type="secondary"
+            icon="arrow-back"
+            onPress={() => navigation.navigate('Faner', { screen: 'Find' })}
+          />
+        </View>
       </View>
     );
   }

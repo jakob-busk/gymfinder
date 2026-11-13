@@ -355,6 +355,11 @@ const GlobalStyle = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
+  // Find: beskeden om eksempeldata med en lille "Prøv igen" under.
+  sampleNotice: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
   noticeText: {
     fontFamily: fonts.body,
     fontSize: 13,

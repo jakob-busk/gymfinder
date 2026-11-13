@@ -15,7 +15,11 @@ import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
 import SortPicker from '../components/SortPicker';
 import { matchCenters } from '../data/matchning';
-import { discountProfileText, loosenFilterSuggestions } from '../data/findView';
+import {
+  discountProfileText,
+  loosenFilterSuggestions,
+  sampleDataNotice,
+} from '../data/findView';
 import { activeFilterCount, activeFilterLabels } from '../data/filterSettings';
 import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
@@ -103,8 +107,19 @@ export default function FindScreen({ navigation }) {
     return null;
   };
 
+  // Eksempeldata: hvorfor, og "Prøv igen", hvis databasen ikke kunne læses.
   const notice = centerData.source === 'sample' && !centerData.loading && (
-    <Text style={GlobalStyle.noticeText}>Viser eksempeldata. Priserne er ikke opdaterede.</Text>
+    <View style={GlobalStyle.sampleNotice}>
+      <Text style={GlobalStyle.noticeText}>
+        {sampleDataNotice({
+          configured: centerData.configured,
+          failed: Boolean(centerData.error),
+        })}
+      </Text>
+      {centerData.configured && (
+        <ButtonComponent title="Prøv igen" type="ghost" size="small" onPress={centerData.retry} />
+      )}
+    </View>
   );
 
   // Rabatprofil, kort, forklaring og sortering/Filtre øverst i listen.

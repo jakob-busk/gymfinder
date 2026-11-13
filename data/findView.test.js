@@ -2,6 +2,7 @@ import {
   DEFAULT_LOCATION,
   centerKeywords,
   discountProfileText,
+  sampleDataNotice,
   loosenFilterSuggestions,
   mapRegion,
 } from './findView';
@@ -107,5 +108,13 @@ describe('discountProfileText', () => {
   test('siger det, når Rabatprofilen er tom', () => {
     expect(discountProfileText([])).toBe('Priser uden Rabat');
     expect(discountProfileText(undefined)).toBe('Priser uden Rabat');
+  });
+});
+
+describe('sampleDataNotice', () => {
+  test('forklarer, hvorfor der vises eksempeldata', () => {
+    expect(sampleDataNotice({ configured: false })).toMatch(/ikke er forbundet/);
+    expect(sampleDataNotice({ configured: true, failed: true })).toMatch(/ikke kunne læses/);
+    expect(sampleDataNotice({ configured: true, failed: false })).toMatch(/endnu ikke er hentet/);
   });
 });
