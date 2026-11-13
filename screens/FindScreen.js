@@ -56,9 +56,11 @@ export default function FindScreen({ navigation }) {
       initial: false,
     });
   const filterLabel = filterCount > 0 ? `Filtre (${filterCount})` : 'Filtre';
-  const legendText =
-    `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
-    (filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : '');
+  // Mens der hentes, står der ikke "0 Centre", men at Centrene er på vej.
+  const legendText = loading
+    ? 'Henter Centre …'
+    : `${centers.length} ${centers.length === 1 ? 'Center' : 'Centre'}` +
+      (filters.maxDistanceKm != null ? ` inden for ${filters.maxDistanceKm} km` : '');
 
   // Mens Centrene hentes, eller når ingen matcher: Ronnie i stedet for listen.
   const renderStatus = () => {
