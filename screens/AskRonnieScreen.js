@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
@@ -202,7 +203,10 @@ export default function AskRonnieScreen({ navigation, route }) {
 
       {error && !weekOff && (
         <View style={[GlobalStyle.warningBox, GlobalStyle.paragraph]}>
-          <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
+          <View style={GlobalStyle.warningHeader}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.text} />
+            <Text style={GlobalStyle.warningTitle}>Ronnie kunne ikke svare</Text>
+          </View>
           <Text style={GlobalStyle.bodyText}>{error}</Text>
           <View style={GlobalStyle.paragraph}>
             <ButtonComponent title="Prøv igen" onPress={handleRetry} disabled={sending} />

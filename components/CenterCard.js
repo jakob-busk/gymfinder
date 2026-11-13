@@ -29,7 +29,9 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
     <Reveal index={index}>
       <View style={[GlobalStyle.card, ink && GlobalStyle.cardHighlighted]}>
         <View style={GlobalStyle.cardTopRow}>
-          <Text style={GlobalStyle.cardIndex}>{String(index + 1).padStart(2, '0')}</Text>
+          <Text style={[GlobalStyle.cardIndex, ink && GlobalStyle.mutedOnInk]}>
+            {String(index + 1).padStart(2, '0')}
+          </Text>
           {isRecommended && (
             <View style={[GlobalStyle.badge, GlobalStyle.badgeInline]}>
               <Text style={GlobalStyle.badgeText}>Anbefalet</Text>

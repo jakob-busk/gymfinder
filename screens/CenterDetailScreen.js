@@ -1,8 +1,9 @@
 // Ansvarlig: Christian
 import { useContext, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
@@ -77,7 +78,10 @@ export default function CenterDetailScreen({ navigation, route }) {
     <>
       {ageNotice && (
         <View style={GlobalStyle.warningBox}>
-          <Text style={GlobalStyle.warningTitle}>Prisen stiger, når du fylder 30</Text>
+          <View style={GlobalStyle.warningHeader}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.text} />
+            <Text style={GlobalStyle.warningTitle}>Prisen stiger, når du fylder 30</Text>
+          </View>
           <Text style={GlobalStyle.bodyText}>
             Du fylder 30 i {ageNotice.birthdayMonth}. Fra måned {ageNotice.fromPeriod} stiger prisen
             på {ageNotice.offerName} fra {formatKr(ageNotice.priceBefore)} til{' '}

@@ -3,20 +3,18 @@ import { Easing, Platform, StyleSheet } from 'react-native';
 // GymFinders udseende: "Tribune, men venlig" (variant 7). Rytmen og bevægelsen fra Tribune: store
 // pristal, det Anbefalede Center som en mørk blæk-blok mellem lyse kort, løbenumre, felter som
 // blanket-linjer og lister, der toner ind forskudt. Varmen fra "Varm og venlig": creme papir,
-// rundere hjørner, Nunito og Fredoka i stedet for skarp grotesk, og Ronnie på farvede pastelcirkler
-// med talebobler. Farverne er valgt, så ingen af dem ligner en Kædes: dyb violet til handlinger,
-// logo-prik, ♥ og aktiv fane (Fitness X er orange, PureGym grøn/turkis, SATS rød/mørkeblå), og mint
-// til besparelser og Anbefalet. Aldrig ren sort eller hvid, ingen skygger, og aldrig farve bag
-// selve prisen, kun bag mærket.
+// rundere hjørner, Nunito og Fredoka og Ronnie på en lys cirkel med talebobler.
+// Farverne har tre roller og ikke flere: violet er handling (knapper, ♥, logo-prik, aktiv fane, din
+// placering), mint er godt nyt (besparelse, Anbefalet) og blæk er alt andet. Ingen af dem ligner en
+// Kædes farve (Fitness X er orange, PureGym grøn/turkis, SATS rød/mørkeblå). Kun to flader (creme
+// og lyst papir), ingen skygger, aldrig ren sort eller hvid, og aldrig farve bag selve prisen.
+// Vægtene er rolige: Fredoka 600/500 til titler, Nunito 700 kun til pristal, ellers 600 og 400.
 const colors = {
   background: '#FDF1E0',
   surface: '#FFFCF7',
-  surfaceRaised: '#F7E4CC',
   inputBackground: '#FFFCF7',
   text: '#1B1915',
   muted: '#6B6358',
-  // Kun til løbenumre og andet pynt, der ikke skal læses (for svag til brødtekst).
-  faint: '#A39C8F',
   border: 'rgba(27, 25, 21, 0.10)',
   borderStrong: 'rgba(27, 25, 21, 0.24)',
   backdrop: 'rgba(27, 25, 21, 0.45)',
@@ -24,55 +22,49 @@ const colors = {
   ink: '#1B1915',
   onInk: '#F7F1E8',
   onInkMuted: '#A8A193',
-  // Den ene handlingsfarve: dyb violet. Langt fra alle Kædernes farver.
+  // Handling: dyb violet. Den lyse udgave er Ronnies cirkel og baggrund bag aktive ting.
   primary: '#5B3CD6',
   onPrimary: '#FFFCF7',
   primaryLight: '#E7E0FB',
-  // Mint er pop-farven på blæk-blokken og markeringen af det gode nyt. På lyst papir er den for
-  // lys til tekst, så besparelser skrives i en dyb mintgrøn.
+  // Godt nyt: mint. På lyst papir er den for lys til tekst, så besparelser skrives i dyb mintgrøn.
   accent: '#8EEBC0',
   onAccent: '#1B1915',
   accentText: '#17734F',
   accentLight: '#DDF5E8',
   badgeBackground: '#8EEBC0',
   badgeText: '#1B1915',
-  // Advarsel og fejl er dæmpede, så de ikke råber.
+  // Fejl er dæmpet rød. Advarsler har ingen egen farve; de står i blæk med et ikon og en kant.
   error: '#B4382E',
-  warning: '#8A5A00',
-  warningLight: '#FFF1CF',
   // ♥ på Centre, der er Favoritter (og dem, der kan blive det).
   favorite: '#5B3CD6',
-  // Pins på kortet på Find: Anbefalet, de andre Centre og brugerens egen placering ("du er her"-blå).
-  recommendedPin: '#34C98A',
+  // Pins på kortet på Find: Anbefalet er godt nyt (mint), de andre Centre er blæk, og din egen
+  // placering er violet.
+  recommendedPin: '#8EEBC0',
   centerPin: '#1B1915',
-  userPin: '#2F7BF6',
+  userPin: '#5B3CD6',
   tabBar: '#FDF1E0',
   tabActive: '#5B3CD6',
   tabInactive: '#6B6358',
   headerBackground: '#FDF1E0',
   headerText: '#1B1915',
-  // Pastellerne: Ronnies cirkler og små pynt-detaljer.
-  peach: '#FFD8C2',
-  mint: '#CDEFDC',
-  lavender: '#E3DAFB',
-  sun: '#FFE59A',
 };
 
 // To familier: Nunito til al tekst og alle priser (runde ender, men tal i lige kolonner) og
-// Fredoka til titler og logo (rund, men tung nok til at stå som en plakat-titel).
+// Fredoka til titler og logo. Et trin lettere end før, så det føles roligt: brødtekst 400,
+// fremhævninger, knapper og mærker 600, kun pristal i 700.
 const fonts = {
   body: 'Nunito_400Regular',
-  medium: 'Nunito_600SemiBold',
-  semibold: 'Nunito_700Bold',
-  bold: 'Nunito_800ExtraBold',
-  figure: 'Nunito_800ExtraBold',
-  display: 'Fredoka_700Bold',
-  displayMedium: 'Fredoka_600SemiBold',
-  logo: 'Fredoka_700Bold',
+  medium: 'Nunito_400Regular',
+  semibold: 'Nunito_600SemiBold',
+  bold: 'Nunito_600SemiBold',
+  figure: 'Nunito_700Bold',
+  display: 'Fredoka_600SemiBold',
+  displayMedium: 'Fredoka_500Medium',
+  logo: 'Fredoka_600SemiBold',
 };
 
 // Store flader er bløde, knapper og mærker er piller, og kvitteringen er lidt skarpere som en bon.
-const shape = { radius: 24, blockRadius: 32, receiptRadius: 12, pill: 999, titleSize: 34 };
+const shape = { radius: 24, blockRadius: 32, receiptRadius: 12, pill: 999, titleSize: 30 };
 
 // Bevægelse: én blød "power4.out"-kurve til næsten alt, og en kurve med lidt fjeder til tryk.
 // Kun transform og opacity animeres, så det holder 60 fps. På web findes ingen native driver,
@@ -91,28 +83,17 @@ const motion = {
   pressScale: 0.96,
 };
 
-// Detaljerne omkring stilen: Ronnies cirkelfarve pr. positur og en lys, varm kortstil.
+// Lys, neutral kortstil til Google Maps (Android) i creme og grå, så pins i blæk, mint og violet
+// er det eneste med farve.
 const brand = {
-  // Ronnies cirkel følger hans humør: solgul når han jubler, mint når han peger, lavendel når han
-  // tænker eller trækker på skuldrene, og fersken ellers.
-  ronnieTones: {
-    vinker: colors.peach,
-    jubler: colors.sun,
-    peger: colors.mint,
-    tænker: colors.lavender,
-    'trækker på skuldrene': colors.lavender,
-    'sveder/løfter': colors.peach,
-    'tommel op': colors.peach,
-  },
   mapInterfaceStyle: 'light',
-  // Lys, varm kortstil til Google Maps (Android), så pins i blæk og mint står frem.
   mapStyle: [
     { elementType: 'geometry', stylers: [{ color: '#F6EDE0' }] },
     { elementType: 'labels.text.fill', stylers: [{ color: '#6B6358' }] },
     { elementType: 'labels.text.stroke', stylers: [{ color: '#FDF1E0' }] },
     { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFCF7' }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#EADFF7' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#D3E4EA' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#E8DFD2' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#DEDAD3' }] },
     { featureType: 'poi', stylers: [{ visibility: 'off' }] },
     { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   ],
@@ -129,7 +110,7 @@ const display = (size, tracking = -0.015) => ({
   color: colors.text,
 });
 
-// Store pristal i Nunito ExtraBold med tal i lige kolonner, så priser kan sammenlignes på et blik.
+// Store pristal i Nunito Bold med tal i lige kolonner, så priser kan sammenlignes på et blik.
 const figure = (size, tracking = -0.03) => ({
   fontFamily: fonts.figure,
   fontSize: size,
@@ -250,7 +231,7 @@ const GlobalStyle = StyleSheet.create({
   },
   // Ronnie i fem størrelser: stor (Velkomst, afslutning), lille (tomme skærme), ved en taleboble,
   // avatar (ved Ronnies beskeder) og mini (i knapper). Billedet er 791 × 566, så højden er
-  // bredde / 1,4. Cirklens farve følger positur (brand.ronnieTones).
+  // bredde / 1,4. Cirklen bag ham er altid lys violet.
   ronnieLarge: {
     width: 240,
     height: 172,
@@ -268,12 +249,13 @@ const GlobalStyle = StyleSheet.create({
     height: 24,
   },
   ronnieLargeStage: { ...ronnieLargeScene.stage, marginVertical: 8 },
-  ronnieLargeCircle: ronnieLargeScene.circle,
+  ronnieLargeCircle: { ...ronnieLargeScene.circle, backgroundColor: colors.primaryLight },
   ronnieSmallStage: { ...ronnieSmallScene.stage, marginVertical: 6 },
-  ronnieSmallCircle: ronnieSmallScene.circle,
+  ronnieSmallCircle: { ...ronnieSmallScene.circle, backgroundColor: colors.primaryLight },
   ronnieHintStage: ronnieHintScene.stage,
-  ronnieHintCircle: ronnieHintScene.circle,
+  ronnieHintCircle: { ...ronnieHintScene.circle, backgroundColor: colors.primaryLight },
   ronnieAvatarStage: {
+    backgroundColor: colors.primaryLight,
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -338,7 +320,7 @@ const GlobalStyle = StyleSheet.create({
     gap: 14,
   },
   modalTitle: {
-    ...display(24, -0.01),
+    ...display(22, -0.01),
     flexShrink: 1,
   },
   modalText: {
@@ -358,7 +340,7 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabel: {
-    ...display(22, -0.01),
+    ...display(20, -0.01),
     marginTop: 28,
     marginBottom: 10,
   },
@@ -406,8 +388,8 @@ const GlobalStyle = StyleSheet.create({
   cardHighlighted: {
     backgroundColor: colors.ink,
     borderRadius: shape.blockRadius,
-    paddingVertical: 24,
-    marginBottom: 18,
+    paddingVertical: 20,
+    marginBottom: 16,
   },
   cardTopRow: {
     flexDirection: 'row',
@@ -417,7 +399,6 @@ const GlobalStyle = StyleSheet.create({
   },
   cardIndex: {
     ...kicker,
-    color: colors.faint,
     fontVariant: ['tabular-nums'],
   },
   cardHeader: {
@@ -442,8 +423,8 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 6,
   },
   cardPrice: {
-    ...figure(52, -0.035),
-    lineHeight: 52,
+    ...figure(44, -0.03),
+    lineHeight: 45,
   },
   cardPriceUnitBox: {
     paddingBottom: 6,
@@ -504,7 +485,7 @@ const GlobalStyle = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   bigPrice: {
-    ...figure(40),
+    ...figure(34),
   },
   distanceText: {
     flexShrink: 1,
@@ -538,7 +519,7 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 8,
   },
   detailsBox: {
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.background,
     borderRadius: 18,
     padding: 12,
     marginBottom: 10,
@@ -569,8 +550,8 @@ const GlobalStyle = StyleSheet.create({
     marginTop: 12,
   },
   welcomeTagline: {
-    ...display(40, -0.02),
-    lineHeight: 43,
+    ...display(34, -0.015),
+    lineHeight: 37,
   },
   welcomeHighlight: {
     backgroundColor: colors.accent,
@@ -608,7 +589,7 @@ const GlobalStyle = StyleSheet.create({
   },
   welcomePointNumber: {
     ...kicker,
-    color: colors.primary,
+    color: colors.text,
     marginTop: 1,
     fontVariant: ['tabular-nums'],
   },
@@ -663,7 +644,7 @@ const GlobalStyle = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.border,
     overflow: 'hidden',
   },
   stepProgressFill: {
@@ -879,7 +860,7 @@ const GlobalStyle = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.surface,
     borderRadius: shape.pill,
     padding: 4,
     marginBottom: 14,
@@ -980,7 +961,7 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 16,
   },
   sheetTitle: {
-    ...display(26, -0.01),
+    ...display(24, -0.01),
     marginBottom: 10,
   },
   sheetOption: {
@@ -1090,14 +1071,14 @@ const GlobalStyle = StyleSheet.create({
     borderRadius: shape.blockRadius,
     overflow: 'hidden',
     marginBottom: 10,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.surface,
   },
   map: {
     flex: 1,
   },
   // Kortet på web (localhost), hvor react-native-maps ikke virker.
   webMap: {
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     padding: 16,
     gap: 10,
@@ -1311,7 +1292,7 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
   },
   receiptTotal: {
-    ...figure(40),
+    ...figure(34),
   },
   facilityGrid: {
     flexDirection: 'row',
@@ -1325,18 +1306,26 @@ const GlobalStyle = StyleSheet.create({
     borderRadius: 20,
     padding: 14,
   },
+  // Advarsel: lyst papir med en blæk-kant og et ikon ved titlen, ingen gul.
   warningBox: {
-    backgroundColor: colors.warningLight,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
     borderRadius: shape.radius,
     padding: 18,
     marginBottom: 12,
   },
+  warningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   warningTitle: {
-    color: colors.warning,
+    flexShrink: 1,
+    color: colors.text,
     fontFamily: fonts.display,
     fontSize: 18,
-    letterSpacing: -0.1,
-    marginBottom: 4,
   },
   // Favoritter: ♥-knappen og rækkerne på Favoritter-skærmen.
   shrinkText: {
@@ -1348,7 +1337,7 @@ const GlobalStyle = StyleSheet.create({
     borderRadius: shape.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.background,
   },
   favoriteButtonOnInk: {
     backgroundColor: 'rgba(247, 241, 232, 0.10)',

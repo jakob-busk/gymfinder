@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated, View } from 'react-native';
 
-import GlobalStyle, { brand, motion } from '../styles/GlobalStyle';
+import GlobalStyle, { motion } from '../styles/GlobalStyle';
 
 // Ronnies positurer. Indtil videre findes kun tommel op; de andre falder tilbage til den.
 // Positurer, der bruges i appen: vinker (Velkomst), peger (Adresse, tomme Favoritter),
@@ -11,7 +11,7 @@ const POSES = {
   'tommel op': require('../assets/ronnie.png'),
 };
 
-// Billedet og den farvede cirkel bag Ronnie pr. størrelse. Avataren er selv en farvet cirkel.
+// Billedet og den lyse violette cirkel bag Ronnie pr. størrelse. Avataren er selv en cirkel.
 // Mini (i knapper) har ingen cirkel, så den ikke slås med knappens farve.
 const SIZES = {
   large: { image: 'ronnieLarge', stage: 'ronnieLargeStage', circle: 'ronnieLargeCircle' },
@@ -61,7 +61,7 @@ function useRonnieMotion(bob) {
   return { transform: [{ translateY: lift }, { scale: pop }] };
 }
 
-// Ronnie, GymFinders maskot, på en farvet cirkel, der følger hans positur (se brand.ronnieTones).
+// Ronnie, GymFinders maskot, på en lys violet cirkel (samme farve uanset positur).
 // size er 'large' (Velkomst, afslutning), 'small' (tomme tilstande, Spørg Ronnie), 'hint' (ved en
 // taleboble), 'avatar' (ved Ronnies beskeder i chatten) eller 'tiny' (i knapper). pose er den
 // positur, der passer til stedet (se POSES). style flytter ham, fx ud til højre på Velkomst.
@@ -69,7 +69,6 @@ function useRonnieMotion(bob) {
 export default function RonnieMascot({ size = 'large', pose = 'tommel op', style }) {
   const parts = SIZES[size] ?? SIZES.large;
   const centered = size === 'large' || size === 'small';
-  const tone = brand.ronnieTones[pose] ?? brand.ronnieTones['tommel op'];
   const ronnieMotion = useRonnieMotion(centered);
 
   const image = (
@@ -84,15 +83,8 @@ export default function RonnieMascot({ size = 'large', pose = 'tommel op', style
   if (!parts.stage) return image;
 
   return (
-    <View
-      style={[
-        GlobalStyle[parts.stage],
-        !parts.circle && { backgroundColor: tone },
-        centered && GlobalStyle.centeredSelf,
-        style,
-      ]}
-    >
-      {parts.circle && <View style={[GlobalStyle[parts.circle], { backgroundColor: tone }]} />}
+    <View style={[GlobalStyle[parts.stage], centered && GlobalStyle.centeredSelf, style]}>
+      {parts.circle && <View style={GlobalStyle[parts.circle]} />}
       {image}
     </View>
   );

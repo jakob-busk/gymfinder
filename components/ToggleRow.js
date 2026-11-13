@@ -17,10 +17,10 @@ export default function ToggleRow({ label, description, value, onChange, right }
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ true: colors.ink, false: colors.surfaceRaised }}
+        trackColor={{ true: colors.primary, false: colors.borderStrong }}
         thumbColor={colors.surface}
-        activeThumbColor={colors.accent}
-        ios_backgroundColor={colors.surfaceRaised}
+        activeThumbColor={colors.surface}
+        ios_backgroundColor={colors.borderStrong}
         accessibilityLabel={label}
       />
     </View>

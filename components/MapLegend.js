@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 
 // Forklaring til pins på kortet: brugeren, det Anbefalede Center og de andre Centre, i den
-// aktive stils farver. text står foran i fed skrift, fx "12 Centre inden for 15 km".
+// aktive stils farver. text står foran i halvfed skrift, fx "12 Centre inden for 15 km".
 export default function MapLegend({ text }) {
   const dot = (color, label) => (
     <View style={GlobalStyle.inlineRow}>

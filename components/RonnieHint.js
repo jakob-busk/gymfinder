@@ -5,7 +5,7 @@ import RonnieMascot from './RonnieMascot';
 
 // Ronnie på sin cirkel med en kort replik i en taleboble, fx på onboarding-trin og ved prisfald.
 // Bruges aldrig ved priser, advarsler, fejl eller login.
-// pose er Ronnies positur (se RonnieMascot), og den styrer også cirklens farve.
+// pose er Ronnies positur (se RonnieMascot).
 export default function RonnieHint({ children, pose }) {
   return (
     <View style={GlobalStyle.ronnieHint}>
