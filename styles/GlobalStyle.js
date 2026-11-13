@@ -633,7 +633,7 @@ const GlobalStyle = StyleSheet.create({
     ...display(34, -0.015),
     lineHeight: 37,
   },
-  // "billigst" står omvendt: lys tekst på en blæk-markering.
+  // "bedst" i taglinen står omvendt: lys tekst på en blæk-markering.
   welcomeHighlight: {
     backgroundColor: colors.ink,
     color: colors.onInk,

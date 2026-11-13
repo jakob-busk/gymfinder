@@ -37,9 +37,9 @@ export default function WelcomeScreen({ navigation }) {
             </Reveal>
             <Reveal index={1} distance={30}>
               <Text style={GlobalStyle.welcomeTagline}>
-                {/* "billigst" står omvendt på en blæk-markering; mellemrummene ligger inden i, så den får luft. */}
+                {/* "bedst" står omvendt på en blæk-markering; mellemrummene ligger inden i, så den får luft. */}
                 Fitnesscentret, der reelt er
-                <Text style={GlobalStyle.welcomeHighlight}>{' billigst '}</Text>
+                <Text style={GlobalStyle.welcomeHighlight}>{' bedst '}</Text>
                 for dig.
               </Text>
             </Reveal>

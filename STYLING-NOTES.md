@@ -33,7 +33,7 @@ Kun to flader og to farver oven på dem. Ingen mint, ingen pasteller, ingen sand
 - **Mærker** (Anbefalet, Billigst her) er en lys pille (`#F7F1E8`) med 1,5 px blæk-kant og blæk-tekst.
   Den samme pille virker på blæk-blokken og på lyst papir.
 - **Besparelse og prisfald** er en creme pille med blæk-kant og halvfed blæk-tekst.
-- **"billigst" på Velkomst** står omvendt: lys tekst på en blæk-markering.
+- **"bedst" på Velkomst** ("Fitnesscentret, der reelt er bedst for dig.") står omvendt: lys tekst på en blæk-markering.
 - **Kortpins:** Anbefalet er en stor papirprik med tyk blæk-ring (24 px), andre Centre er små
   blækprikker med papirkant (14 px), "du er her" er en violet pin. På web er Anbefalet en papirpille
   med blæk-kant, de andre blæk-piller. Forklaringen under kortet bruger de samme prikker.
