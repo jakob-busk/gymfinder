@@ -12,7 +12,7 @@ import OfferReceipt from '../components/OfferReceipt';
 import OfflineNotice from '../components/OfflineNotice';
 import Reveal from '../components/Reveal';
 import {
-  facilityRows,
+  aboutCenterRows,
   formatDistance,
   formatKr,
   formatNumber,
@@ -31,8 +31,8 @@ import { openSignupPage } from '../services/Signup';
 // Spar mere-forslag, og derefter "Tilmeld dig ...", der åbner tilmeldingen til det valgte Tilbud.
 // Udregningen bag prisen (kvitteringen, se OfferReceipt) er foldet sammen under "Se udregningen".
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
-// for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Viser også faciliteter og "Spørg
-// Ronnie om dette Center". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
+// for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Nederst står tabellen "Om centret"
+// (adresse, Abonnementstyper, Binding for det valgte Tilbud og faciliteter) og "Spørg Ronnie". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
@@ -81,7 +81,6 @@ export default function CenterDetailScreen({ navigation, route }) {
   }
 
   const { chain, offers, bestOffer } = match;
-  const facilities = facilityRows(center);
   const ageNotice =
     turns30Notice(user.birthDate, bestOffer) ??
     offers.map((priced) => turns30Notice(user.birthDate, priced)).find(Boolean);
@@ -90,6 +89,7 @@ export default function CenterDetailScreen({ navigation, route }) {
   );
 
   const selected = offers.find((priced) => priced.offer.id === selectedOfferId) ?? bestOffer;
+  const aboutRows = aboutCenterRows({ center, offers, selectedOffer: selected });
   const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
@@ -241,16 +241,20 @@ export default function CenterDetailScreen({ navigation, route }) {
         </Reveal>
       )}
 
+      {/* Tabellen "Om centret": kun data, vi har. Bindingen følger det valgte Tilbud. */}
       <View style={GlobalStyle.inlineRow}>
-        <Text style={GlobalStyle.sectionLabel}>Faciliteter</Text>
-        {facilities.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
+        <Text style={GlobalStyle.sectionLabel}>Om centret</Text>
+        {aboutRows.some((row) => row.value === 'Ikke oplyst') && <InfoButton term="notStated" />}
       </View>
-      <View style={GlobalStyle.facilityGrid}>
-        {facilities.map((row, index) => (
-          <Reveal key={row.key} index={index} distance={12} style={GlobalStyle.facilityCell}>
-            <Text style={GlobalStyle.mapLegend}>{row.label}</Text>
-            <Text style={GlobalStyle.feeValue}>{row.value}</Text>
-          </Reveal>
+      <View style={[GlobalStyle.aboutTable, GlobalStyle.paragraph]}>
+        {aboutRows.map((row, index) => (
+          <View
+            key={row.key}
+            style={[GlobalStyle.aboutRow, index > 0 && GlobalStyle.aboutRowDivider]}
+          >
+            <Text style={GlobalStyle.aboutLabel}>{row.label}</Text>
+            <Text style={GlobalStyle.aboutValue}>{row.value}</Text>
+          </View>
         ))}
       </View>
 
