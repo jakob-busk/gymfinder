@@ -1,6 +1,7 @@
 import {
   facilityRows,
   feeSummary,
+  formatDistance,
   formatKr,
   formatNumber,
   formatPrice,
@@ -395,6 +396,12 @@ describe('prisformat', () => {
     expect(formatPrice(249)).toBe('249 kr. pr. md.');
     expect(formatPrice(3000, 'år')).toBe('3.000 kr. pr. år');
     expect(formatPrice(99.5, '30 dage')).toBe('99,50 kr. pr. 30 dage');
+  });
+
+  test('formatDistance skriver afstanden med decimalkomma', () => {
+    expect(formatDistance(2.4)).toBe('2,4 km');
+    expect(formatDistance(12)).toBe('12,0 km');
+    expect(formatDistance(0.04)).toBe('0,0 km');
   });
 
   test('formatNumber giver kun tallet, til de store pristal', () => {

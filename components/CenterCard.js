@@ -7,7 +7,7 @@ import FavoriteButton from './FavoriteButton';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
 import Reveal from './Reveal';
-import { formatNumber, formatPrice } from '../data/centerDetail';
+import { formatDistance, formatNumber, formatPrice } from '../data/centerDetail';
 import { openSignupPage } from '../services/Signup';
 
 // Kort for ét Center i listen: løbenummer, navn, Ærlig årspris for det billigste Tilbud for
@@ -17,7 +17,7 @@ import { openSignupPage } from '../services/Signup';
 // i stedet for ens kort. index er pladsen i listen; kortene toner ind forskudt efter den.
 export default function CenterCard({ match, isRecommended, onShowDetails, index = 0 }) {
   const { center, chain, bestOffer } = match;
-  const distance = match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null;
+  const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
   const ink = isRecommended;
 
   return (

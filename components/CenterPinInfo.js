@@ -4,7 +4,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import CenterTitle from './CenterTitle';
 import NotStatedRow from './NotStatedRow';
-import { formatNumber } from '../data/centerDetail';
+import { formatDistance, formatNumber } from '../data/centerDetail';
 import { centerKeywords } from '../data/findView';
 
 // Boksen der vises på kortet, når man trykker på en Center-pin: titel (logo, pin, navn), Ærlig årspris (stort tal),
@@ -34,7 +34,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
         </View>
       </View>
       <Text style={GlobalStyle.distanceText}>
-        {match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : 'Afstand ukendt'}
+        {match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : 'Afstand ukendt'}
         {keywords.length > 0 ? ` · ${keywords.join(', ')}` : ''}
       </Text>
       <NotStatedRow notStated={match.notStated} />

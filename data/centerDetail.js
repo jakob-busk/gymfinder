@@ -39,6 +39,11 @@ export function formatKr(amount) {
   return `${formatNumber(amount)} kr.`;
 }
 
+// En afstand med én decimal og decimalkomma: 2,4 km.
+export function formatDistance(km) {
+  return `${km.toFixed(1).replace('.', ',')} km`;
+}
+
 // En pris pr. periode: 249 kr. pr. md., 3.000 kr. pr. år, 99 kr. pr. 30 dage. Afrunder ikke selv.
 export function formatPrice(amount, per = 'md.') {
   return `${formatKr(amount)} pr. ${per}`;

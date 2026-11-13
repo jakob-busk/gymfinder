@@ -12,6 +12,7 @@ import OfferReceipt from '../components/OfferReceipt';
 import Reveal from '../components/Reveal';
 import {
   facilityRows,
+  formatDistance,
   formatKr,
   formatPrice,
   matchCenter,
@@ -69,7 +70,7 @@ export default function CenterDetailScreen({ navigation, route }) {
   );
 
   const selected = offers.find((priced) => priced.offer.id === selectedOfferId) ?? bestOffer;
-  const distance = match.distanceKm != null ? `${match.distanceKm.toFixed(1)} km fra dig` : null;
+  const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
 
   // Åbner Spørg Ronnie med et færdigt spørgsmål om Centret. askedAt gør, at spørgsmålet også
   // sættes ind, hvis man spørger om samme Center igen.
