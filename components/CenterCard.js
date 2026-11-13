@@ -45,6 +45,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
             <View style={[GlobalStyle.badge, GlobalStyle.badgeInline]}>
               <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
             </View>
+            <InfoButton term="recommended" onInk={ink} />
           </View>
         )}
         <View style={GlobalStyle.cardHeader}>
@@ -84,7 +85,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
               <Text style={[GlobalStyle.cardPriceCaption, ink && GlobalStyle.mutedOnInk]}>
                 ærlig årspris · gns. pr. md.
               </Text>
-              <InfoButton term="honestYearlyPrice" />
+              <InfoButton term="honestYearlyPrice" onInk={ink} />
             </View>
           </View>
         </View>

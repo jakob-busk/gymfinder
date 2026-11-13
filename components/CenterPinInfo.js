@@ -2,8 +2,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
-import InfoButton from './InfoButton';
 import CenterTitle from './CenterTitle';
+import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
 import { formatDistance, formatNumber } from '../data/centerDetail';
 import { centerKeywords } from '../data/findView';
@@ -22,8 +22,11 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
           <CenterTitle chain={chain} name={center.name} size="compact" />
         </View>
         {isRecommended && (
-          <View style={GlobalStyle.badge}>
-            <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
+          <View style={GlobalStyle.inlineRow}>
+            <View style={GlobalStyle.badge}>
+              <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
+            </View>
+            <InfoButton term="recommended" />
           </View>
         )}
       </View>
