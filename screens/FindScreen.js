@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
-import CenterCard from '../components/CenterCard';
+import ChainCard from '../components/ChainCard';
 import CenterMap from '../components/CenterMap';
 import CenterPinInfo from '../components/CenterPinInfo';
 import MapLegend from '../components/MapLegend';
@@ -24,13 +24,15 @@ import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
-// Find: kort med brugerens placering og en pin pr. Center, Filtre under kortet, og en liste over
-// de samme Centre nedenunder. Kortet ligger øverst i listen, så det scroller væk, og listen får
-// hele skærmen, når man scroller ned. Begge viser præcis resultatet fra Matchning i Matchnings
-// rækkefølge, så Filtre (fra Filtre-skærmen, med Præferencerne som udgangspunkt, inkl. maks.
-// afstand) slår ens igennem. Filtrene huskes efter genstart. Matchnings rækkefølge og Anbefalet
-// bygger på Rangeringspris (Ærlig årspris + Afstandstillæg), som aldrig vises. Anbefalet er
-// lavest Rangeringspris blandt sikre match og fremhæves både på kortet og i listen.
+// Find: kort med brugerens placering og en pin pr. matchende Center, Filtre under kortet, og
+// nedenunder en liste med ét kort pr. Kæde (Kædens bedste Center, med Kædens andre Centre til at
+// folde ud). Kortet ligger øverst i listen, så det scroller væk, og listen får hele skærmen, når man
+// scroller ned. Begge viser præcis resultatet fra Matchning i Matchnings rækkefølge, så Filtre (fra
+// Filtre-skærmen, med Præferencerne som udgangspunkt, inkl. maks. afstand) slår ens igennem.
+// Filtrene huskes efter genstart. Matchnings rækkefølge og Anbefalet bygger på Rangeringspris
+// (Ærlig årspris + Afstandstillæg), som aldrig vises. Anbefalet er lavest Rangeringspris blandt
+// sikre match; det er kort nr. 1 i listen og har den største pin. Hver Kædes bedste Center er
+// fremhævet på kortet.
 export default function FindScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const [selectedId, setSelectedId] = useState(null);
@@ -40,7 +42,7 @@ export default function FindScreen({ navigation }) {
   const filterCount = activeFilterCount(filters);
   const filterLabels = activeFilterLabels(filters);
 
-  const { centers, recommendedId } = matchCenters({
+  const { centers, chains, recommendedId } = matchCenters({
     centers: loading ? [] : centerData.centers,
     chains: centerData.chains,
     user,
@@ -136,6 +138,7 @@ export default function FindScreen({ navigation }) {
         <CenterMap
           userLocation={user.location}
           matches={centers}
+          chains={chains}
           recommendedId={recommendedId}
           onSelect={setSelectedId}
         />
@@ -192,18 +195,18 @@ export default function FindScreen({ navigation }) {
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
       <ScreenHeader logo />
       <FlatList
-        data={centers}
-        keyExtractor={(match) => match.center.id}
+        data={chains}
+        keyExtractor={(chainMatch) => chainMatch.best.center.id}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={renderStatus()}
         contentContainerStyle={GlobalStyle.scrollEnd}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
-          <CenterCard
-            match={item}
+          <ChainCard
+            chainMatch={item}
             index={index}
-            isRecommended={item.center.id === recommendedId}
-            onShowDetails={() => showDetails(item.center.id)}
+            isRecommended={item.best.center.id === recommendedId}
+            onShowDetails={showDetails}
           />
         )}
       />

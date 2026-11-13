@@ -34,9 +34,10 @@ Kun to flader og to farver oven på dem. Ingen mint, ingen pasteller, ingen sand
   Den samme pille virker på blæk-blokken og på lyst papir.
 - **Besparelse og prisfald** er en creme pille med blæk-kant og halvfed blæk-tekst.
 - **"bedst" på Velkomst** ("Fitnesscentret, der reelt er bedst for dig.") står omvendt: lys tekst på en blæk-markering.
-- **Kortpins:** Anbefalet er en stor papirprik med tyk blæk-ring (24 px), andre Centre er små
-  blækprikker med papirkant (14 px), "du er her" er en violet pin. På web er Anbefalet en papirpille
-  med blæk-kant, de andre blæk-piller. Forklaringen under kortet bruger de samme prikker.
+- **Kortpins:** Anbefalet er en stor papirprik med tyk blæk-ring (24 px), hver Kædes bedste Center
+  en blækprik med papirkant (18 px), Kædernes andre Centre små, dæmpede prikker (12 px), og "du er
+  her" er en violet pin. På web er Anbefalet en papirpille med blæk-kant, Kædens bedste Center en
+  blæk-pille og de andre dæmpede piller. Forklaringen under kortet bruger de samme prikker.
 - **Fanepriser:** prisen på det aktive Tilbud er dæmpet lys på blæk.
 
 Advarsler (fx "Prisen stiger, når du fylder 30") har ingen egen farve: lyst papir, blæk-kant og et

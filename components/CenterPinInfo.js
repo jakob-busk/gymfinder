@@ -39,7 +39,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
       <NotStatedRow notStated={match.notStated} />
       <View style={GlobalStyle.pinInfoActions}>
         <ButtonComponent title="Luk" type="text" size="small" onPress={onClose} />
-        <ButtonComponent title="Se detaljer" type="secondary" size="small" onPress={onShowDetails} />
+        <ButtonComponent title="Om centret" type="secondary" size="small" onPress={onShowDetails} />
       </View>
     </View>
   );

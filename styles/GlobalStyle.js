@@ -461,6 +461,35 @@ const GlobalStyle = StyleSheet.create({
     letterSpacing: -0.2,
     color: colors.text,
   },
+  // "N andre centre i {Kæde}" nederst på et kæde-kort og rækkerne, der foldes ud.
+  chainOthers: {
+    alignItems: 'flex-start',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    marginTop: 16,
+    paddingTop: 8,
+  },
+  chainOthersOnInk: {
+    borderTopColor: 'rgba(247, 241, 232, 0.24)',
+  },
+  chainOtherRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+  },
+  chainOtherName: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: colors.text,
+  },
+  chainOtherPrice: {
+    fontFamily: fonts.figure,
+    fontSize: 15,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
   // Kædens logo: lyst logo på en lille blæk-pille, samme højde for alle Kæder (se ChainLogo).
   chainPill: {
     alignSelf: 'flex-start',
@@ -1243,8 +1272,8 @@ const GlobalStyle = StyleSheet.create({
   legendDot: {
     marginBottom: 8,
   },
-  // Pins: Anbefalet er en stor papirprik med tyk blæk-ring, de andre Centre er små blækprikker med
-  // en papirkant, så de kan ses på kortet. Bruges både på kortet (native) og i forklaringen.
+  // Pins: Anbefalet er en stor papirprik med tyk blæk-ring, hver Kædes bedste Center en mellemstor
+  // blækprik, og Kædernes andre Centre er små, dæmpede prikker med en papirkant. Bruges både på kortet (native) og i forklaringen.
   mapPinRecommended: {
     width: 24,
     height: 24,
@@ -1253,11 +1282,21 @@ const GlobalStyle = StyleSheet.create({
     borderWidth: 6,
     borderColor: colors.ink,
   },
-  mapPinCenter: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  // Kædens bedste Center: en mellemstor blækprik, så hver Kædes bedste Center kan ses blandt de
+  // andre.
+  mapPinChainBest: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: colors.ink,
+    borderWidth: 3,
+    borderColor: colors.surface,
+  },
+  mapPinCenter: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.muted,
     borderWidth: 2,
     borderColor: colors.surface,
   },
@@ -1269,16 +1308,22 @@ const GlobalStyle = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.surface,
   },
-  // På web er Centrene piller: Anbefalet papir med blæk-kant, de andre blæk.
+  // På web er Centrene piller: Anbefalet papir med blæk-kant, Kædens bedste Center blæk, de andre
+  // dæmpet.
   webMapPinRecommended: {
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.ink,
   },
-  webMapPinCenter: {
+  webMapPinChainBest: {
     backgroundColor: colors.ink,
     borderWidth: 2,
     borderColor: colors.ink,
+  },
+  webMapPinCenter: {
+    backgroundColor: colors.muted,
+    borderWidth: 2,
+    borderColor: colors.muted,
   },
   emptyState: {
     alignItems: 'center',
