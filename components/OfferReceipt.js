@@ -44,7 +44,7 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
         <Text style={[GlobalStyle.cardTitle, GlobalStyle.shrinkText]}>{offer.name}</Text>
         {isCheapest && (
           <View style={GlobalStyle.badge}>
-            <Text style={GlobalStyle.badgeText}>BILLIGST HER</Text>
+            <Text style={GlobalStyle.badgeText}>Billigst her</Text>
           </View>
         )}
       </View>

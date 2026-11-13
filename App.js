@@ -116,7 +116,7 @@ function Tabs() {
         tabBarActiveTintColor: colors.tabActive,
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.borderStrong },
-        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 0.2 },
+        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
         // Den aktive fane får en violet pille bag ikonet (se TabIcon).
         tabBarIcon: ({ color, size, focused }) => (
           <TabIcon name={TAB_ICONS[route.name]} color={color} size={size} focused={focused} />

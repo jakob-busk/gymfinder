@@ -139,12 +139,12 @@ const figure = (size, tracking = -0.03) => ({
   fontVariant: ['tabular-nums'],
 });
 
-// Små versaler over sektioner og i mærker: luftig spærring, så de kan læses i lille størrelse.
+// Små etiketter over sektioner, i mærker og ved felter. Ingen versaler og ingen bred spærring
+// (det ligner et skabelon-design); de skrives med stort begyndelsesbogstav og får hierarki med
+// vægt, størrelse og farve i stedet.
 const kicker = {
   fontFamily: fonts.bold,
-  fontSize: 11,
-  letterSpacing: 1.4,
-  textTransform: 'uppercase',
+  fontSize: 13,
   color: colors.muted,
 };
 
@@ -492,8 +492,7 @@ const GlobalStyle = StyleSheet.create({
   },
   badgeText: {
     ...kicker,
-    fontFamily: fonts.bold,
-    fontSize: 10,
+    fontSize: 12,
     color: colors.badgeText,
   },
   // Priser står altid roligt: neutral farve og tal i lige kolonner.
@@ -610,8 +609,7 @@ const GlobalStyle = StyleSheet.create({
   welcomePointNumber: {
     ...kicker,
     color: colors.primary,
-    fontFamily: fonts.bold,
-    marginTop: 3,
+    marginTop: 1,
     fontVariant: ['tabular-nums'],
   },
   welcomePointText: {
@@ -702,6 +700,7 @@ const GlobalStyle = StyleSheet.create({
   },
   fieldLabel: {
     ...kicker,
+    fontSize: 14,
     color: colors.text,
     marginBottom: 6,
   },
@@ -997,8 +996,11 @@ const GlobalStyle = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+  // Overskrift over en gruppe (fx Maks. afstand, Krav): lille Fredoka i blæk, ikke versaler.
   groupTitle: {
-    ...kicker,
+    fontFamily: fonts.displayMedium,
+    fontSize: 18,
+    color: colors.text,
     marginTop: 26,
     marginBottom: 10,
   },
@@ -1152,6 +1154,7 @@ const GlobalStyle = StyleSheet.create({
   },
   legendCount: {
     ...kicker,
+    fontSize: 14,
     color: colors.text,
     marginBottom: 8,
   },

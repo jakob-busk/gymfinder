@@ -89,7 +89,7 @@ export function parseBirthDate(text, today = new Date()) {
   const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (danish) [, day, month, year] = danish.map(Number);
   else if (iso) [, year, month, day] = iso.map(Number);
-  else return { error: 'Skriv fødselsdatoen som DD-MM-ÅÅÅÅ, fx 12-03-1997.' };
+  else return { error: 'Skriv fødselsdatoen som dd-mm-åååå, fx 12-03-1997.' };
 
   const date = new Date(Date.UTC(year, month - 1, day));
   const isRealDate =
@@ -107,7 +107,7 @@ export function parseBirthDate(text, today = new Date()) {
   return { birthDate: `${year}-${pad(month)}-${pad(day)}` };
 }
 
-// 'YYYY-MM-DD' → 'DD-MM-ÅÅÅÅ' til visning og redigering.
+// 'YYYY-MM-DD' → 'dd-mm-åååå' til visning og redigering.
 export function formatBirthDate(birthDate) {
   if (!birthDate) return '';
   const [year, month, day] = birthDate.split('-');

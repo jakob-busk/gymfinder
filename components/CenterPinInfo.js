@@ -18,7 +18,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
         <Text style={GlobalStyle.cardTitle}>{chain?.name ?? center.name}</Text>
         {isRecommended && (
           <View style={GlobalStyle.badge}>
-            <Text style={GlobalStyle.badgeText}>ANBEFALET</Text>
+            <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
           </View>
         )}
       </View>

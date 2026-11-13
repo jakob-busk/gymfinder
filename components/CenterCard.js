@@ -32,7 +32,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
           <Text style={GlobalStyle.cardIndex}>{String(index + 1).padStart(2, '0')}</Text>
           {isRecommended && (
             <View style={[GlobalStyle.badge, GlobalStyle.badgeInline]}>
-              <Text style={GlobalStyle.badgeText}>ANBEFALET</Text>
+              <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
             </View>
           )}
         </View>

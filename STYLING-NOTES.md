@@ -67,6 +67,14 @@ aldrig til handlinger.
 - Fjernet: `@expo-google-fonts/bricolage-grotesque` og `@expo-google-fonts/inter`. Tilføjet:
   `@expo-google-fonts/fredoka` og `@expo-google-fonts/nunito`.
 
+## Regel: ingen versaltekst
+
+Ingen tekst står i versaler med spærring (det opleves som et "AI-design-spor"). Etiketter, mærker,
+trintæller, kortforklaring og løbenumre skrives med stort begyndelsesbogstav (fx "Anbefalet",
+"Billigst her", "Trin 1 af 6", "5 Centre inden for 15 km") og får hierarki med vægt, størrelse og
+farve. `kicker` har derfor hverken `textTransform: 'uppercase'` eller positiv spærring, og
+gruppeoverskrifter (Maks. afstand, Krav, Maskiner) er små Fredoka-titler i blæk.
+
 ## Taget fra 2 (Tribune)
 
 Lys stil og navigationstema, layout-rytmen, store pristal, blæk-blokken for Anbefalet, løbenumre,
@@ -92,6 +100,8 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 - `WelcomeScreen`: taleboble over Ronnie; Ronnie og boblen står i samme `Reveal`. Samme tekster.
 - `AskRonnieScreen`: spids på Ronnies første taleboble.
 - `LoginScreen`: Ronnie er fjernet, så reglen "kun ved godt nyt, aldrig ved login" overholdes.
+- Versaler fjernet: mærkerne "ANBEFALET"/"BILLIGST HER" (CenterCard, CenterPinInfo, OfferReceipt),
+  `kicker`-stilen, spærring på fanetitler og datoformatet "DD-MM-ÅÅÅÅ" → "dd-mm-åååå" (felt og fejltekst).
 - `TabIcon`: violet pille med lyst ikon. `GlobalStyle`: ny `figure()` til priser, `ronnieStage()`.
 - `app.json`: baggrunde `#FDF1E0`. App-ikon, favicon, Android-ikoner og splash er genereret på ny
   med Pillow (Ronnie på ferskencirkel på creme; splash med "GymFinder" i Fredoka og violet prik).
