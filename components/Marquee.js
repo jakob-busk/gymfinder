@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 
 import GlobalStyle, { motion } from '../styles/GlobalStyle';
+import { useReduceMotion } from './useReduceMotion';
 
 const COPIES = 3;
 // Pixels pr. sekund. Langsomt nok til at kunne læses, hurtigt nok til at ses.
@@ -9,14 +10,16 @@ const SPEED = 36;
 
 // Et skråt bånd, hvor ordene løber stille forbi, som på en stadion-banner. words er en liste af
 // korte ord; de sættes sammen med en dæmpet ✳ imellem. Teksten står tre gange efter hinanden, og
-// båndet flyttes præcis én kopi, før det starter forfra, så løkken ikke kan ses.
+// båndet flyttes præcis én kopi, før det starter forfra, så løkken ikke kan ses. Med "reducer
+// bevægelse" står båndet stille.
 export default function Marquee({ words }) {
   const [copyWidth, setCopyWidth] = useState(0);
   const offset = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
-    if (copyWidth === 0) return undefined;
     offset.setValue(0);
+    if (copyWidth === 0 || reduceMotion) return undefined;
     const loop = Animated.loop(
       Animated.timing(offset, {
         toValue: -copyWidth,
@@ -27,7 +30,7 @@ export default function Marquee({ words }) {
     );
     loop.start();
     return () => loop.stop();
-  }, [copyWidth, offset]);
+  }, [copyWidth, offset, reduceMotion]);
 
   const copy = (index) => (
     <Text

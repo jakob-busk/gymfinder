@@ -68,10 +68,11 @@ const motion = {
   micro: 150,
   small: 260,
   medium: 520,
-  large: 760,
-  stagger: 70,
-  // Højst så mange elementer forskydes; resten kommer samtidig, så lange lister ikke venter.
-  maxStagger: 8,
+  // Ind-toning (Reveal, fremdrift i onboarding): kort, så indholdet kan bruges med det samme.
+  large: 340,
+  stagger: 50,
+  // Kun de første få elementer forskydes; resten kommer samtidig, så ingen venter.
+  maxStagger: 3,
   pressScale: 0.96,
 };
 

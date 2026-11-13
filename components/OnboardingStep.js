@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalStyle, { motion } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import Reveal from './Reveal';
+import { useReduceMotion } from './useReduceMotion';
 
 export const ONBOARDING_STEP_COUNT = 6;
 
@@ -12,16 +13,21 @@ export const ONBOARDING_STEP_COUNT = 6;
 // fyldes op fra venstre, når trinnet åbnes, så man mærker at man er kommet et skridt videre.
 function StepProgress({ step }) {
   const fill = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      fill.setValue(1);
+      return;
+    }
     Animated.timing(fill, {
       toValue: 1,
       duration: motion.large,
-      delay: 120,
+      delay: 60,
       easing: motion.easeOut,
       useNativeDriver: motion.native,
     }).start();
-  }, [fill]);
+  }, [fill, reduceMotion]);
 
   return (
     <View style={GlobalStyle.stepProgress}>

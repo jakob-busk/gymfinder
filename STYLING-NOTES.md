@@ -180,7 +180,8 @@ ikonrække, pin-prikker, kædelogo-pillen og titellinjen; pasteller, mint og `ro
   web-pillerne og i forklaringen er mindre iøjnefaldende end før.
 - Ronnies cirkel (lys violet) ligger tæt på cremen (1,14:1); den er pynt, så det er bevidst blødt.
 - Velkomst er blevet lidt højere af taleboblen; på små skærme skal man scrolle (ScrollView).
-- Logo-prikken og båndet på Velkomst bevæger sig stadig, selv med "reducer bevægelse" (kun Ronnie
-  respekterer indstillingen).
+- `Reveal`, logo-prikken, båndet, tryk-fjederen og fremdriften i onboarding respekterer nu
+  "reducer bevægelse" (`useReduceMotion` lytter på `reduceMotionChanged`). Reveal tager 340 ms og
+  forskyder kun de første 3 elementer med 50 ms; knapperne på Velkomst animeres ikke.
 - Animationer er kun bundlet på web, ikke afprøvet på fysisk enhed.
 - `expo-linear-gradient` er stadig installeret, men bruges ikke.
