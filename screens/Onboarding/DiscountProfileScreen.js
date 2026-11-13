@@ -23,13 +23,12 @@ export default function DiscountProfileScreen({ navigation }) {
     <OnboardingStep
       step={3}
       title="Har du ret til en rabat?"
-      intro="Vælg dem, der passer på dig. Så regner vi automatisk de rabatter med, du har ret til."
+      intro="Så regner vi rabatten med i prisen."
       onNext={goNext}
       onSkip={nothingChosen ? goNext : undefined}
     >
       <RonnieHint pose="tænker">
-        Studerende, senior eller vil du træne med en makker? Så kan du ofte spare flere hundrede
-        kroner om året.
+        Det kan ofte spare dig flere hundrede kroner om året.
       </RonnieHint>
       <DiscountProfilePicker discountProfile={user.discountProfile} onChange={setDiscountProfile} />
     </OnboardingStep>

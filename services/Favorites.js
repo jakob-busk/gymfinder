@@ -14,7 +14,7 @@ import {
 import { setFavoritePriceAlert } from '../data/priceAlerts';
 
 // Favoritter gemmes i Realtime Database under Users/<uid>/favorites/<centerId>, så de følger
-// brugeren (også efter "Gem din profil" og log ind på en ny telefon). En kopi gemmes altid i
+// brugeren (også efter "Opret konto" og log ind på en ny telefon). En kopi gemmes altid i
 // AsyncStorage, så appen også virker uden Firebase-nøgler og offline, ligesom profilen.
 // Formen er beskrevet i data/favorites.js.
 

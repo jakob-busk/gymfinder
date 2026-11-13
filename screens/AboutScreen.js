@@ -5,7 +5,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import RonnieMascot from '../components/RonnieMascot';
 
 // Om GymFinder: hvad GymFinder er, og "Sådan virker det" (Anbefalet, hvor priserne kommer fra,
-// affiliate og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og rækkefølgen
+// hvordan vi tjener penge og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og rækkefølgen
 // regnes i data/matchning.js ud fra pris, Filtre og afstand, og priserne hentes af den natlige
 // scraper (scraper/, docs/adr/0001).
 export default function AboutScreen() {
@@ -20,13 +20,13 @@ export default function AboutScreen() {
 
       <Text style={GlobalStyle.sectionLabel}>Sådan virker det</Text>
 
-      <Text style={GlobalStyle.groupTitle}>Hvordan vælges Anbefalet?</Text>
+      <Text style={GlobalStyle.groupTitle}>Hvordan vælger vi det anbefalede center?</Text>
       <Text style={GlobalStyle.bodyText}>
         Vi vælger det center, der passer bedst til dig ud fra pris og afstand. Et center lidt
         længere væk skal være mærkbart billigere for at vinde. Prisen er den ærlige årspris: det, du
         reelt betaler i gennemsnit pr. måned over et år, med oprettelse, admingebyr, kampagnepriser
         og dine rabatter regnet med. Vi vælger kun blandt centre, der helt sikkert passer til dine
-        ønsker, så et center, hvor noget er "ikke oplyst", kan ikke blive Anbefalet.
+        ønsker, så et center, hvor noget er "ikke oplyst", kan ikke blive anbefalet.
       </Text>
 
       <Text style={GlobalStyle.groupTitle}>Hvor kommer priserne fra?</Text>
@@ -39,8 +39,8 @@ export default function AboutScreen() {
 
       <Text style={GlobalStyle.groupTitle}>Tjener vi penge på det?</Text>
       <Text style={GlobalStyle.bodyText}>
-        Vi samarbejder med fitnesscentrene om affiliate-aftaler, så det er gratis for dig at bruge
-        GymFinder. Aftalerne indgår ikke i beregningen: rækkefølgen og Anbefalet regnes kun ud fra
+        Nogle kæder betaler os et lille beløb, når du melder dig ind via GymFinder. Derfor er appen
+        gratis. Aftalerne indgår ikke i beregningen: rækkefølgen og anbefalingen regnes kun ud fra
         pris, dine ønsker og afstand.
       </Text>
 

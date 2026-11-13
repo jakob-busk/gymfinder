@@ -127,8 +127,8 @@ export function useProfileSections(navigation) {
     return (
       <View style={GlobalStyle.groupPadded}>
         <Text style={GlobalStyle.stepIntro}>
-          Du bruger GymFinder anonymt, så dine oplysninger er knyttet til denne telefon. Gem din
-          profil, så følger alt med, også favoritter og prisalarmer, hvis du skifter telefon.
+          Du bruger GymFinder anonymt, så dine oplysninger er knyttet til denne telefon. Opret en
+          konto, så følger alt med, også favoritter og prisalarmer, hvis du skifter telefon.
         </Text>
         <AccountForm mode="create" onSubmit={handleCreateAccount} />
         <View style={GlobalStyle.accountActions}>
@@ -146,7 +146,7 @@ export function useProfileSections(navigation) {
   const membershipChain = chains.find((chain) => chain.id === membership?.chainId)?.name;
   let accountSummary = 'Gemmes kun på denne telefon';
   if (account && !account.isAnonymous) accountSummary = account.email;
-  else if (accountsAvailable && account) accountSummary = 'Anonym · gem din profil';
+  else if (accountsAvailable && account) accountSummary = 'Anonym · opret konto';
 
   const sections = [
     {

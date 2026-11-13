@@ -212,8 +212,8 @@ export default function FavoritesScreen({ navigation }) {
       {(!account || account.isAnonymous) && (
         <Text style={GlobalStyle.noticeText}>
           {accountsAvailable
-            ? 'Du bruger GymFinder anonymt, så dine favoritter og prisalarmer forsvinder, hvis ' +
-              'du sletter appen. Gem din profil under Profil for at beholde dem.'
+            ? 'Dine favoritter er kun gemt på denne telefon. Opret en konto under Profil for at ' +
+              'beholde dem.'
             : 'Dine favoritter og prisalarmer gemmes kun på denne telefon og forsvinder, hvis ' +
               'du sletter appen.'}
         </Text>

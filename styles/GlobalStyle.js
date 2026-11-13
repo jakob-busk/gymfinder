@@ -842,6 +842,22 @@ const GlobalStyle = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 16,
   },
+  // Et tekstfelt med enheden ved siden af, fx "kr. pr. md." i prisalarmen.
+  inputWithUnit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  inputWithUnitField: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  inputUnit: {
+    fontFamily: fonts.medium,
+    color: colors.text,
+    fontSize: 16,
+  },
   // Knapper: primær (den ene handling på skærmen, violet pille), sekundær (blæk-omrids), tekst
   // (understreget som et link) og ghost (rolig flade). Alle trykkes ind med en lille fjeder.
   buttonPrimary: {
