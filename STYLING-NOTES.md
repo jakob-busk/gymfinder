@@ -161,7 +161,7 @@ så B's commits har deres egne hashes. `npm test` og nat-jobbets tests er grønn
 | L15 | `2535ad3` | A | "Se detaljer" ens i pin-boks og Favoritter; "Luk" som knap; "dette Center" | Ronnies "Se {navn}" er B's og uændret |
 | L16 | `1fa2ded` | B | Det kørende bånd på Velkomst er fjernet | `Marquee.js` slettet |
 | L17 | `e5ed8f2` | A | Eksempeldata-beskeden siger hvorfor og har "Prøv igen"; tomt Center har "Tilbage til Find" | `sampleDataNotice` |
-| L17 | `dbaffa9` | B | Forklaringer ved spærrede knapper og fagord; sortering kun på Find; "Om GymFinder" | "Kontakt" mangler en e-mail |
+| L17 | `dbaffa9` | B | Forklaringer ved spærrede knapper og fagord; sortering kun på Find; "Om GymFinder" | Intet kontaktafsnit på Om GymFinder (fjernet efter fletningen efter ønske) |
 | F1 | `e1dc280` | A | "Fjernet fra Favoritter · Fortryd" i 5 sek.; gendanner Prisalarm og startpris | "Fjern" på Favoritter spørger ikke længere ja/nej; global `UndoToast` i App.js |
 | F2 | `8708188` | A | Timeout på centerdata (8 sek.) og "Ingen forbindelse" med "Prøv igen" | Timeouten har ingen automatisk test |
 | F3 | `41ac484` | B | Tomt eller ugyldigt prisfelt nulstiller Nuværende medlemskab og siger det | |

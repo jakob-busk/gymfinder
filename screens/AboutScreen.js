@@ -5,7 +5,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import RonnieMascot from '../components/RonnieMascot';
 
 // Om GymFinder: hvad GymFinder er, og "Sådan virker det" (Anbefalet, hvor priserne kommer fra,
-// affiliate og kontakt). Nås fra Profil. Teksterne bygger på koden: Anbefalet og sorteringen
+// affiliate og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og sorteringen
 // regnes i data/matchning.js ud fra pris, Filtre og afstand, og priserne hentes af den natlige
 // scraper (scraper/, docs/adr/0001).
 export default function AboutScreen() {
@@ -49,13 +49,6 @@ export default function AboutScreen() {
         Ronnie er vores maskot og din rådgiver. Han anbefaler kun Centre fra GymFinder og
         sammenligner altid på Ærlig årspris. Ronnie er en AI: hans svar bygger på priserne i
         GymFinder, men han kan tage fejl, så tjek altid prisen hos Centret, før du melder dig ind.
-      </Text>
-
-      <Text style={GlobalStyle.groupTitle}>Kontakt</Text>
-      <Text style={GlobalStyle.bodyText}>
-        GymFinder er et studieprojekt. Har du spørgsmål, eller har du fundet en pris, der ikke
-        passer, så skriv til holdet bag GymFinder. Når du melder dig ind, er det altid prisen på
-        Kædens egen side, der gælder.
       </Text>
     </ScrollView>
   );
