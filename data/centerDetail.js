@@ -247,6 +247,46 @@ export function facilityRows(center) {
   return rows;
 }
 
+// Abonnementstyperne i tabellen "Om centret", med appens ord og i fast rækkefølge.
+const ABOUT_SUBSCRIPTION_TYPES = { 'Lokal center': 'lokalt center', Landsdækkende: 'landsdækkende' };
+
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+// Centrets Abonnementstyper (fra alle dets Tilbud) uden dubletter: "Lokalt center, landsdækkende".
+function subscriptionTypesText(offers) {
+  const known = Object.keys(ABOUT_SUBSCRIPTION_TYPES);
+  const types = [
+    ...new Set(offers.map((priced) => priced.offer.subscriptionType).filter(Boolean)),
+  ].sort((a, b) => {
+    const rank = (type) => (known.includes(type) ? known.indexOf(type) : known.length);
+    return rank(a) - rank(b);
+  });
+  if (types.length === 0) return 'Ikke oplyst';
+  return capitalize(types.map((type) => ABOUT_SUBSCRIPTION_TYPES[type] ?? type).join(', '));
+}
+
+// Tabellen "Om centret" på Centerdetalje: adresse, Abonnementstyper, Binding for det valgte
+// Tilbud og faciliteter (Ja / Nej / Ikke oplyst). Maskiner er kun med, når de kendes. Viser kun
+// data, vi har. offers og selectedOffer er prissatte Tilbud fra Matchning.
+// Returnerer [{ key, label, value }].
+export function aboutCenterRows({ center, offers = [], selectedOffer }) {
+  const facilities = facilityRows(center).filter(
+    (row) => row.key !== 'machines' || center?.machines != null,
+  );
+  return [
+    { key: 'address', label: 'Adresse', value: center?.address || 'Ikke oplyst' },
+    { key: 'subscriptionTypes', label: 'Abonnementstyper', value: subscriptionTypesText(offers) },
+    {
+      key: 'binding',
+      label: 'Binding',
+      value: selectedOffer ? feeSummary(selectedOffer).binding : 'Ikke oplyst',
+    },
+    ...facilities,
+  ];
+}
+
 // Et tilmeldingslink er én URL eller { under30, over30 } (fx SATS og Fitness X, hvor under 30
 // er sit eget medlemskab). Giver linket for Aldersgruppen.
 function linkForAgeGroup(link, ageGroup) {

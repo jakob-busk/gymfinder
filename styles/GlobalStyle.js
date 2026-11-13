@@ -1434,17 +1434,34 @@ const GlobalStyle = StyleSheet.create({
   receiptTotal: {
     ...figure(34),
   },
-  facilityGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  // Faciliteter som små bento-felter, to pr. række.
-  facilityCell: {
-    width: '48%',
+  // Centerdetalje: tabellen "Om centret" på lyst papir, én række pr. oplysning med en tynd linje
+  // imellem.
+  aboutTable: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 14,
+    borderRadius: shape.radius,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 16,
+    paddingVertical: 10,
+  },
+  aboutRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  aboutLabel: {
+    fontFamily: fonts.body,
+    color: colors.muted,
+  },
+  aboutValue: {
+    flexShrink: 1,
+    textAlign: 'right',
+    fontFamily: fonts.semibold,
+    color: colors.text,
   },
   // Advarsel: lyst papir med en blæk-kant og et ikon ved titlen, ingen gul.
   warningBox: {

@@ -1,4 +1,5 @@
 import {
+  aboutCenterRows,
   facilityRows,
   feeSummary,
   formatDistance,
@@ -317,6 +318,64 @@ describe('facilityRows', () => {
       { key: 'machines', label: 'Maskiner', value: 'Bænkpres, Løbebånd' },
     ]);
     expect(facilityRows(center({ machines: null }))[3].value).toBe('Ikke oplyst');
+  });
+});
+
+describe('aboutCenterRows', () => {
+  function aboutRows(centerOverrides = {}, selectedOfferId = null) {
+    const c = center(centerOverrides);
+    const match = matchCenter({ center: c, chains: [CHAIN], user: user(), today: TODAY });
+    const selected =
+      match.offers.find((priced) => priced.offer.id === selectedOfferId) ?? match.bestOffer;
+    return aboutCenterRows({ center: c, offers: match.offers, selectedOffer: selected });
+  }
+
+  test('viser adresse, abonnementstyper, binding for det valgte abonnement og faciliteter', () => {
+    expect(aboutRows()).toEqual([
+      { key: 'address', label: 'Adresse', value: 'Gaden 1, 1000 København' },
+      { key: 'subscriptionTypes', label: 'Abonnementstyper', value: 'Lokalt center' },
+      { key: 'binding', label: 'Binding', value: 'Ingen' },
+      { key: 'sauna', label: 'Sauna', value: 'Ja' },
+      { key: 'groupClasses', label: 'Holdtræning', value: 'Nej' },
+      { key: 'open24h', label: 'Døgnåbent', value: 'Ikke oplyst' },
+      { key: 'machines', label: 'Maskiner', value: 'Bænkpres, Løbebånd' },
+    ]);
+  });
+
+  test('oversætter abonnementstyperne og viser hver kun én gang', () => {
+    const offers = [
+      offer({ id: 'a', subscriptionType: 'Landsdækkende' }),
+      offer({ id: 'b', subscriptionType: 'Lokal center' }),
+      offer({ id: 'c', subscriptionType: 'Landsdækkende' }),
+    ];
+    const row = aboutRows({ offers }).find((entry) => entry.key === 'subscriptionTypes');
+    expect(row.value).toBe('Lokalt center, landsdækkende');
+  });
+
+  test('viser bindingen for det valgte abonnement', () => {
+    const offers = [
+      offer({ id: 'flex', standardPrice: 300, bindingMonths: 0 }),
+      offer({ id: 'bundet', standardPrice: 250, bindingMonths: 12 }),
+      offer({ id: 'ukendt', standardPrice: 350, bindingMonths: null }),
+    ];
+    const binding = (id) =>
+      aboutRows({ offers }, id).find((entry) => entry.key === 'binding').value;
+    expect(binding('flex')).toBe('Ingen');
+    expect(binding('bundet')).toBe('12 mdr.');
+    expect(binding('ukendt')).toBe('Ikke oplyst');
+  });
+
+  test('viser "ikke oplyst", hvor adresse og abonnementstype er ukendte', () => {
+    const rows = aboutRows({ address: '', offers: [offer({ subscriptionType: null })] });
+    expect(rows.find((entry) => entry.key === 'address').value).toBe('Ikke oplyst');
+    expect(rows.find((entry) => entry.key === 'subscriptionTypes').value).toBe('Ikke oplyst');
+  });
+
+  test('viser kun maskiner, når de kendes', () => {
+    expect(aboutRows({ machines: null }).map((entry) => entry.key)).not.toContain('machines');
+    expect(aboutRows({ machines: [] }).find((entry) => entry.key === 'machines').value).toBe(
+      'Ingen',
+    );
   });
 });
 
