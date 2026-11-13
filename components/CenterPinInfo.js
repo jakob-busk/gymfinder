@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
@@ -46,10 +46,8 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
       </Text>
       <NotStatedRow notStated={match.notStated} />
       <View style={GlobalStyle.pinInfoActions}>
-        <Pressable onPress={onClose} accessibilityRole="button">
-          <Text style={GlobalStyle.link}>Luk</Text>
-        </Pressable>
-        <ButtonComponent title="Se detaljer" type="primary" size="small" onPress={onShowDetails} />
+        <ButtonComponent title="Luk" type="text" size="small" onPress={onClose} />
+        <ButtonComponent title="Se detaljer" type="secondary" size="small" onPress={onShowDetails} />
       </View>
     </View>
   );

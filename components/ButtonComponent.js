@@ -17,7 +17,7 @@ const BUTTON_STYLES = {
 // Genbrugeligt knap komponenet. Bruges alle steder i appen hvor der er en knap (sortering, tilmelding, osv.)
 // disabled gør knappen grå og utrykbar (fx mens en adresse slås op).
 // size 'small' bruges i kort og rækker; full fylder hele bredden. icon er et Ionicons-navn.
-// ronnie viser en lille Ronnie foran teksten (fx "Spørg Ronnie om dette center").
+// ronnie viser en lille Ronnie foran teksten (fx "Spørg Ronnie om dette Center").
 // onInk bruges i den mørke blok (det Anbefalede Center), så tekst- og ghost-knapper kan ses.
 // Knappen trykkes en anelse ind og fjedrer tilbage, så den føles fysisk.
 export default function ButtonComponent({

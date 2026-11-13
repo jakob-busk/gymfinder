@@ -1504,6 +1504,11 @@ const GlobalStyle = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 8,
   },
+  // "Se detaljer" på en Favorit, venstrestillet som i boksen på kortet.
+  favoriteDetails: {
+    alignItems: 'flex-start',
+    marginTop: 8,
+  },
   favoriteInfo: {
     flex: 1,
     gap: 2,

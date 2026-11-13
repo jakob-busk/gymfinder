@@ -144,7 +144,14 @@ export default function FavoritesScreen({ navigation }) {
                   </View>
                 </View>
                 <PriceChange priceChange={row.priceChange} />
-                <Text style={GlobalStyle.link}>Se mere →</Text>
+                <View style={GlobalStyle.favoriteDetails}>
+                  <ButtonComponent
+                    title="Se detaljer"
+                    type="secondary"
+                    size="small"
+                    onPress={() => showDetails(row.centerId)}
+                  />
+                </View>
               </>
             ) : (
               <Text style={GlobalStyle.notStatedText}>

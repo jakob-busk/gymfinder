@@ -31,7 +31,7 @@ import { openSignupPage } from '../services/Signup';
 // Udregningen bag prisen (kvitteringen, se OfferReceipt) er foldet sammen under "Se udregningen".
 // Priserne kommer fra Matchning, så de er de samme som på Find. Fra start er det billigste Tilbud
 // for brugeren valgt. ♥ i titelrækken gør Centret til Favorit. Viser også faciliteter og "Spørg
-// Ronnie om dette center". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
+// Ronnie om dette Center". Prisen toner ind på ny, når et andet Tilbud vælges, så skiftet kan ses.
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
@@ -205,7 +205,7 @@ export default function CenterDetailScreen({ navigation, route }) {
           Åbner {selected.offer.name} på {chain?.name ?? 'kædens'} egen side.
         </Text>
         <ButtonComponent
-          title="Spørg Ronnie om dette center"
+          title="Spørg Ronnie om dette Center"
           type="text"
           ronnie
           onPress={handleAskRonnie}
