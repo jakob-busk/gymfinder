@@ -1,5 +1,5 @@
 // Ansvarlig: Christian
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,41 +17,12 @@ import { useFilterSettings } from '../services/FilterSettings';
 // Præferencer. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
 // til Præferencerne. Find læser de samme gemte Filtre, så kort og liste følger med.
 // Knappen nederst viser, hvor mange Centre Filtrene giver, før man går tilbage til Find.
-// Nulstil kan fortrydes i UNDO_MS: "Filtre nulstillet · Fortryd" står over knapperne.
-const UNDO_MS = 5000;
-
 export default function FiltersScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const centerData = useCenterData();
-  const { filters, sortBy, isCustom, loading, setFilters, reset, restore } = useFilterSettings(
+  const { filters, sortBy, isCustom, loading, setFilters, reset } = useFilterSettings(
     user.preferences,
   );
-  // Det, der var gemt før Nulstil, mens Fortryd vises; null, når der intet er at fortryde.
-  const [undo, setUndo] = useState(null);
-  const undoTimer = useRef(null);
-  useEffect(() => () => clearTimeout(undoTimer.current), []);
-
-  const handleReset = () => {
-    const previous = reset();
-    clearTimeout(undoTimer.current);
-    setUndo({ previous });
-    undoTimer.current = setTimeout(() => setUndo(null), UNDO_MS);
-  };
-
-  const handleUndo = () => {
-    clearTimeout(undoTimer.current);
-    if (undo) restore(undo.previous);
-    setUndo(null);
-  };
-
-  // Retter brugeren Filtrene igen, er der ikke længere noget at fortryde.
-  const handleFilters = (next) => {
-    if (undo) {
-      clearTimeout(undoTimer.current);
-      setUndo(null);
-    }
-    setFilters(next);
-  };
 
   if (loading) {
     return (
@@ -78,7 +49,7 @@ export default function FiltersScreen({ navigation }) {
   return (
     <SafeAreaView style={GlobalStyle.screen} edges={['bottom']}>
       <ScrollView contentContainerStyle={[GlobalStyle.stepContent, GlobalStyle.filtersContent]}>
-        <PreferencesEditor preferences={filters} onChange={handleFilters} />
+        <PreferencesEditor preferences={filters} onChange={setFilters} />
 
         <Text style={GlobalStyle.mutedText}>
           {isCustom
@@ -94,14 +65,8 @@ export default function FiltersScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {undo && (
-        <View style={GlobalStyle.undoBar} accessibilityLiveRegion="polite">
-          <Text style={GlobalStyle.undoText}>Filtre nulstillet</Text>
-          <ButtonComponent title="Fortryd" type="text" onPress={handleUndo} />
-        </View>
-      )}
       <View style={GlobalStyle.stickyFooter}>
-        <ButtonComponent title="Nulstil" type="text" onPress={handleReset} disabled={!isCustom} />
+        <ButtonComponent title="Nulstil" type="text" onPress={reset} disabled={!isCustom} />
         <View style={GlobalStyle.fill}>
           <ButtonComponent
             title={showLabel}

@@ -34,9 +34,7 @@ export async function clearFilterSettings() {
 //   filters, sortBy, isCustom   se resolveFilterSettings
 //   loading                     true, indtil det gemte er læst første gang
 //   setFilters, setSortBy       ændrer og gemmer
-//   reset                       tilbage til Præferencerne og standard-sorteringen. Returnerer
-//                               det, der var gemt før, så det kan gives til restore (Fortryd)
-//   restore(previous)           sætter en tidligere gemt indstilling tilbage
+//   reset                       tilbage til Præferencerne og standard-sorteringen
 export function useFilterSettings(preferences) {
   const [stored, setStored] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,16 +69,9 @@ export function useFilterSettings(preferences) {
   const setSortBy = (sortBy) => persist({ filters: stored?.filters ?? null, sortBy });
 
   const reset = () => {
-    const previous = stored;
     setStored(null);
     clearFilterSettings().catch((error) => console.error('Nulstil Filtre fejlede:', error));
-    return previous;
   };
 
-  const restore = (previous) => {
-    if (previous) persist(previous);
-    else reset();
-  };
-
-  return { ...settings, loading, setFilters, setSortBy, reset, restore };
+  return { ...settings, loading, setFilters, setSortBy, reset };
 }

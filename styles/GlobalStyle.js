@@ -1657,27 +1657,6 @@ const GlobalStyle = StyleSheet.create({
     paddingTop: 8,
     backgroundColor: colors.background,
   },
-  // Kort besked over knapperne med en Fortryd-knap (fx "Filtre nulstillet · Fortryd").
-  undoBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginHorizontal: 20,
-    marginBottom: 8,
-    paddingLeft: 16,
-    paddingRight: 6,
-    borderRadius: shape.pill,
-    borderWidth: 1.5,
-    borderColor: colors.text,
-    backgroundColor: colors.surface,
-  },
-  undoText: {
-    flexShrink: 1,
-    fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: colors.text,
-  },
 });
 
 export { brand, colors, fonts, motion };
