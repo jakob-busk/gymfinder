@@ -9,6 +9,7 @@ import {
   partnerInfo,
   priceBreakdown,
   receiptLines,
+  subscriptionTypeLabel,
 } from '../data/centerDetail';
 
 // Én række på kvitteringen: tekst til venstre, beløb til højre.
@@ -50,7 +51,9 @@ export default function OfferReceipt({ pricedOffer, chain, user, isCheapest }) {
         )}
       </View>
       <Text style={GlobalStyle.mutedText}>
-        {[offer.subscriptionType, `med ${yearlyOption.label}`].filter(Boolean).join(' · ')}
+        {[subscriptionTypeLabel(offer.subscriptionType), `med ${yearlyOption.label}`]
+          .filter(Boolean)
+          .join(' · ')}
       </Text>
 
       <View style={GlobalStyle.receiptDivider} />

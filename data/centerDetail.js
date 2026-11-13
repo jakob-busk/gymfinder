@@ -49,6 +49,15 @@ export function formatPrice(amount, per = 'md.') {
   return `${formatKr(amount)} pr. ${per}`;
 }
 
+// Abonnementstypen, som den vises: "Landsdækkende" eller "Lokalt Center". Data skriver
+// "Lokal center", som ikke ændres her (Matchning og nat-jobbet bruger værdien).
+const SUBSCRIPTION_TYPE_LABELS = { 'Lokal center': 'Lokalt Center', Landsdækkende: 'Landsdækkende' };
+
+export function subscriptionTypeLabel(subscriptionType) {
+  if (!subscriptionType) return null;
+  return SUBSCRIPTION_TYPE_LABELS[subscriptionType] ?? subscriptionType;
+}
+
 // Hvilket Tilbud en pris gælder, som en kort linje ved prisen: "for Basis", og "· med Studierabat",
 // når en Rabat (eller Makkerpris) er regnet med i Ærlig årspris.
 export function offerBasisText(pricedOffer) {

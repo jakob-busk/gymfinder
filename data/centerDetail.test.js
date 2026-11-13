@@ -12,6 +12,7 @@ import {
   priceBreakdown,
   receiptLines,
   signupLink,
+  subscriptionTypeLabel,
   turns30Notice,
 } from './centerDetail';
 
@@ -445,5 +446,13 @@ describe('receiptLines', () => {
     expect(lines[0]).toMatchObject({ label: 'Betaling 1–12', count: 12, total: 240 });
     expect(lines[1]).toMatchObject({ label: 'Betaling 13', count: 1 });
     expect(lines[1].share).toBeCloseTo(1 / 6, 4);
+  });
+});
+
+describe('subscriptionTypeLabel', () => {
+  test('viser Abonnementstypen som "Landsdækkende" eller "Lokalt Center"', () => {
+    expect(subscriptionTypeLabel('Lokal center')).toBe('Lokalt Center');
+    expect(subscriptionTypeLabel('Landsdækkende')).toBe('Landsdækkende');
+    expect(subscriptionTypeLabel(null)).toBeNull();
   });
 });
