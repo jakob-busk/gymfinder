@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import GlobalStyle from '../styles/GlobalStyle';
+import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import CenterTitle, { centerTitleLabel } from './CenterTitle';
 import FavoriteButton from './FavoriteButton';
@@ -10,11 +11,12 @@ import Reveal from './Reveal';
 import { formatDistance, formatNumber, formatPrice } from '../data/centerDetail';
 import { openSignupPage } from '../services/Signup';
 
-// Kort for ét Center i listen: løbenummer, navn, Ærlig årspris for det billigste Tilbud for
-// brugeren som et stort tal, og kun to handlinger: "Se detaljer" (åbner Centerdetalje, ligesom et
-// tryk på navnet) og "Tilmeld". ♥ gør Centret til Favorit. Detaljerne om tilbuddet står på
-// Centerdetalje. Det Anbefalede Center er en mørk blok med prisen i lyst blæk, så listen får en rytme
-// i stedet for ens kort. index er pladsen i listen; kortene toner ind forskudt efter den.
+// Kort for ét Center i listen: titel (logo, pin, navn), afstand, Ærlig årspris for det billigste
+// Tilbud for brugeren som et stort tal og "Tilmeld". Hele kortet åbner Centerdetalje (pilen til
+// højre viser det); ♥ gør Centret til Favorit. Detaljer som de første 3 mdr. står på
+// Centerdetalje, så kortet holdes kort. Det Anbefalede Center er en mørk blok med prisen i lyst
+// blæk, så listen får en rytme i stedet for ens kort. index er pladsen i listen; kortene toner ind
+// forskudt efter den (den vises ikke, så den ikke ligner en rangering).
 export default function CenterCard({ match, isRecommended, onShowDetails, index = 0 }) {
   const { center, chain, bestOffer } = match;
   const distance = match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : null;
@@ -22,26 +24,43 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
 
   return (
     <Reveal index={index}>
-      <View style={[GlobalStyle.card, ink && GlobalStyle.cardHighlighted]}>
-        <View style={GlobalStyle.cardTopRow}>
-          <Text style={[GlobalStyle.cardIndex, ink && GlobalStyle.mutedOnInk]}>
-            {String(index + 1).padStart(2, '0')}
-          </Text>
-          {isRecommended && (
+      {/* Hele kortet kan trykkes. Det er ikke selv et element for skærmlæsere (så ♥ og Tilmeld
+          stadig kan nås); titlen er knappen, der læses op. */}
+      <Pressable
+        onPress={onShowDetails}
+        accessible={false}
+        style={({ pressed }) => [
+          GlobalStyle.card,
+          ink && GlobalStyle.cardHighlighted,
+          pressed && GlobalStyle.cardPressed,
+        ]}
+      >
+        {isRecommended && (
+          <View style={GlobalStyle.cardTopRow}>
             <View style={[GlobalStyle.badge, GlobalStyle.badgeInline]}>
               <Text style={GlobalStyle.badgeText}>Anbefalet</Text>
             </View>
-          )}
-        </View>
+          </View>
+        )}
         <View style={GlobalStyle.cardHeader}>
           <View style={GlobalStyle.cardTitleArea}>
-            {/* Titlen (logo, pin, navn) kan trykkes; skærmlæseren hører "Kæde, Centernavn". */}
+            {/* Titlen (logo, pin, navn) og pilen; skærmlæseren hører "Kæde, Centernavn". */}
             <Pressable
               onPress={onShowDetails}
               accessibilityRole="button"
               accessibilityLabel={centerTitleLabel(chain, center.name)}
+              accessibilityHint="Åbner detaljer om Centret"
+              style={GlobalStyle.cardTitleButton}
             >
-              <CenterTitle chain={chain} name={center.name} onInk={ink} labelled={false} />
+              <View style={GlobalStyle.fill}>
+                <CenterTitle chain={chain} name={center.name} onInk={ink} labelled={false} />
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={ink ? colors.onInk : colors.text}
+                style={GlobalStyle.cardChevron}
+              />
             </Pressable>
             {distance && (
               <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>{distance}</Text>
@@ -66,9 +85,6 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
             </View>
           </View>
         </View>
-        <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
-          De første 3 mdr. {formatPrice(Math.round(match.quarterlyPrice))}
-        </Text>
         <NotStatedRow notStated={match.notStated} onInk={ink} />
         {match.savingPerMonth != null && match.savingPerMonth > 0 && (
           <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
@@ -78,15 +94,6 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
         )}
 
         <View style={GlobalStyle.cardActions}>
-          {onShowDetails && (
-            <ButtonComponent
-              title="Se detaljer"
-              type="text"
-              size="small"
-              onInk={ink}
-              onPress={onShowDetails}
-            />
-          )}
           <ButtonComponent
             title="Tilmeld"
             type="primary"
@@ -96,7 +103,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
             onPress={() => openSignupPage(center, chain, bestOffer)}
           />
         </View>
-      </View>
+      </Pressable>
     </Reveal>
   );
 }

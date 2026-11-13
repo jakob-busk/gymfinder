@@ -389,16 +389,25 @@ const GlobalStyle = StyleSheet.create({
     gap: 10,
     marginBottom: 10,
   },
-  cardIndex: {
-    ...kicker,
-    fontVariant: ['tabular-nums'],
-  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 10,
     marginBottom: 4,
+  },
+  // Kortet trykkes en anelse ned, så man kan se, at hele kortet åbner Centerdetalje.
+  cardPressed: {
+    opacity: 0.85,
+  },
+  // Titlen og pilen til højre, der viser, at kortet kan åbnes.
+  cardTitleButton: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  cardChevron: {
+    marginTop: 1,
   },
   cardTitleArea: {
     flex: 1,
