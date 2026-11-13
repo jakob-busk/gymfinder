@@ -1,4 +1,6 @@
 import {
+  aboutCenterRows,
+  billingNote,
   facilityRows,
   feeSummary,
   formatDistance,
@@ -6,11 +8,16 @@ import {
   formatNumber,
   formatPrice,
   matchCenter,
+  chainGenitive,
+  offerAccessLabel,
+  offerAccessPhrase,
   offerBasisText,
+  offerLabels,
   offerSignupUrl,
   partnerInfo,
   priceBreakdown,
   receiptLines,
+  savingSuggestionText,
   signupLink,
   subscriptionTypeLabel,
   turns30Notice,
@@ -108,7 +115,7 @@ describe('matchCenter', () => {
       { discountProfile: ['student'] },
     );
     // Kampagne: (99 + 11 * 300) / 12 = 283,25. Studierabat: 150 hele året.
-    expect(best.yearlyOption.label).toBe('Studierabat');
+    expect(best.yearlyOption.label).toBe('studierabat');
     expect(best.honestYearlyPrice).toBe(150);
   });
 });
@@ -160,7 +167,7 @@ describe('priceBreakdown', () => {
     });
     expect(breakdown.rows[2]).toMatchObject({
       label: 'Måned 3',
-      kindLabel: 'Standardpris',
+      kindLabel: 'Normalpris',
       total: 314,
     });
     // 60 + 2 * 114 + 10 * 314 = 3.428 kr. 3.428 / 12 = 285,67 kr/md.
@@ -193,8 +200,8 @@ describe('priceBreakdown', () => {
     );
     const breakdown = priceBreakdown(best);
     // Måned 3 (22. dec.–22. jan.) rummer 30-års-fødselsdagen den 15. januar 2027.
-    expect(breakdown.rows[1]).toMatchObject({ kindLabel: 'Standardpris (under 30)', total: 200 });
-    expect(breakdown.rows[2]).toMatchObject({ kindLabel: 'Standardpris (30+)', total: 250 });
+    expect(breakdown.rows[1]).toMatchObject({ kindLabel: 'Normalpris (under 30)', total: 200 });
+    expect(breakdown.rows[2]).toMatchObject({ kindLabel: 'Normalpris (30+)', total: 250 });
     // 2 * 200 + 10 * 250 = 2.900 kr. 2.900 / 12 = 241,67 kr/md.
     expect(breakdown.honestYearlyPrice).toBeCloseTo(241.6667, 4);
   });
@@ -208,6 +215,7 @@ describe('turns30Notice', () => {
     );
     // Måned 3 løber 22. dec.–22. jan., og brugeren fylder 30 den 15. januar 2027.
     expect(turns30Notice('1997-01-15', best)).toEqual({
+      offerId: 'basis',
       offerName: 'Basis',
       birthdayMonth: 'januar 2027',
       fromPeriod: 3,
@@ -240,6 +248,7 @@ describe('feeSummary', () => {
     expect(feeSummary(bestOfferFor({ signupFee: 299, adminFee: 15, bindingMonths: 6 }))).toEqual({
       signupFee: '299 kr.',
       adminFee: '15 kr. pr. md.',
+      adminFeeNote: 'Allerede regnet med ovenfor',
       binding: '6 mdr.',
     });
   });
@@ -248,6 +257,7 @@ describe('feeSummary', () => {
     expect(feeSummary(bestOfferFor({ bindingMonths: null }))).toEqual({
       signupFee: 'Gratis',
       adminFee: 'Ingen',
+      adminFeeNote: null,
       binding: 'Ikke oplyst',
     });
     expect(feeSummary(bestOfferFor({ bindingMonths: 0 })).binding).toBe('Ingen');
@@ -311,12 +321,90 @@ describe('partnerInfo', () => {
 describe('facilityRows', () => {
   test('viser faciliteter og maskiner som Ja, Nej og Ikke oplyst', () => {
     expect(facilityRows(center())).toEqual([
-      { key: 'sauna', label: 'Sauna', value: 'Ja' },
-      { key: 'groupClasses', label: 'Holdtræning', value: 'Nej' },
-      { key: 'open24h', label: 'Døgnåbent', value: 'Ikke oplyst' },
-      { key: 'machines', label: 'Maskiner', value: 'Bænkpres, Løbebånd' },
+      { key: 'sauna', label: 'Sauna', value: 'Ja', status: 'stated' },
+      { key: 'groupClasses', label: 'Holdtræning', value: 'Nej', status: 'stated' },
+      { key: 'open24h', label: 'Døgnåbent', value: 'Ikke oplyst', status: 'notStated' },
+      { key: 'machines', label: 'Maskiner', value: 'Bænkpres, Løbebånd', status: 'stated' },
     ]);
-    expect(facilityRows(center({ machines: null }))[3].value).toBe('Ikke oplyst');
+    expect(facilityRows(center({ machines: null }))[3]).toMatchObject({
+      value: 'Ikke oplyst',
+      status: 'notStated',
+    });
+  });
+});
+
+describe('aboutCenterRows', () => {
+  function aboutRows(centerOverrides = {}, selectedOfferId = null) {
+    const c = center(centerOverrides);
+    const match = matchCenter({ center: c, chains: [CHAIN], user: user(), today: TODAY });
+    const selected =
+      match.offers.find((priced) => priced.offer.id === selectedOfferId) ?? match.bestOffer;
+    return aboutCenterRows({
+      center: c,
+      chain: CHAIN,
+      offers: match.offers,
+      selectedOffer: selected,
+    });
+  }
+
+  test('viser adresse, abonnementstyper, binding for det valgte abonnement og faciliteter', () => {
+    expect(aboutRows()).toEqual([
+      { key: 'address', label: 'Adresse', value: 'Gaden 1, 1000 København', status: 'stated' },
+      { key: 'access', label: 'Adgang', value: 'Kun dette center', status: 'stated' },
+      { key: 'binding', label: 'Binding', value: 'Ingen', status: 'stated' },
+      { key: 'sauna', label: 'Sauna', value: 'Ja', status: 'stated' },
+      { key: 'groupClasses', label: 'Holdtræning', value: 'Nej', status: 'stated' },
+      { key: 'open24h', label: 'Døgnåbent', value: 'Ikke oplyst', status: 'notStated' },
+      { key: 'machines', label: 'Maskiner', value: 'Bænkpres, Løbebånd', status: 'stated' },
+    ]);
+  });
+
+  test('markerer rækker, kæden ikke har oplyst, ud fra data og ikke teksten', () => {
+    const known = aboutRows({ facilities: { sauna: true, groupClasses: false, open24h: true } });
+    expect(known.every((row) => row.status === 'stated')).toBe(true);
+
+    const offers = [offer({ id: 'ukendt', bindingMonths: null, subscriptionType: null })];
+    const rows = aboutRows({ address: '', offers });
+    const status = (key) => rows.find((row) => row.key === key).status;
+    expect(status('address')).toBe('notStated');
+    expect(status('access')).toBe('notStated');
+    expect(status('binding')).toBe('notStated');
+  });
+
+  test('oversætter abonnementstyperne og viser hver kun én gang', () => {
+    const offers = [
+      offer({ id: 'a', subscriptionType: 'Landsdækkende' }),
+      offer({ id: 'b', subscriptionType: 'Lokal center' }),
+      offer({ id: 'c', subscriptionType: 'Landsdækkende' }),
+    ];
+    const row = aboutRows({ offers }).find((entry) => entry.key === 'access');
+    expect(row.value).toBe('Kun dette center eller alle Kæde-centre');
+  });
+
+  test('viser bindingen for det valgte abonnement', () => {
+    const offers = [
+      offer({ id: 'flex', standardPrice: 300, bindingMonths: 0 }),
+      offer({ id: 'bundet', standardPrice: 250, bindingMonths: 12 }),
+      offer({ id: 'ukendt', standardPrice: 350, bindingMonths: null }),
+    ];
+    const binding = (id) =>
+      aboutRows({ offers }, id).find((entry) => entry.key === 'binding').value;
+    expect(binding('flex')).toBe('Ingen');
+    expect(binding('bundet')).toBe('12 mdr.');
+    expect(binding('ukendt')).toBe('Ikke oplyst');
+  });
+
+  test('viser "ikke oplyst", hvor adresse og abonnementstype er ukendte', () => {
+    const rows = aboutRows({ address: '', offers: [offer({ subscriptionType: null })] });
+    expect(rows.find((entry) => entry.key === 'address').value).toBe('Ikke oplyst');
+    expect(rows.find((entry) => entry.key === 'access').value).toBe('Ikke oplyst');
+  });
+
+  test('viser kun maskiner, når de kendes', () => {
+    expect(aboutRows({ machines: null }).map((entry) => entry.key)).not.toContain('machines');
+    expect(aboutRows({ machines: [] }).find((entry) => entry.key === 'machines').value).toBe(
+      'Ingen',
+    );
   });
 });
 
@@ -387,11 +475,78 @@ describe('signupLink', () => {
 });
 
 describe('offerBasisText', () => {
-  test('siger, hvilket Tilbud prisen gælder, og hvilken Rabat der er regnet med', () => {
-    expect(offerBasisText(bestOfferFor())).toBe('for Basis');
-    expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }))).toBe(
-      'for Basis · med Studierabat',
+  test('siger adgangen og hvilken Rabat der er regnet med, uden kædens produktnavn', () => {
+    expect(offerBasisText(bestOfferFor(), 'Kæde')).toBe('Kun dette center');
+    expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }), 'Kæde')).toBe(
+      'Kun dette center · med studierabat',
     );
+    expect(offerBasisText(bestOfferFor({ subscriptionType: 'Landsdækkende' }), 'PureGym')).toBe(
+      'Alle PureGym-centre',
+    );
+  });
+
+  test('ukendt Abonnementstype: kun produktnavnet, ikke to gange', () => {
+    expect(offerBasisText(bestOfferFor({ subscriptionType: null }), 'Kæde')).toBe('Basis');
+  });
+});
+
+describe('offerAccessLabel og offerAccessPhrase', () => {
+  test('beskriver Tilbuddet ved den adgang, det giver', () => {
+    expect(offerAccessLabel(offer(), 'PureGym')).toBe('Kun dette center');
+    expect(offerAccessLabel(offer({ subscriptionType: 'Landsdækkende' }), 'PureGym')).toBe(
+      'Alle PureGym-centre',
+    );
+    expect(offerAccessLabel(offer({ subscriptionType: 'Landsdækkende' }))).toBe(
+      'Alle kædens centre',
+    );
+  });
+
+  test('falder tilbage til Tilbuddets navn, når Abonnementstypen er ukendt', () => {
+    expect(offerAccessLabel(offer({ subscriptionType: null }), 'PureGym')).toBe('Basis');
+    expect(offerAccessLabel(offer({ subscriptionType: 'Noget nyt' }), 'PureGym')).toBe('Basis');
+  });
+
+  test('offerAccessPhrase er til midt i en sætning', () => {
+    expect(offerAccessPhrase(offer(), 'PureGym')).toBe('kun dette center');
+    expect(offerAccessPhrase(offer({ subscriptionType: 'Landsdækkende' }), 'PureGym')).toBe(
+      'alle PureGym-centre',
+    );
+    expect(offerAccessPhrase(offer({ subscriptionType: null }), 'PureGym')).toBe('Basis');
+  });
+});
+
+describe('offerLabels', () => {
+  const priced = (overrides) => ({ offer: offer(overrides) });
+
+  test('viser kun produktnavnet, når to Tilbud har samme adgang', () => {
+    const labels = offerLabels(
+      [
+        priced({ id: 'core', name: 'Core', subscriptionType: 'Lokal center' }),
+        priced({ id: 'plus', name: 'Plus', subscriptionType: 'Lokal center' }),
+        priced({ id: 'unl', name: 'Unlimited', subscriptionType: 'Landsdækkende' }),
+      ],
+      'PureGym',
+    );
+    expect(labels).toEqual({
+      core: { label: 'Kun dette center', productName: 'Core', ambiguous: true },
+      plus: { label: 'Kun dette center', productName: 'Plus', ambiguous: true },
+      unl: { label: 'Alle PureGym-centre', productName: 'Unlimited', ambiguous: false },
+    });
+  });
+
+  test('et Tilbud uden kendt Abonnementstype har navnet som label og intet produktnavn', () => {
+    const labels = offerLabels([priced({ id: 'x', name: 'X', subscriptionType: null })], 'K');
+    expect(labels.x).toEqual({ label: 'X', productName: null, ambiguous: false });
+  });
+});
+
+describe('chainGenitive', () => {
+  test('Kædens navn i ejefald', () => {
+    expect(chainGenitive('PureGym')).toBe('PureGyms');
+    expect(chainGenitive('Fitness X')).toBe("Fitness X'");
+    expect(chainGenitive('SATS')).toBe("SATS'");
+    expect(chainGenitive('Fitnessworld')).toBe('Fitnessworlds');
+    expect(chainGenitive(null)).toBe('kædens');
   });
 });
 
@@ -433,8 +588,24 @@ describe('receiptLines', () => {
     const lines = receiptLines(priceBreakdown(best).rows);
 
     expect(lines).toEqual([
-      { key: '1', label: 'Måned 1–2', kindLabel: 'Kampagnepris', total: 114, share: 1, count: 2 },
-      { key: '3', label: 'Måned 3–12', kindLabel: 'Standardpris', total: 314, share: 1, count: 10 },
+      {
+        key: '1',
+        label: 'Måned 1–2',
+        kindLabel: 'Kampagnepris',
+        total: 114,
+        share: 1,
+        count: 2,
+        value: '2 × 114 kr.',
+      },
+      {
+        key: '3',
+        label: 'Måned 3–12',
+        kindLabel: 'Normalpris',
+        total: 314,
+        share: 1,
+        count: 10,
+        value: '10 × 314 kr.',
+      },
     ]);
   });
 
@@ -444,15 +615,77 @@ describe('receiptLines', () => {
 
     expect(lines).toHaveLength(2);
     expect(lines[0]).toMatchObject({ label: 'Betaling 1–12', count: 12, total: 240 });
-    expect(lines[1]).toMatchObject({ label: 'Betaling 13', count: 1 });
+    // Kun 1/6 af den 13. betaling på 240 kr. falder inden for året: 40 kr.
+    expect(lines[1]).toMatchObject({
+      label: 'Betaling 13 (kun en del af den)',
+      count: 1,
+      value: '40 kr.',
+    });
     expect(lines[1].share).toBeCloseTo(1 / 6, 4);
+  });
+
+  test('beløbet for den delvise betaling afrundes til hele kroner', () => {
+    // 365 / 30 - 12 = 1/6 af 299 kr. = 49,83 kr.
+    const best = bestOfferFor({ standardPrice: 299, billingIntervalDays: 30 });
+    const lines = receiptLines(priceBreakdown(best).rows);
+    expect(lines[1].value).toBe('50 kr.');
+  });
+});
+
+describe('billingNote', () => {
+  test('forklarer betaling hver 30. dag med kædens navn og antal betalinger', () => {
+    const breakdown = priceBreakdown(bestOfferFor({ standardPrice: 240, billingIntervalDays: 30 }));
+    expect(billingNote(breakdown, 'LOOP')).toBe(
+      'LOOP trækker hver 30. dag, ikke hver måned. Derfor betaler du 13 gange på et år.',
+    );
+    expect(billingNote(breakdown, null)).toBe(
+      'Kæden trækker hver 30. dag, ikke hver måned. Derfor betaler du 13 gange på et år.',
+    );
+  });
+
+  test('intet ved betaling pr. måned', () => {
+    expect(billingNote(priceBreakdown(bestOfferFor()), 'PureGym')).toBeNull();
+  });
+});
+
+describe('savingSuggestionText', () => {
+  test('siger prisen med rabatten, prisen uden, medlemskabets pris og hvad man sparer netto', () => {
+    // Uden: 327 kr. pr. md. Med rabat: 271 kr. pr. md. Brutto 56 kr. × 12 = 672 kr. om året
+    // minus medlemskabet på 310 kr. = 362 kr.
+    const suggestion = {
+      discountGroup: 'aeldreSagen',
+      label: 'Ældre Sagen-medlem',
+      membershipPricePerYear: 310,
+      offerId: 'core',
+      honestYearlyPrice: 271,
+      savingPerYear: 672,
+    };
+    expect(savingSuggestionText(suggestion)).toBe(
+      'Med Ældre Sagen-rabat betaler du 271 kr. pr. md. her i stedet for 327 kr. ' +
+        'Medlemskabet koster 310 kr. om året, så du sparer 362 kr. om året.',
+    );
+  });
+
+  test('regner besparelsen af de præcise priser og afrunder først til sidst', () => {
+    const suggestion = {
+      discountGroup: 'aeldreSagen',
+      label: 'Ældre Sagen-medlem',
+      membershipPricePerYear: 310,
+      offerId: 'core',
+      honestYearlyPrice: 270.6,
+      savingPerYear: 672.9, // uden rabat: 270,6 + 672,9 / 12 = 326,675 kr. pr. md.
+    };
+    expect(savingSuggestionText(suggestion)).toBe(
+      'Med Ældre Sagen-rabat betaler du 271 kr. pr. md. her i stedet for 327 kr. ' +
+        'Medlemskabet koster 310 kr. om året, så du sparer 363 kr. om året.',
+    );
   });
 });
 
 describe('subscriptionTypeLabel', () => {
-  test('viser Abonnementstypen som "Landsdækkende" eller "Lokalt Center"', () => {
-    expect(subscriptionTypeLabel('Lokal center')).toBe('Lokalt Center');
-    expect(subscriptionTypeLabel('Landsdækkende')).toBe('Landsdækkende');
+  test('viser Abonnementstypen med appens ord: "lokalt center" eller "landsdækkende"', () => {
+    expect(subscriptionTypeLabel('Lokal center')).toBe('lokalt center');
+    expect(subscriptionTypeLabel('Landsdækkende')).toBe('landsdækkende');
     expect(subscriptionTypeLabel(null)).toBeNull();
   });
 });

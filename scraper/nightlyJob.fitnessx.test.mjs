@@ -99,7 +99,6 @@ const honestYearlyPrices = (db, user, centerId) => {
     chains,
     user: { currentMembership: null, ...user },
     filters: {},
-    sortBy: 'honestYearlyPrice',
     location: COPENHAGEN,
     today: NIGHT_1,
   });

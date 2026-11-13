@@ -4,12 +4,11 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { resolveFilterSettings } from '../data/filterSettings';
 
-// De sidste Filtre og den sidste sortering på Find gemmes på telefonen (AsyncStorage), så de
-// huskes efter genstart. Formen er beskrevet i data/filterSettings.js.
+// De sidste Filtre på Find gemmes på telefonen (AsyncStorage), så de huskes efter genstart. Formen er beskrevet i data/filterSettings.js.
 
 const FILTER_SETTINGS_KEY = 'gymfinder:filterSettings';
 
-// Det gemte ({ filters, sortBy }) eller null, hvis intet er gemt (eller det ikke kan læses).
+// Det gemte ({ filters }) eller null, hvis intet er gemt (eller det ikke kan læses).
 export async function loadFilterSettings() {
   try {
     const json = await AsyncStorage.getItem(FILTER_SETTINGS_KEY);
@@ -29,12 +28,12 @@ export async function clearFilterSettings() {
   await AsyncStorage.removeItem(FILTER_SETTINGS_KEY);
 }
 
-// Filtre og sortering til en skærm. Indlæses igen, hver gang skærmen får fokus, så Find altid
+// Filtre til en skærm. Indlæses igen, hver gang skærmen får fokus, så Find altid
 // viser det, der lige er valgt på Filtre. Returnerer:
-//   filters, sortBy, isCustom   se resolveFilterSettings
-//   loading                     true, indtil det gemte er læst første gang
-//   setFilters, setSortBy       ændrer og gemmer
-//   reset                       tilbage til Præferencerne og standard-sorteringen
+//   filters, isCustom   se resolveFilterSettings
+//   loading             true, indtil det gemte er læst første gang
+//   setFilters          ændrer og gemmer
+//   reset               tilbage til Præferencerne
 export function useFilterSettings(preferences) {
   const [stored, setStored] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -63,15 +62,12 @@ export function useFilterSettings(preferences) {
     saveFilterSettings(next).catch((error) => console.error('Gem Filtre fejlede:', error));
   };
 
-  const setFilters = (filters) => persist({ filters, sortBy: settings.sortBy });
-
-  // Kun sorteringen gemmes; urørte Filtre følger stadig Præferencerne.
-  const setSortBy = (sortBy) => persist({ filters: stored?.filters ?? null, sortBy });
+  const setFilters = (filters) => persist({ filters });
 
   const reset = () => {
     setStored(null);
     clearFilterSettings().catch((error) => console.error('Nulstil Filtre fejlede:', error));
   };
 
-  return { ...settings, loading, setFilters, setSortBy, reset };
+  return { ...settings, loading, setFilters, reset };
 }

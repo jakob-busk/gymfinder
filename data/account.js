@@ -6,7 +6,7 @@ export const MIN_PASSWORD_LENGTH = 6;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Felterne til "Gem din profil" (mode 'create') eller "Log ind" (mode 'login').
+// Felterne til "Opret konto" (mode 'create') eller "Log ind" (mode 'login').
 // Returnerer { name, email, password } renset for mellemrum, eller { error } på dansk.
 export function validateAccountForm({ name, email, password }, mode = 'create') {
   const cleanName = String(name ?? '').trim();

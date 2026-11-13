@@ -28,7 +28,7 @@ Det beløb brugeren reelt betaler for et Tilbud over et år, divideret med 12: (
 _Avoid_: Månedspris, førsteårspris, pris (alene) — brug altid "ærlig årspris" når der sammenlignes/sorteres
 
 **Kvartalspris**:
-Det brugeren i gennemsnit betaler pr. måned i de første 3 måneder af et Tilbud: (Oprettelsesgebyr + summen af 3 måneders pris inkl. Admingebyr) / 3. Viser det kortsigtede billede, hvor Kampagnepriser fylder meget. Bruges kun til sortering og som ekstra info — Anbefalet og Prisalarmer bygger altid på Ærlig årspris.
+Det brugeren i gennemsnit betaler pr. måned i de første 3 måneder af et Tilbud: (Oprettelsesgebyr + summen af 3 måneders pris inkl. Admingebyr) / 3. Viser det kortsigtede billede, hvor Kampagnepriser fylder meget. Bruges kun som ekstra info — Anbefalet bygger på Rangeringspris, og Prisalarmer bygger altid på Ærlig årspris.
 
 **Oprettelsesgebyr**:
 Et valgfrit engangsgebyr ved oprettelse af et Tilbud. Indgår i beregningen af Ærlig årspris.
@@ -75,11 +75,22 @@ Brugerens faste ønsker til et Tilbud (faciliteter, maskiner, Abonnementstype), 
 **Filter**:
 Et midlertidigt krav i oversigten (fx sauna, holdtræning, ingen binding, maks. afstand). Centre, der med sikkerhed ikke opfylder et aktivt Filter, vises ikke. Centre, hvor det er ukendt, vises med mærket "Ikke oplyst". Maks. afstand er altid hård.
 
-**Anbefalet**:
-Det Tilbud med lavest Ærlig årspris blandt dem, der med sikkerhed opfylder alle aktive Filtre (ikke "Ikke oplyst"). Uafhængig af hvilken sortering brugeren har valgt.
-
 **Distance**:
 Afstanden i luftlinje mellem brugerens placering (adresse eller GPS) og et Center.
+
+**Afstandstillæg**:
+Et beregnet beløb på 10 kr/md pr. km Distance, som lægges til Ærlig årspris, når Centre rangeres. Brugeren betaler det aldrig, og det vises aldrig. Kendes brugerens placering ikke, er det 0 for alle Centre.
+_Avoid_: Afstandsstraf, kørepris
+
+**Rangeringspris**:
+Ærlig årspris for Centrets billigste Tilbud plus Afstandstillæg. Bruges kun til at rangere Centre og Kæder og til at finde Anbefalet. Vises aldrig for brugeren.
+_Avoid_: Score, matchscore, pris (alene)
+
+**Kædens bedste Center**:
+Det Center i en Kæde med lavest Rangeringspris blandt dem, der med sikkerhed opfylder alle aktive Filtre. Har Kæden ingen af dem, er det Centret med lavest Rangeringspris blandt dem med "Ikke oplyst". Er det Center, der repræsenterer Kæden i resultatlisten.
+
+**Anbefalet**:
+Det Center (med dets billigste Tilbud) med lavest Rangeringspris blandt dem, der med sikkerhed opfylder alle aktive Filtre (ikke "Ikke oplyst").
 
 **Nuværende medlemskab**:
 Det brugeren allerede betaler for, hvis nogen: en månedspris angivet af brugeren selv og eventuelt hvilken Kæde det er hos. Er ikke et Tilbud fra GymFinder. Bruges som sammenligningsgrundlag for Besparelser.

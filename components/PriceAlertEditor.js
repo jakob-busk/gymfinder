@@ -9,12 +9,12 @@ import { describePriceAlert, parseThreshold, thresholdText } from '../data/price
 
 const OFF_DESCRIPTIONS = {
   favorite: 'Få besked, når prisen falder.',
-  currentMembership: 'Få besked, når et Tilbud er billigere end dit medlemskab.',
+  currentMembership: 'Få besked, når et abonnement er billigere end dit medlemskab.',
 };
 
 const FIELD_LABELS = {
-  favorite: 'Sig til, når prisen falder mindst (kr. pr. md.):',
-  currentMembership: 'Sig til, når et Tilbud er mindst så meget billigere (kr. pr. md.):',
+  favorite: 'Giv mig besked, når prisen falder med mindst',
+  currentMembership: 'Giv mig besked, når et abonnement er mindst så meget billigere',
 };
 
 // Prisalarm på en Favorit eller på Nuværende medlemskab (kind = 'favorite' | 'currentMembership'):
@@ -51,7 +51,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
       setEditing(false);
     } catch (saveError) {
       console.error('Gem Prisalarm fejlede:', saveError);
-      Alert.alert('Kunne ikke gemme Prisalarm', TRY_AGAIN_MESSAGE);
+      Alert.alert('Kunne ikke gemme prisalarmen', TRY_AGAIN_MESSAGE);
     } finally {
       setSaving(false);
     }
@@ -62,7 +62,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
       await onDisable();
     } catch (disableError) {
       console.error('Slå Prisalarm fra fejlede:', disableError);
-      Alert.alert('Kunne ikke slå Prisalarm fra', TRY_AGAIN_MESSAGE);
+      Alert.alert('Kunne ikke slå prisalarmen fra', TRY_AGAIN_MESSAGE);
     }
   };
 
@@ -70,15 +70,18 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
     return (
       <View style={[GlobalStyle.cardSection, GlobalStyle.groupPadded]}>
         <Text style={GlobalStyle.fieldLabel}>{FIELD_LABELS[kind]}</Text>
-        <TextInput
-          style={GlobalStyle.input}
-          value={text}
-          onChangeText={setText}
-          placeholder="Ethvert fald"
-          placeholderTextColor={colors.muted}
-          keyboardType="decimal-pad"
-          accessibilityLabel="Tærskel i kr. pr. md."
-        />
+        <View style={GlobalStyle.inputWithUnit}>
+          <TextInput
+            style={[GlobalStyle.input, GlobalStyle.inputWithUnitField]}
+            value={text}
+            onChangeText={setText}
+            placeholder="Ethvert fald"
+            placeholderTextColor={colors.muted}
+            keyboardType="decimal-pad"
+            accessibilityLabel="Tærskel i kr. pr. md."
+          />
+          <Text style={GlobalStyle.inputUnit}>kr. pr. md.</Text>
+        </View>
         {error && <Text style={GlobalStyle.errorText}>{error}</Text>}
         <Text style={GlobalStyle.mutedText}>Lad feltet stå tomt for besked ved ethvert fald.</Text>
         <View style={GlobalStyle.accountActions}>
@@ -89,7 +92,7 @@ export default function PriceAlertEditor({ priceAlert, kind = 'favorite', onSave
             disabled={saving}
           />
           <ButtonComponent
-            title="Gem Prisalarm"
+            title="Gem prisalarm"
             type="primary"
             size="small"
             onPress={handleSave}

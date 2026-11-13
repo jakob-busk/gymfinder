@@ -153,13 +153,21 @@ function onboardingScreens() {
       <RootStack.Group screenOptions={onboardingStepOptions}>
         <RootStack.Screen name="Adresse" component={AddressScreen} />
         <RootStack.Screen name="Fødselsdato" component={BirthDateScreen} />
-        <RootStack.Screen name="Rabatprofil" component={DiscountProfileScreen} />
+        <RootStack.Screen
+          name="Rabatprofil"
+          component={DiscountProfileScreen}
+          options={{ title: 'Rabatter' }}
+        />
         <RootStack.Screen
           name="Medlemskab"
           component={CurrentMembershipScreen}
           options={{ title: 'Nuværende medlemskab' }}
         />
-        <RootStack.Screen name="Præferencer" component={PreferencesScreen} />
+        <RootStack.Screen
+          name="Præferencer"
+          component={PreferencesScreen}
+          options={{ title: 'Dine ønsker' }}
+        />
         <RootStack.Screen name="Klar" component={FinishScreen} />
       </RootStack.Group>
     </>

@@ -27,7 +27,7 @@ export default function PreferencesScreen({ navigation }) {
     <OnboardingStep
       step={5}
       title="Hvad er vigtigt for dig?"
-      intro="Vælg det, du ikke kan undvære. Du kan altid ændre dine Filtre på Find."
+      intro="Vælg det, du ikke kan undvære. Du kan altid ændre dine filtre på Find."
       onNext={goNext}
       onSkip={nothingChosen ? goNext : undefined}
     >

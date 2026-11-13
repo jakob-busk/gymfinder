@@ -112,7 +112,7 @@ test('log ud logger ud og rydder telefonen', async () => {
   await createAccount(FORM);
   await saveUserProfile(user.uid, { address: 'Østerbrogade 79' });
   await saveOnboardingDone();
-  await saveFilterSettings({ filters: { sauna: true }, sortBy: 'distance' });
+  await saveFilterSettings({ filters: { sauna: true } });
   await recordRonnieQuestion(user.uid);
 
   await logOut(user.uid);

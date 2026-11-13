@@ -94,7 +94,7 @@ describe('tærskel', () => {
     );
     expect(describePriceAlert({ thresholdPerMonth: null })).toBe('Besked ved ethvert prisfald.');
     expect(describePriceAlert({ thresholdPerMonth: 50 }, 'currentMembership')).toBe(
-      'Besked, når et Tilbud er mindst 50 kr. pr. md. billigere end dit nuværende medlemskab.',
+      'Besked, når et abonnement er mindst 50 kr. pr. md. billigere end dit nuværende medlemskab.',
     );
   });
 });
@@ -266,6 +266,27 @@ describe('Prisalarm på Nuværende medlemskab', () => {
       honestYearlyPrice: 249,
       savingPerMonth: 100,
     });
+  });
+
+  test('bygger på Ærlig årspris, ikke Rangeringspris', () => {
+    // 'naer' har lavest Rangeringspris (249 + 0) mod 'billigst' (229 + 9 km * 10 = 319),
+    // men Prisalarmen bygger på Ærlig årspris, så 'billigst' udløser den.
+    const nineKmNorth = { latitude: HOME.latitude + 9 / 111.19, longitude: HOME.longitude };
+    const centers = [
+      center('naer', [offer({ standardPrice: 249 })]),
+      center('billigst', [offer({ standardPrice: 229 })], nineKmNorth),
+    ];
+
+    const trigger = currentMembershipAlertTrigger({
+      alert: newCurrentMembershipAlert({ thresholdPerMonth: 50 }),
+      centers,
+      chains: [CHAIN],
+      user: member,
+      today: TODAY,
+    });
+
+    expect(trigger.centerId).toBe('billigst');
+    expect(trigger.savingPerMonth).toBe(120);
   });
 
   test('udløses ikke, når Besparelsen er under tærsklen', () => {

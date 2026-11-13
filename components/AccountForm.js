@@ -5,7 +5,7 @@ import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import { accountErrorMessage, validateAccountForm } from '../data/account';
 
-// Formular til "Gem din profil" (mode 'create': navn, e-mail og adgangskode) eller "Log ind"
+// Formular til "Opret konto" (mode 'create': navn, e-mail og adgangskode) eller "Log ind"
 // (mode 'login': e-mail og adgangskode). onSubmit({ name, email, password }) kaldes med de
 // rensede værdier; kaster den en fejl, vises den på dansk under felterne. onFilledChange(true/false)
 // fortæller, om brugeren har skrevet noget i felterne. submitType er knappens type.
@@ -94,7 +94,7 @@ export default function AccountForm({
       <View style={GlobalStyle.accountActions}>
         {busy && <ActivityIndicator color={colors.text} />}
         <ButtonComponent
-          title={submitLabel ?? (isCreate ? 'Gem din profil' : 'Log ind')}
+          title={submitLabel ?? (isCreate ? 'Opret konto' : 'Log ind')}
           type={submitType}
           onPress={handleSubmit}
           disabled={busy}

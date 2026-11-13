@@ -166,7 +166,6 @@ describe('normal kørsel med PureGym', () => {
         chains,
         user: { currentMembership: null, ...user },
         filters: {},
-        sortBy: 'honestYearlyPrice',
         location: { latitude: 55.6761, longitude: 12.5683 },
         today: NIGHT_1,
       });
@@ -238,7 +237,6 @@ describe('normal kørsel med PureGym', () => {
         chains,
         user: { birthDate: '2000-01-01', discountProfile: ['student'], currentMembership: null },
         filters: {},
-        sortBy: 'honestYearlyPrice',
         location: { latitude: 56.15, longitude: 10.2 },
         today: NIGHT_1,
       });

@@ -11,8 +11,15 @@ import { centerKeywords } from '../data/findView';
 
 // Boksen der vises på kortet, når man trykker på en Center-pin: titel (logo, pin, navn), Ærlig årspris (stort tal),
 // Distance, nøgleord og "Ikke oplyst" for aktive Filtre, hvor det er ukendt.
+// Er Centret Kædens bedste (isChainBest) uden at være Anbefalet, står "Bedste valg hos {kæde}".
 // onShowDetails åbner Centerdetalje, onClose lukker boksen.
-export default function CenterPinInfo({ match, isRecommended, onShowDetails, onClose }) {
+export default function CenterPinInfo({
+  match,
+  isRecommended,
+  isChainBest = false,
+  onShowDetails,
+  onClose,
+}) {
   const { center, chain } = match;
   const keywords = centerKeywords(center);
 
@@ -31,6 +38,9 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
           </View>
         )}
       </View>
+      {isChainBest && !isRecommended && chain?.name && (
+        <Text style={GlobalStyle.mutedText}>Bedste valg hos {chain.name}</Text>
+      )}
       <HonestPrice amount={match.honestYearlyPrice} />
       <Text style={GlobalStyle.distanceText}>
         {match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : 'Afstand ukendt'}
@@ -39,7 +49,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
       <NotStatedRow notStated={match.notStated} />
       <View style={GlobalStyle.pinInfoActions}>
         <ButtonComponent title="Luk" type="text" size="small" onPress={onClose} />
-        <ButtonComponent title="Se detaljer" type="secondary" size="small" onPress={onShowDetails} />
+        <ButtonComponent title="Om centret" type="secondary" size="small" onPress={onShowDetails} />
       </View>
     </View>
   );

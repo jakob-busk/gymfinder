@@ -10,6 +10,7 @@ import {
   ronnieErrorMessage,
   ronnieMatches,
 } from './ronnie';
+import { buildRonnieSystemPrompt } from './ronniePrompt';
 
 // Adfærdstests for Spørg Ronnie uden netværk: hvilke Centre Ronnie kender, hvad der sendes til
 // OpenAI, og hvordan svaret læses. Alle tal er regnet ud på forhånd.
@@ -104,6 +105,58 @@ describe('Centre Ronnie kender', () => {
   });
 });
 
+describe('Centre Ronnie kender fra Find', () => {
+  const OTHER_CHAIN = { id: 'anden', name: 'Anden', website: 'https://anden.dk', discounts: [] };
+  // 22 Centre fra Kæde og ét fra Anden, der ligger længere væk end de 20 nærmeste. Kun nr. 22
+  // bekræfter sauna, så det er det eneste sikre match og dermed Anbefalet.
+  const unknownSauna = { facilities: { sauna: null } };
+  const centers = [
+    ...Array.from({ length: 21 }, (_, i) => center(i + 1, unknownSauna)),
+    center(22),
+    center(30, { id: 'anden-30', chainId: 'anden', name: 'Anden 30', ...unknownSauna }),
+  ];
+  const matches = ronnieMatches({
+    centers,
+    chains: [CHAIN, OTHER_CHAIN],
+    user: USER,
+    filters: { sauna: true },
+    today: TODAY,
+  });
+  const ids = matches.map((match) => match.center.id);
+
+  test('hver Kædes bedste Center og Anbefalet er med ud over de 20 nærmeste', () => {
+    expect(ids).toHaveLength(22);
+    expect(ids.slice(0, 20)).toEqual(Array.from({ length: 20 }, (_, i) => `kaede-${i + 1}`));
+    expect(ids).toContain('kaede-22');
+    expect(ids).toContain('anden-30');
+    expect(ids).not.toContain('kaede-21');
+  });
+
+  test('intet Center kommer med to gange', () => {
+    const near = ronnieMatches({
+      centers: [center(1), center(2)],
+      chains: [CHAIN],
+      user: USER,
+      filters: {},
+      today: TODAY,
+    });
+    expect(near.map((match) => match.center.id)).toEqual(['kaede-1', 'kaede-2']);
+  });
+
+  test('Anbefalet og Kædernes bedste Centre er markeret i prompten', () => {
+    const prompt = buildRonnieSystemPrompt({ matches, user: USER });
+    const facts = JSON.parse(prompt.split('\n').at(-1));
+    const byId = Object.fromEntries(facts.map((fact) => [fact.id, fact]));
+
+    expect(facts.filter((fact) => fact.anbefalet)).toEqual([byId['kaede-22']]);
+    expect(byId['kaede-22'].bedsteValgHosKaeden).toBe(true);
+    expect(byId['anden-30'].bedsteValgHosKaeden).toBe(true);
+    expect(byId['anden-30'].anbefalet).toBeUndefined();
+    expect(byId['kaede-1'].bedsteValgHosKaeden).toBeUndefined();
+    expect(prompt).toContain('"anbefalet"');
+  });
+});
+
 describe('Centre Ronnie kender uden brugerens placering', () => {
   test('med maks. afstand kender han kun Centret fra Centerdetalje, da Distance er ukendt', () => {
     const centers = [center(1), center(2)];
@@ -151,18 +204,31 @@ describe('Forespørgsel til OpenAI', () => {
       tilbud: [
         {
           navn: 'Basis',
+          abonnementstype: 'lokalt center',
           aerligAarsprisKrPrMd: 170,
-          billigsteMulighed: 'Studierabat',
+          billigsteMulighed: 'studierabat',
           oprettelsesgebyrKr: 120,
           admingebyrKr: 10,
           binding: 'Ingen',
         },
       ],
     });
-    expect(systemPrompt).toContain('Anbefal KUN Centre fra listen');
-    expect(systemPrompt).toContain('Ærlig årspris');
+    expect(systemPrompt).toContain('Anbefal kun centre fra listen');
+    expect(systemPrompt).toContain('ærlig årspris');
     expect(systemPrompt).toContain('Studerende');
-    expect(systemPrompt).toContain('299 kr/md');
+    expect(systemPrompt).toContain('299 kr. pr. md.');
+  });
+
+  test('system-prompten beder Ronnie bruge appens ord og skrivemåde', () => {
+    expect(systemPrompt).toContain(
+      'Sprog: Skriv almindeligt dansk med de samme ord som resten af GymFinder.',
+    );
+    expect(systemPrompt).toContain('Stort bogstav kun først i en sætning.');
+    expect(systemPrompt).toMatch(/"center", "kæde",\s+"abonnement", "ærlig årspris"/);
+    expect(systemPrompt).toContain('Sig "abonnement" (ikke tilbud)');
+    // Selve prompten skriver også ordlistens begreber med småt midt i sætninger.
+    const instructions = systemPrompt.split('\n').slice(0, -1).join('\n');
+    expect(instructions).not.toMatch(/[a-zæøå,] (Centre|Center|Tilbud|Ærlig|Binding|Rabat|Filtre)\b/);
   });
 
   test('hele samtalen sendes med i rækkefølge, Ronnies svar i samme JSON-form', () => {

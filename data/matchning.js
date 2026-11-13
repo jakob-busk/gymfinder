@@ -1,5 +1,5 @@
 // Matchning: beregner hvad netop denne bruger reelt kommer til at betale i hvert Center,
-// filtrerer og sorterer Centrene og udpeger det Anbefalede.
+// filtrerer Centrene, sætter dem i rækkefølge efter Rangeringspris og udpeger det Anbefalede.
 //
 // Modulet er ren JavaScript uden afhængighed af React Native eller Expo, så det kan bruges
 // både i appen (Find, Centerdetalje, Favoritter, Ronnie) og af nat-jobbet (prisalarmer).
@@ -43,25 +43,19 @@
 //   Bruger: { birthDate: 'YYYY-MM-DD', discountProfile: ['student', ...],
 //             currentMembership: { monthlyPrice, chainId? } | null }
 
-// Rabatgrupperne. Kun grupper med en medlemspris kan man "melde sig ind i" (Spar mere-forslag).
+// Rabatgrupperne. optionLabel er mulighedens navn med appens ord (småt, så det kan stå midt i en
+// sætning; se "Sproget i appen" i CODING_STANDARDS.md). Kun grupper med en medlemspris kan man "melde sig ind i" (Spar mere-forslag).
 export const DISCOUNT_GROUPS = {
-  student: { label: 'Studerende', optionLabel: 'Studierabat' },
-  senior: { label: 'Senior/pensionist', optionLabel: 'Seniorrabat' },
+  student: { label: 'Studerende', optionLabel: 'studierabat' },
+  senior: { label: 'Senior/pensionist', optionLabel: 'seniorrabat' },
   aeldreSagen: {
     label: 'Ældre Sagen-medlem',
     optionLabel: 'Ældre Sagen-rabat',
     membershipPricePerYear: 310,
     minAge: 18,
   },
-  partner: { label: 'Træn med en makker', optionLabel: 'Makkerpris' },
+  partner: { label: 'Træn med en makker', optionLabel: 'makkerpris' },
 };
-
-export const SORT_OPTIONS = [
-  { id: 'honestYearlyPrice', label: 'Ærlig årspris, billigst først' },
-  { id: 'quarterlyPrice', label: 'Kvartalspris, billigst først' },
-  { id: 'priceDesc', label: 'Ærlig årspris, dyrest først' },
-  { id: 'distance', label: 'Afstand, nærmest først' },
-];
 
 const MONTHS_IN_YEAR = 12;
 const MONTHS_IN_QUARTER = 3;
@@ -168,7 +162,7 @@ function optionsFor(offer, chain, profile, ageGroups) {
       id: hasCampaign ? 'campaign' : 'standard',
       kind: hasCampaign ? 'campaign' : 'standard',
       discountGroup: null,
-      label: hasCampaign ? 'Kampagnepris' : 'Standardpris',
+      label: hasCampaign ? 'kampagnepris' : 'normalpris',
       signupFee,
       month: (i) =>
         hasCampaign && i < offer.campaignMonths
@@ -184,7 +178,7 @@ function optionsFor(offer, chain, profile, ageGroups) {
       id: `discount-${discount.discountGroup}`,
       kind: 'discount',
       discountGroup: discount.discountGroup,
-      label: DISCOUNT_GROUPS[discount.discountGroup]?.optionLabel ?? 'Rabat',
+      label: DISCOUNT_GROUPS[discount.discountGroup]?.optionLabel ?? 'rabat',
       signupFee: discount.signupFee ?? signupFee,
       month: (i) => {
         if (i >= months) return { price: standard(i), kind: 'standard' };
@@ -322,15 +316,17 @@ export function distanceKm(from, to) {
 
 export const FACILITY_FILTERS = ['sauna', 'groupClasses', 'open24h'];
 
-// Navne til "Ikke oplyst"-mærker i UI. Abonnementstype-Filteret hedder "Landsdækkende" i UI,
-// så mærket bruger samme ord.
+// Navne til "Ikke oplyst" og faciliteter i UI, med appens ord og småt, så de kan stå midt i en
+// sætning ("Ikke oplyst: binding, maskiner"). Står navnet alene (mærke, rækkenavn), får det stort
+// begyndelsesbogstav dér. Abonnementstype-Filteret hedder "landsdækkende" i UI, så navnet bruger
+// samme ord.
 export const NOT_STATED_LABELS = {
-  sauna: 'Sauna',
-  groupClasses: 'Holdtræning',
-  open24h: 'Døgnåbent',
-  machines: 'Maskiner',
-  binding: 'Binding',
-  subscriptionType: 'Landsdækkende',
+  sauna: 'sauna',
+  groupClasses: 'holdtræning',
+  open24h: 'døgnåbent',
+  machines: 'maskiner',
+  binding: 'binding',
+  subscriptionType: 'landsdækkende',
 };
 
 function checkCenter(center, filters) {
@@ -395,33 +391,52 @@ function savingSuggestionsFor(offers, chain, user, profile, today, currentBest) 
     .filter((suggestion) => suggestion.savingPerYear > suggestion.membershipPricePerYear);
 }
 
-// ---------- Sortering ----------
+// ---------- Rangeringspris og rækkefølge ----------
 
-const COMPARATORS = {
-  honestYearlyPrice: (a, b) => a.honestYearlyPrice - b.honestYearlyPrice,
-  quarterlyPrice: (a, b) => a.quarterlyPrice - b.quarterlyPrice,
-  priceDesc: (a, b) => b.honestYearlyPrice - a.honestYearlyPrice,
-  distance: (a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity),
-};
+// Afstandstillæg: 10 kr/md pr. km Distance. En fast konstant, brugeren ikke kan ændre.
+export const DISTANCE_SURCHARGE_PER_KM = 10;
 
-function sortCenters(results, sortBy) {
-  const compare = COMPARATORS[sortBy] ?? COMPARATORS.honestYearlyPrice;
-  return [...results].sort(
-    (a, b) =>
-      compare(a, b) ||
-      a.honestYearlyPrice - b.honestYearlyPrice ||
-      String(a.center.id).localeCompare(String(b.center.id)),
+// Afstandstillægget for en Distance. Kendes Distance ikke (fx brugerens placering er ukendt),
+// er det 0.
+function distanceSurcharge(distance) {
+  return distance == null ? 0 : distance * DISTANCE_SURCHARGE_PER_KM;
+}
+
+// Rangeringspris: Ærlig årspris for et Tilbud plus Afstandstillæg for Centrets Distance.
+function rankingPrice(priced, distance) {
+  return priced.honestYearlyPrice + distanceSurcharge(distance);
+}
+
+// Lavest Rangeringspris først. Uafgjort afgøres af Ærlig årspris for det Tilbud, Centret
+// rangeres på, og derefter Center-id, så rækkefølgen er stabil.
+function byRankingPrice(a, b) {
+  return (
+    a.rankingPrice - b.rankingPrice ||
+    a.rankedOffer.honestYearlyPrice - b.rankedOffer.honestYearlyPrice ||
+    String(a.center.id).localeCompare(String(b.center.id))
   );
 }
 
 // ---------- Matchning ----------
 
-// Input:  { centers, chains, user, filters, sortBy, location, today }
-// Output: { centers: [CenterMatch], recommendedId, recommendedOfferId }
+// Input:  { centers, chains, user, filters, location, today }
+// Output: { centers: [CenterMatch], chains: [ChainMatch], recommendedId, recommendedOfferId }
+//   centers står efter Rangeringspris, lavest først (uafgjort: Ærlig årspris, derefter Center-id).
+//   chains har én post pr. Kæde med mindst ét matchende Center (se groupByChain).
+//   recommendedOfferId = rankedOffer for det Anbefalede Center.
+//
+// ChainMatch: { chain, best, others: [CenterMatch], isSureMatch, rankingPrice }
+//   best = Kædens bedste Center (CenterMatch). others = Kædens andre matchende Centre efter
+//   Rangeringspris. isSureMatch = best er et sikkert match. rankingPrice = Rangeringsprisen for
+//   best, som Kæden rangeres på. Vises aldrig.
 //
 // CenterMatch: { center, chain, distanceKm, offers: [PrisetTilbud], bestOffer, honestYearlyPrice,
-//                quarterlyPrice, notStated, isSureMatch, bestSureOffer, savingSuggestions,
-//                savingPerMonth }
+//                rankingPrice, quarterlyPrice, notStated, isSureMatch, bestSureOffer,
+//                rankedOffer, savingSuggestions, savingPerMonth }
+//   rankedOffer = det Tilbud, Centret rangeres på: for et sikkert match det billigste Tilbud,
+//                 der med sikkerhed matcher (bestSureOffer), ellers bestOffer.
+//   rankingPrice = Rangeringspris: Ærlig årspris for rankedOffer + Afstandstillæg. Bruges kun til
+//                  rækkefølgen, Kædens bedste Center og Anbefalet og vises aldrig.
 //   notStated = aktive Filtre, der er "Ikke oplyst" for Centret / det billigste Tilbud.
 //   savingPerMonth = Besparelse i forhold til Nuværende medlemskab (null hvis intet).
 // PrisetTilbud: { offer, honestYearlyPrice, quarterlyPrice, yearlyOption, quarterlyOption,
@@ -432,7 +447,7 @@ function sortCenters(results, sortBy) {
 //
 // bestOffer er Tilbuddet med lavest Ærlig årspris. quarterlyPrice på Centret er den laveste
 // Kvartalspris blandt Centrets Tilbud. Priser er ikke afrundede; afrund først ved visning.
-export function matchCenters({ centers, chains, user, filters, sortBy, location, today }) {
+export function matchCenters({ centers, chains, user, filters, location, today }) {
   const activeFilters = filters ?? {};
   const todayDate = toDate(today ?? new Date());
   const profile = user?.discountProfile ?? [];
@@ -465,6 +480,7 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
     const bestOffer = offers[0];
     const sureOffers =
       centerCheck.notStated.length === 0 ? offers.filter((o) => o.notStated.length === 0) : [];
+    const rankedOffer = sureOffers[0] ?? bestOffer;
 
     results.push({
       center,
@@ -473,10 +489,12 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
       offers,
       bestOffer,
       honestYearlyPrice: bestOffer.honestYearlyPrice,
+      rankingPrice: rankingPrice(rankedOffer, distance),
       quarterlyPrice: cheapest(offers, 'quarterlyPrice').quarterlyPrice,
       notStated: [...centerCheck.notStated, ...bestOffer.notStated],
       isSureMatch: sureOffers.length > 0,
       bestSureOffer: sureOffers[0] ?? null,
+      rankedOffer,
       savingSuggestions: savingSuggestionsFor(
         eligibleOffers,
         chain,
@@ -489,18 +507,42 @@ export function matchCenters({ centers, chains, user, filters, sortBy, location,
     });
   }
 
-  // Anbefalet: lavest Ærlig årspris blandt sikre match, uafhængig af sorteringen.
-  const sure = results.filter((result) => result.isSureMatch);
-  const recommended =
-    sure.length > 0
-      ? sure.reduce((best, r) =>
-          r.bestSureOffer.honestYearlyPrice < best.bestSureOffer.honestYearlyPrice ? r : best,
-        )
-      : null;
-
+  // Anbefalet: lavest Rangeringspris blandt sikre match, regnet på det billigste Tilbud, der
+  // med sikkerhed matcher. Et Center med "Ikke oplyst" kan aldrig blive Anbefalet.
+  const sorted = [...results].sort(byRankingPrice);
+  const recommended = sorted.find((result) => result.isSureMatch) ?? null;
   return {
-    centers: sortCenters(results, sortBy),
+    centers: sorted,
+    chains: groupByChain(sorted),
     recommendedId: recommended?.center.id ?? null,
-    recommendedOfferId: recommended?.bestSureOffer.offer.id ?? null,
+    recommendedOfferId: recommended?.rankedOffer.offer.id ?? null,
   };
+}
+
+// Ét ChainMatch pr. Kæde med mindst ét matchende Center. sorted er Centrene efter Rangeringspris.
+// Kædens bedste Center er det sikre match med lavest Rangeringspris (samme regel som Anbefalet);
+// har Kæden ingen sikre match, er det Centret med lavest Rangeringspris. Kæder med sikre match
+// står først, hver gruppe efter Rangeringsprisen for Kædens bedste Center. Så er Kæde nr. 1's
+// bedste Center også Anbefalet, når der findes et sikkert match.
+function groupByChain(sorted) {
+  const byChain = new Map();
+  for (const result of sorted) {
+    const key = result.center.chainId ?? result.chain?.id ?? null;
+    if (!byChain.has(key)) byChain.set(key, []);
+    byChain.get(key).push(result);
+  }
+
+  const groups = [...byChain].map(([key, matches]) => {
+    const best = matches.find((result) => result.isSureMatch) ?? matches[0];
+    return {
+      // Kendes Kæden ikke (mangler i chains), har den kun et id.
+      chain: best.chain ?? { id: key, name: null },
+      best,
+      others: matches.filter((result) => result !== best),
+      isSureMatch: best.isSureMatch,
+      rankingPrice: best.rankingPrice,
+    };
+  });
+
+  return groups.sort((a, b) => b.isSureMatch - a.isSureMatch || byRankingPrice(a.best, b.best));
 }

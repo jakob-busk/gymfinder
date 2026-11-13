@@ -107,7 +107,7 @@ const display = (size, tracking = -0.015) => ({
 const figure = (size, tracking = -0.03) => ({
   fontFamily: fonts.figure,
   fontSize: size,
-  lineHeight: Math.round(size * 1.02),
+  lineHeight: Math.round(size * 1.2),
   letterSpacing: size * tracking,
   color: colors.text,
   fontVariant: ['tabular-nums'],
@@ -431,7 +431,7 @@ const GlobalStyle = StyleSheet.create({
   },
   cardPrice: {
     ...figure(44, -0.03),
-    lineHeight: 45,
+    lineHeight: 53,
   },
   cardPriceUnitBox: {
     paddingBottom: 6,
@@ -460,6 +460,39 @@ const GlobalStyle = StyleSheet.create({
     lineHeight: 24,
     letterSpacing: -0.2,
     color: colors.text,
+  },
+  // "N andre centre i {Kæde}" nederst på et kæde-kort og rækkerne, der foldes ud.
+  chainOthers: {
+    alignItems: 'flex-start',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderStrong,
+    marginTop: 16,
+    paddingTop: 8,
+  },
+  chainOthersOnInk: {
+    borderTopColor: 'rgba(247, 241, 232, 0.24)',
+  },
+  chainOtherRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+  },
+  chainOtherName: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: colors.text,
+  },
+  chainOtherPriceBox: {
+    alignItems: 'flex-end',
+    gap: 1,
+  },
+  chainOtherPrice: {
+    fontFamily: fonts.figure,
+    fontSize: 15,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
   // Kædens logo: lyst logo på en lille blæk-pille, samme højde for alle Kæder (se ChainLogo).
   chainPill: {
@@ -813,6 +846,22 @@ const GlobalStyle = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 16,
   },
+  // Et tekstfelt med enheden ved siden af, fx "kr. pr. md." i prisalarmen.
+  inputWithUnit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  inputWithUnitField: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  inputUnit: {
+    fontFamily: fonts.medium,
+    color: colors.text,
+    fontSize: 16,
+  },
   // Knapper: primær (den ene handling på skærmen, violet pille), sekundær (blæk-omrids), tekst
   // (understreget som et link) og ghost (rolig flade). Alle trykkes ind med en lille fjeder.
   buttonPrimary: {
@@ -901,6 +950,65 @@ const GlobalStyle = StyleSheet.create({
   },
   buttonTextOnInk: {
     color: colors.onInk,
+  },
+  // Facilitetsmærker på kæde-kortet (se FacilityTags). Ingen nye farver (ADR 0006): ønsket er en
+  // blæk-pille med ✓, ikke oplyst en stiplet blæk-kant med "?", og andre faciliteter er dæmpet
+  // tekst uden kant. På blæk-blokken er farverne vendt om.
+  facilityTagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  facilityTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    borderRadius: shape.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  facilityTagWanted: {
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
+  },
+  facilityTagWantedOnInk: {
+    backgroundColor: colors.onInk,
+    borderColor: colors.onInk,
+  },
+  facilityTagNotStated: {
+    borderStyle: 'dashed',
+    borderColor: colors.ink,
+  },
+  facilityTagNotStatedOnInk: {
+    borderStyle: 'dashed',
+    borderColor: colors.onInk,
+  },
+  facilityTagText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
+  },
+  facilityTagOtherText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.muted,
+  },
+  facilityTagMore: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
+    textDecorationLine: 'underline',
+  },
+  // Teksten i en blæk-pille (lys) og i en lys pille på blæk-blokken (blæk).
+  textOnInkPill: {
+    color: colors.onInk,
+  },
+  textOnPaperPill: {
+    color: colors.text,
   },
   // Valg-kontroller: mærker man slår til og fra, et segment-valg med en glidende markør, en række
   // med en kontakt, et felt der åbner en liste (dropdown) og grupper af rækker som i Indstillinger.
@@ -1243,8 +1351,8 @@ const GlobalStyle = StyleSheet.create({
   legendDot: {
     marginBottom: 8,
   },
-  // Pins: Anbefalet er en stor papirprik med tyk blæk-ring, de andre Centre er små blækprikker med
-  // en papirkant, så de kan ses på kortet. Bruges både på kortet (native) og i forklaringen.
+  // Pins: Anbefalet er en stor papirprik med tyk blæk-ring, hver Kædes bedste Center en mellemstor
+  // blækprik, og Kædernes andre Centre er små, dæmpede prikker med en papirkant. Bruges både på kortet (native) og i forklaringen.
   mapPinRecommended: {
     width: 24,
     height: 24,
@@ -1253,11 +1361,21 @@ const GlobalStyle = StyleSheet.create({
     borderWidth: 6,
     borderColor: colors.ink,
   },
-  mapPinCenter: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  // Kædens bedste Center: en mellemstor blækprik, så hver Kædes bedste Center kan ses blandt de
+  // andre.
+  mapPinChainBest: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: colors.ink,
+    borderWidth: 3,
+    borderColor: colors.surface,
+  },
+  mapPinCenter: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.muted,
     borderWidth: 2,
     borderColor: colors.surface,
   },
@@ -1269,16 +1387,22 @@ const GlobalStyle = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.surface,
   },
-  // På web er Centrene piller: Anbefalet papir med blæk-kant, de andre blæk.
+  // På web er Centrene piller: Anbefalet papir med blæk-kant, Kædens bedste Center blæk, de andre
+  // dæmpet.
   webMapPinRecommended: {
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.ink,
   },
-  webMapPinCenter: {
+  webMapPinChainBest: {
     backgroundColor: colors.ink,
     borderWidth: 2,
     borderColor: colors.ink,
+  },
+  webMapPinCenter: {
+    backgroundColor: colors.muted,
+    borderWidth: 2,
+    borderColor: colors.muted,
   },
   emptyState: {
     alignItems: 'center',
@@ -1434,17 +1558,34 @@ const GlobalStyle = StyleSheet.create({
   receiptTotal: {
     ...figure(34),
   },
-  facilityGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  // Faciliteter som små bento-felter, to pr. række.
-  facilityCell: {
-    width: '48%',
+  // Centerdetalje: tabellen "Om centret" på lyst papir, én række pr. oplysning med en tynd linje
+  // imellem.
+  aboutTable: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 14,
+    borderRadius: shape.radius,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 16,
+    paddingVertical: 10,
+  },
+  aboutRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  aboutLabel: {
+    fontFamily: fonts.body,
+    color: colors.muted,
+  },
+  aboutValue: {
+    flexShrink: 1,
+    textAlign: 'right',
+    fontFamily: fonts.semibold,
+    color: colors.text,
   },
   // Advarsel: lyst papir med en blæk-kant og et ikon ved titlen, ingen gul.
   warningBox: {

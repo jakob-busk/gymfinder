@@ -5,7 +5,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import RonnieMascot from '../components/RonnieMascot';
 
 // Om GymFinder: hvad GymFinder er, og "Sådan virker det" (Anbefalet, hvor priserne kommer fra,
-// affiliate og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og sorteringen
+// hvordan vi tjener penge og Ronnie). Nås fra Profil. Teksterne bygger på koden: Anbefalet og rækkefølgen
 // regnes i data/matchning.js ud fra pris, Filtre og afstand, og priserne hentes af den natlige
 // scraper (scraper/, docs/adr/0001).
 export default function AboutScreen() {
@@ -20,35 +20,35 @@ export default function AboutScreen() {
 
       <Text style={GlobalStyle.sectionLabel}>Sådan virker det</Text>
 
-      <Text style={GlobalStyle.groupTitle}>Hvordan vælges Anbefalet?</Text>
+      <Text style={GlobalStyle.groupTitle}>Hvordan vælger vi det anbefalede center?</Text>
       <Text style={GlobalStyle.bodyText}>
-        Anbefalet er det Tilbud med den laveste Ærlig årspris blandt de Centre, der med sikkerhed
-        opfylder dine Filtre. Ærlig årspris er det, du reelt betaler i gennemsnit pr. måned over et
-        år, med Oprettelsesgebyr, Admingebyr, Kampagnepriser og dine Rabatter regnet med. Centre,
-        hvor noget er "Ikke oplyst", kan ikke blive Anbefalet. Anbefalet er det samme, uanset hvilken
-        sortering du vælger.
+        Vi vælger det center, der passer bedst til dig ud fra pris og afstand. Et center lidt
+        længere væk skal være mærkbart billigere for at vinde. Prisen er den ærlige årspris: det, du
+        reelt betaler i gennemsnit pr. måned over et år, med oprettelse, admingebyr, kampagnepriser
+        og dine rabatter regnet med. Vi vælger kun blandt centre, der helt sikkert passer til dine
+        ønsker, så et center, hvor noget er "ikke oplyst", kan ikke blive anbefalet.
       </Text>
 
       <Text style={GlobalStyle.groupTitle}>Hvor kommer priserne fra?</Text>
       <Text style={GlobalStyle.bodyText}>
-        Hver nat henter vi priser og Centre direkte fra Kædernes egne hjemmesider. Ser en pris
+        Hver nat henter vi priser og centre direkte fra kædernes egne hjemmesider. Ser en pris
         mærkelig ud (fx hvis den ændrer sig meget på én nat), beholder vi den gamle, indtil den er
-        tjekket. Priserne kan derfor være op til et døgn gamle, så tjek altid prisen hos Kæden, før
+        tjekket. Priserne kan derfor være op til et døgn gamle, så tjek altid prisen hos kæden, før
         du melder dig ind.
       </Text>
 
       <Text style={GlobalStyle.groupTitle}>Tjener vi penge på det?</Text>
       <Text style={GlobalStyle.bodyText}>
-        Vi samarbejder med fitnesscentrene om affiliate-aftaler, så det er gratis for dig at bruge
-        GymFinder. Aftalerne indgår ikke i beregningen: rækkefølgen og Anbefalet regnes kun ud fra
-        pris, dine Filtre og afstand.
+        Nogle kæder betaler os et lille beløb, når du melder dig ind via GymFinder. Derfor er appen
+        gratis. Aftalerne indgår ikke i beregningen: rækkefølgen og anbefalingen regnes kun ud fra
+        pris, dine ønsker og afstand.
       </Text>
 
       <Text style={GlobalStyle.groupTitle}>Hvem er Ronnie?</Text>
       <Text style={GlobalStyle.bodyText}>
-        Ronnie er vores maskot og din rådgiver. Han anbefaler kun Centre fra GymFinder og
-        sammenligner altid på Ærlig årspris. Ronnie er en AI: hans svar bygger på priserne i
-        GymFinder, men han kan tage fejl, så tjek altid prisen hos Centret, før du melder dig ind.
+        Ronnie er vores maskot og din rådgiver. Han anbefaler kun centre fra GymFinder og
+        sammenligner altid på ærlig årspris. Ronnie er en AI: hans svar bygger på priserne i
+        GymFinder, men han kan tage fejl, så tjek altid prisen hos centret, før du melder dig ind.
       </Text>
     </ScrollView>
   );

@@ -16,7 +16,7 @@ const PREFERENCE_TOGGLES = [
   {
     key: 'multiCenterAccess',
     label: 'Landsdækkende',
-    description: 'Adgang til alle Kædens Centre, ikke kun ét Lokalt Center',
+    description: 'Adgang til alle kædens centre, ikke kun ét lokalt center',
   },
   { key: 'noBinding', label: 'Ingen binding' },
 ];

@@ -1,4 +1,4 @@
-// Filtre og sortering huskes på telefonen (AsyncStorage) og kan nulstilles.
+// Filtre huskes på telefonen (AsyncStorage) og kan nulstilles.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { resolveFilterSettings } from '../data/filterSettings';
@@ -25,24 +25,35 @@ test('intet gemt: Filtrene er Præferencerne', async () => {
   );
 });
 
-test('gemte Filtre og sortering hentes igen (som efter genstart)', async () => {
+test('gemte Filtre hentes igen (som efter genstart)', async () => {
   const filters = { ...EMPTY_PREFERENCES, sauna: true, maxDistanceKm: 50 };
-  await saveFilterSettings({ filters, sortBy: 'quarterlyPrice' });
+  await saveFilterSettings({ filters });
 
   expect(resolveFilterSettings(await loadFilterSettings(), PREFERENCES)).toEqual({
     filters,
-    sortBy: 'quarterlyPrice',
     isCustom: true,
   });
 });
 
-test('nulstil giver Præferencerne og standard-sorteringen tilbage', async () => {
-  await saveFilterSettings({ filters: { ...EMPTY_PREFERENCES, sauna: true }, sortBy: 'distance' });
+test('en sortering gemt af en tidligere version ignoreres uden fejl', async () => {
+  const filters = { ...EMPTY_PREFERENCES, sauna: true };
+  await AsyncStorage.setItem(
+    'gymfinder:filterSettings',
+    JSON.stringify({ filters, sortBy: 'quarterlyPrice' }),
+  );
+
+  expect(resolveFilterSettings(await loadFilterSettings(), PREFERENCES)).toEqual({
+    filters,
+    isCustom: true,
+  });
+});
+
+test('nulstil giver Præferencerne tilbage', async () => {
+  await saveFilterSettings({ filters: { ...EMPTY_PREFERENCES, sauna: true } });
   await clearFilterSettings();
 
   expect(resolveFilterSettings(await loadFilterSettings(), PREFERENCES)).toEqual({
     filters: PREFERENCES,
-    sortBy: 'honestYearlyPrice',
     isCustom: false,
   });
 });

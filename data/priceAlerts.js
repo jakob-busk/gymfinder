@@ -67,8 +67,8 @@ export function describePriceAlert(priceAlert, kind = 'favorite') {
   const amount = threshold == null ? null : formatPrice(threshold);
   if (kind === 'currentMembership') {
     return amount
-      ? `Besked, når et Tilbud er mindst ${amount} billigere end dit nuværende medlemskab.`
-      : 'Besked, når et Tilbud er billigere end dit nuværende medlemskab.';
+      ? `Besked, når et abonnement er mindst ${amount} billigere end dit nuværende medlemskab.`
+      : 'Besked, når et abonnement er billigere end dit nuværende medlemskab.';
   }
   return amount ? `Besked, når prisen falder mindst ${amount}` : 'Besked ved ethvert prisfald.';
 }
@@ -183,11 +183,16 @@ export function currentMembershipAlertTrigger({ alert, centers, chains, user, to
     chains,
     user,
     filters: maxDistanceKm == null ? {} : { maxDistanceKm },
-    sortBy: 'honestYearlyPrice',
     location: user?.location ?? null,
     today,
   });
-  const best = matches[0];
+  // Prisalarmer bygger på Ærlig årspris, ikke Rangeringspris, så det billigste Center vælges
+  // her uafhængigt af Matchnings rækkefølge (uafgjort: Center-id, så valget er stabilt).
+  const best = [...matches].sort(
+    (a, b) =>
+      a.honestYearlyPrice - b.honestYearlyPrice ||
+      String(a.center.id).localeCompare(String(b.center.id)),
+  )[0];
   if (!best) return null;
 
   const savingPerMonth = monthlyPrice - best.honestYearlyPrice;

@@ -97,7 +97,6 @@ describe('seed af centerdata', () => {
         currentMembership: { monthlyPrice: 299, chainId: null },
       },
       filters: { maxDistanceKm: 50 },
-      sortBy: 'honestYearlyPrice',
       location: { latitude: 55.7088, longitude: 12.5725 },
       today: new Date('2026-10-22'),
     };

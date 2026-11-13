@@ -12,15 +12,15 @@ import { UserContext } from '../data/UserContext';
 import { useCenterData } from '../services/CenterData';
 import { useFilterSettings } from '../services/FilterSettings';
 
-// Filtre til Find (sorteringen vælges kun på Find, så den står ét sted): sauna, holdtræning, døgnåbent, Landsdækkende
-// (Abonnementstype), ingen Binding, maskiner og maks. afstand. Udgangspunktet er brugerens
-// Præferencer. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
+// Filtre til Find: sauna, holdtræning, døgnåbent, Landsdækkende
+// (Abonnementstype), ingen Binding, maskiner og maks. afstand. Brugerens Præferencer er valgt
+// på forhånd. Ændringer gemmes med det samme og huskes efter genstart; Nulstil går tilbage
 // til Præferencerne. Find læser de samme gemte Filtre, så kort og liste følger med.
 // Knappen nederst viser, hvor mange Centre Filtrene giver, før man går tilbage til Find.
 export default function FiltersScreen({ navigation }) {
   const { user } = useContext(UserContext);
   const centerData = useCenterData();
-  const { filters, sortBy, isCustom, loading, setFilters, reset } = useFilterSettings(
+  const { filters, isCustom, loading, setFilters, reset } = useFilterSettings(
     user.preferences,
   );
 
@@ -39,12 +39,11 @@ export default function FiltersScreen({ navigation }) {
         chains: centerData.chains,
         user,
         filters,
-        sortBy,
         location: user.location,
         today: new Date(),
       }).centers.length;
   const showLabel =
-    count == null ? 'Vis resultater' : `Vis ${count} ${count === 1 ? 'Center' : 'Centre'}`;
+    count == null ? 'Vis resultater' : `Vis ${count} ${count === 1 ? 'center' : 'centre'}`;
 
   return (
     <SafeAreaView style={GlobalStyle.screen} edges={['bottom']}>
@@ -53,13 +52,13 @@ export default function FiltersScreen({ navigation }) {
 
         <Text style={GlobalStyle.mutedText}>
           {isCustom
-            ? 'Du har rettet Filtrene. Nulstil for at bruge dine Præferencer fra Profil igen.'
-            : 'Udgangspunktet er dine Præferencer fra Profil.'}
+            ? 'Du har rettet filtrene. Nulstil for at bruge dine ønsker fra Profil igen.'
+            : 'Dine faste ønsker fra Profil er valgt på forhånd.'}
         </Text>
         <View style={[GlobalStyle.inlineRow, GlobalStyle.paragraph]}>
           <Text style={[GlobalStyle.mutedText, GlobalStyle.shrinkText]}>
-            Centre, der med sikkerhed ikke opfylder dine Filtre, skjules. Er det ukendt, vises de
-            med "Ikke oplyst". Maks. afstand gælder altid.
+            Vi skjuler centre, der ikke har det, du har valgt. Ved vi det ikke, står der "ikke
+            oplyst". Maks. afstand gælder altid.
           </Text>
           <InfoButton term="notStated" />
         </View>
