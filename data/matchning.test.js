@@ -732,6 +732,171 @@ describe('Rækkefølge', () => {
   });
 });
 
+describe('Kæder', () => {
+  const ids = (matches) => matches.map((entry) => entry.center.id);
+  const chainIds = (result) => result.chains.map((entry) => entry.chain.id);
+  const twoChains = [chain({ id: 'a', name: 'A' }), chain({ id: 'b', name: 'B' })];
+
+  test('én post pr. Kæde med Kædens bedste Center og de andre efter Rangeringspris', () => {
+    // a1: 300 + 30 = 330, a2: 250 + 10 = 260, a3: 280 + 20 = 300, b1: 200 + 50 = 250
+    const result = run({
+      chains: twoChains,
+      centers: [
+        center({
+          id: 'a1',
+          chainId: 'a',
+          location: north(3),
+          offers: [offer({ standardPrice: 300 })],
+        }),
+        center({
+          id: 'a2',
+          chainId: 'a',
+          location: north(1),
+          offers: [offer({ standardPrice: 250 })],
+        }),
+        center({
+          id: 'a3',
+          chainId: 'a',
+          location: north(2),
+          offers: [offer({ standardPrice: 280 })],
+        }),
+        center({
+          id: 'b1',
+          chainId: 'b',
+          location: north(5),
+          offers: [offer({ standardPrice: 200 })],
+        }),
+      ],
+    });
+    expect(chainIds(result)).toEqual(['b', 'a']);
+    const [b, a] = result.chains;
+    expect(b.best.center.id).toBe('b1');
+    expect(b.others).toEqual([]);
+    expect(a.best.center.id).toBe('a2');
+    expect(ids(a.others)).toEqual(['a3', 'a1']);
+    expect(a.chain.name).toBe('A');
+    // Listen af Centre (til kortet) har stadig alle Centre.
+    expect(ids(result.centers)).toEqual(['b1', 'a2', 'a3', 'a1']);
+  });
+
+  test('et sikkert match vinder over "Ikke oplyst" inden for en Kæde', () => {
+    // ukendt: 149 + 10 = 159 er billigst, men sikker: 249 + 20 = 269 er Kædens bedste Center.
+    const result = run({
+      filters: { sauna: true },
+      centers: [
+        center({
+          id: 'ukendt',
+          location: north(1),
+          facilities: { sauna: null },
+          offers: [offer({ standardPrice: 149 })],
+        }),
+        center({ id: 'sikker', location: north(2), offers: [offer({ standardPrice: 249 })] }),
+      ],
+    });
+    expect(result.chains).toHaveLength(1);
+    expect(result.chains[0].best.center.id).toBe('sikker');
+    expect(ids(result.chains[0].others)).toEqual(['ukendt']);
+    expect(result.chains[0].isSureMatch).toBe(true);
+  });
+
+  test('Kædens bedste Center regnes på de Tilbud, der med sikkerhed matcher', () => {
+    // a1: billigste Tilbud har ukendt Binding (99); det sikre koster 299 -> 299.
+    // a2: 259 med sikkerhed uden Binding -> 259.
+    const result = run({
+      filters: { noBinding: true },
+      centers: [
+        center({
+          id: 'a1',
+          offers: [
+            offer({ id: 'ukendt-binding', standardPrice: 99, bindingMonths: null }),
+            offer({ id: 'fri', standardPrice: 299, bindingMonths: 0 }),
+          ],
+        }),
+        center({ id: 'a2', offers: [offer({ id: 'a2-fri', standardPrice: 259 })] }),
+      ],
+    });
+    expect(result.chains[0].best.center.id).toBe('a2');
+    expect(result.recommendedId).toBe('a2');
+  });
+
+  test('en Kæde med kun "Ikke oplyst" er med, står efter sikre match og er ikke Anbefalet', () => {
+    // a (kun ukendt): 99 og 149 -> billigst, men står sidst. b (sikker): 299.
+    const result = run({
+      chains: twoChains,
+      filters: { sauna: true },
+      centers: [
+        center({
+          id: 'a-dyr',
+          chainId: 'a',
+          facilities: { sauna: null },
+          offers: [offer({ standardPrice: 149 })],
+        }),
+        center({
+          id: 'a-billig',
+          chainId: 'a',
+          facilities: { sauna: null },
+          offers: [offer({ standardPrice: 99 })],
+        }),
+        center({ id: 'b1', chainId: 'b', offers: [offer({ standardPrice: 299 })] }),
+      ],
+    });
+    expect(chainIds(result)).toEqual(['b', 'a']);
+    const a = result.chains[1];
+    expect(a.isSureMatch).toBe(false);
+    expect(a.best.center.id).toBe('a-billig');
+    expect(ids(a.others)).toEqual(['a-dyr']);
+    expect(result.recommendedId).toBe('b1');
+  });
+
+  test('uden sikre match er ingen Kæde Anbefalet', () => {
+    const result = run({
+      filters: { sauna: true },
+      centers: [center({ facilities: { sauna: null } })],
+    });
+    expect(result.chains).toHaveLength(1);
+    expect(result.chains[0].isSureMatch).toBe(false);
+    expect(result.recommendedId).toBeNull();
+  });
+
+  test('Kæder uden matchende Centre er ikke med', () => {
+    const result = run({
+      chains: [...twoChains, chain({ id: 'c', name: 'C' })],
+      filters: { sauna: true },
+      centers: [
+        center({ id: 'a1', chainId: 'a' }),
+        center({ id: 'b1', chainId: 'b', facilities: { sauna: false } }),
+      ],
+    });
+    expect(chainIds(result)).toEqual(['a']);
+  });
+
+  test('Kæderne står efter Rangeringsprisen for Kædens bedste Center, og nr. 1 er Anbefalet', () => {
+    const { CENTERS, CHAINS, DEFAULT_USER } = require('./const');
+    for (const filters of [{}, DEFAULT_USER.preferences]) {
+      const result = matchCenters({
+        centers: CENTERS,
+        chains: CHAINS,
+        user: DEFAULT_USER,
+        filters,
+        location: DEFAULT_USER.location,
+        today: TODAY,
+      });
+      const chainKeys = result.chains.map((entry) => entry.chain.id);
+      expect(new Set(chainKeys).size).toBe(chainKeys.length);
+      // Hvert Center står præcis én gang: som bedste Center eller blandt de andre.
+      const all = result.chains.flatMap((entry) => [entry.best, ...entry.others]);
+      expect(ids(all).sort()).toEqual(ids(result.centers).sort());
+      const sureFlags = result.chains.map((entry) => entry.isSureMatch);
+      expect(sureFlags).toEqual([...sureFlags].sort((x, y) => y - x));
+      const sure = result.chains.filter((entry) => entry.isSureMatch);
+      const prices = sure.map((entry) => entry.rankingPrice);
+      expect(prices).toEqual([...prices].sort((x, y) => x - y));
+      expect(result.chains[0].isSureMatch).toBe(true);
+      expect(result.chains[0].best.center.id).toBe(result.recommendedId);
+    }
+  });
+});
+
 describe('Spar mere-forslag', () => {
   const aeldreSagenChain = (price) =>
     chain({ discounts: [{ discountGroup: 'aeldreSagen', price }] });
@@ -798,6 +963,7 @@ describe('Tom-tilstand', () => {
   test('ingen Centre giver tom liste og intet Anbefalet', () => {
     expect(run({ centers: [] })).toEqual({
       centers: [],
+      chains: [],
       recommendedId: null,
       recommendedOfferId: null,
     });
@@ -808,7 +974,12 @@ describe('Tom-tilstand', () => {
       centers: [center({ facilities: { sauna: false } })],
       filters: { sauna: true },
     });
-    expect(result).toEqual({ centers: [], recommendedId: null, recommendedOfferId: null });
+    expect(result).toEqual({
+      centers: [],
+      chains: [],
+      recommendedId: null,
+      recommendedOfferId: null,
+    });
   });
 
   test('et Center uden Tilbud vises ikke', () => {

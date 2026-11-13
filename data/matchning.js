@@ -412,8 +412,14 @@ function byRankingPrice(a, b) {
 // ---------- Matchning ----------
 
 // Input:  { centers, chains, user, filters, location, today }
-// Output: { centers: [CenterMatch], recommendedId, recommendedOfferId }
+// Output: { centers: [CenterMatch], chains: [ChainMatch], recommendedId, recommendedOfferId }
 //   centers står efter Rangeringspris, lavest først (uafgjort: Ærlig årspris, derefter Center-id).
+//   chains har én post pr. Kæde med mindst ét matchende Center (se groupByChain).
+//
+// ChainMatch: { chain, best, others: [CenterMatch], isSureMatch, rankingPrice }
+//   best = Kædens bedste Center (CenterMatch). others = Kædens andre matchende Centre efter
+//   Rangeringspris. isSureMatch = best er et sikkert match. rankingPrice = Rangeringsprisen, Kæden
+//   rangeres på (for et sikkert match regnet på det billigste sikre Tilbud). Vises aldrig.
 //
 // CenterMatch: { center, chain, distanceKm, offers: [PrisetTilbud], bestOffer, honestYearlyPrice,
 //                rankingPrice, quarterlyPrice, notStated, isSureMatch, bestSureOffer,
@@ -493,17 +499,58 @@ export function matchCenters({ centers, chains, user, filters, location, today }
   const recommended =
     results
       .filter((result) => result.isSureMatch)
-      .map((result) => ({
-        ...result,
-        honestYearlyPrice: result.bestSureOffer.honestYearlyPrice,
-        rankingPrice:
-          result.bestSureOffer.honestYearlyPrice + distanceSurcharge(result.distanceKm),
-      }))
+      .map(asSureMatch)
       .sort(byRankingPrice)[0] ?? null;
 
+  const sorted = [...results].sort(byRankingPrice);
   return {
-    centers: [...results].sort(byRankingPrice),
+    centers: sorted,
+    chains: groupByChain(sorted),
     recommendedId: recommended?.center.id ?? null,
     recommendedOfferId: recommended?.bestSureOffer.offer.id ?? null,
   };
+}
+
+// Et sikkert match regnet på det billigste Tilbud, der med sikkerhed matcher. Det er den
+// Rangeringspris, Anbefalet og Kædens bedste Center sammenlignes på.
+function asSureMatch(result) {
+  return {
+    ...result,
+    honestYearlyPrice: result.bestSureOffer.honestYearlyPrice,
+    rankingPrice: result.bestSureOffer.honestYearlyPrice + distanceSurcharge(result.distanceKm),
+  };
+}
+
+// Ét ChainMatch pr. Kæde med mindst ét matchende Center. sorted er Centrene efter Rangeringspris.
+// Kædens bedste Center er det sikre match med lavest Rangeringspris (regnet som for Anbefalet);
+// har Kæden ingen sikre match, er det Centret med lavest Rangeringspris. Kæder med sikre match
+// står først, hver gruppe efter Rangeringsprisen for Kædens bedste Center. Så er Kæde nr. 1's
+// bedste Center også Anbefalet, når der findes et sikkert match.
+function groupByChain(sorted) {
+  const byChain = new Map();
+  for (const result of sorted) {
+    const key = result.center.chainId ?? result.chain?.id ?? null;
+    if (!byChain.has(key)) byChain.set(key, []);
+    byChain.get(key).push(result);
+  }
+
+  const groups = [...byChain].map(([key, matches]) => {
+    const sure = matches.filter((result) => result.isSureMatch).map(asSureMatch);
+    const bestRanked = sure.sort(byRankingPrice)[0] ?? matches[0];
+    const best = matches.find((result) => result.center.id === bestRanked.center.id);
+    return {
+      // Kendes Kæden ikke (mangler i chains), har den kun et id.
+      chain: best.chain ?? { id: key, name: null },
+      best,
+      others: matches.filter((result) => result !== best),
+      isSureMatch: best.isSureMatch,
+      rankingPrice: bestRanked.rankingPrice,
+      // Kun til rækkefølgen nedenfor.
+      ranked: bestRanked,
+    };
+  });
+
+  return groups
+    .sort((a, b) => b.isSureMatch - a.isSureMatch || byRankingPrice(a.ranked, b.ranked))
+    .map(({ ranked, ...group }) => group);
 }

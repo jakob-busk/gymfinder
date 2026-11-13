@@ -5,6 +5,8 @@ import {
   sampleDataNotice,
   loosenFilterSuggestions,
   mapRegion,
+  otherCentersLabel,
+  pinKind,
 } from './findView';
 
 // Adfærdstests for visningslogikken på Find. Tallene er regnet ud på forhånd.
@@ -116,5 +118,34 @@ describe('sampleDataNotice', () => {
     expect(sampleDataNotice({ configured: false })).toMatch(/ikke er forbundet/);
     expect(sampleDataNotice({ configured: true, failed: true })).toMatch(/ikke kunne læses/);
     expect(sampleDataNotice({ configured: true, failed: false })).toMatch(/endnu ikke er hentet/);
+  });
+});
+
+describe('pinKind', () => {
+  const chainMatch = (id) => ({ best: { center: { id } }, others: [] });
+  const chains = [chainMatch('a1'), chainMatch('b1')];
+
+  test('Anbefalet har den største pin', () => {
+    expect(pinKind('a1', { chains, recommendedId: 'a1' })).toBe('recommended');
+  });
+
+  test('hver Kædes bedste Center er fremhævet', () => {
+    expect(pinKind('b1', { chains, recommendedId: 'a1' })).toBe('chainBest');
+    expect(pinKind('a1', { chains, recommendedId: null })).toBe('chainBest');
+  });
+
+  test('Kædens andre Centre er almindelige pins', () => {
+    expect(pinKind('a2', { chains, recommendedId: 'a1' })).toBe('center');
+  });
+});
+
+describe('otherCentersLabel', () => {
+  test('"N andre centre i {Kæde}"', () => {
+    expect(otherCentersLabel(3, { name: 'PureGym' })).toBe('3 andre centre i PureGym');
+    expect(otherCentersLabel(1, { name: 'SATS' })).toBe('1 andet center i SATS');
+  });
+
+  test('uden Kædens navn står der "kæden"', () => {
+    expect(otherCentersLabel(2, { name: null })).toBe('2 andre centre i kæden');
   });
 });

@@ -35,6 +35,20 @@ export function mapRegion(userLocation, matches) {
   };
 }
 
+// Hvilken slags pin et Center får på kortet: 'recommended' (Anbefalet, den største pin),
+// 'chainBest' (Kædens bedste Center, fremhævet) eller 'center' (Kædens andre Centre). chains er
+// ChainMatch fra Matchning.
+export function pinKind(centerId, { chains, recommendedId }) {
+  if (centerId === recommendedId) return 'recommended';
+  return (chains ?? []).some((entry) => entry.best.center.id === centerId) ? 'chainBest' : 'center';
+}
+
+// Teksten, der folder Kædens andre Centre ud på et kæde-kort: "3 andre centre i PureGym".
+export function otherCentersLabel(count, chain) {
+  const name = chain?.name ?? 'kæden';
+  return count === 1 ? `1 andet center i ${name}` : `${count} andre centre i ${name}`;
+}
+
 // Nøgleord til pin-boksen: de faciliteter Centret med sikkerhed har (fx Sauna, Holdtræning).
 export function centerKeywords(center) {
   return FACILITY_FILTERS.filter((facility) => center?.facilities?.[facility] === true).map(
