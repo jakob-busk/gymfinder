@@ -14,7 +14,7 @@
 
 - Stort bogstav kun først i en sætning, en overskrift eller et mærke. Ikke midt i en sætning, fordi ordet står i ordlisten.
 - Så få fagord som muligt. Hvert begreb fra ordlisten har ét fast ord i appen, så vi siger det samme alle steder.
-- Tal skrives på dansk: `3,4 km`, `1.234 kr`.
+- Tal skrives på dansk: `3,4 km`, `1.234 kr.`, `249 kr. pr. md.` (se `formatDistance`, `formatKr` og `formatPrice` i `data/centerDetail.js`).
 - Data i databasen (fx Abonnementstype `Lokal center`) ændres ikke. Den oversættes, når den vises.
 
 | Ordliste (`CONTEXT.md`) | I appen |
@@ -23,7 +23,7 @@
 | Tilbud | abonnement |
 | Ærlig årspris | ærlig årspris (forklares med ⓘ) |
 | Kvartalspris | de første 3 måneder |
-| Abonnementstype `Lokal center` / `Landsdækkende` | ét center / alle kædens centre |
+| Abonnementstype `Lokal center` / `Landsdækkende` | lokalt center / landsdækkende |
 | Kampagnepris / Standardpris | kampagnepris / normalpris |
 | Oprettelsesgebyr / Admingebyr | oprettelse / admingebyr |
 | Rabat (fx for Rabatgruppen Studerende) | studierabat, seniorrabat, Ældre Sagen-rabat |
