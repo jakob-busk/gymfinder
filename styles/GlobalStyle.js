@@ -931,6 +931,65 @@ const GlobalStyle = StyleSheet.create({
   buttonTextOnInk: {
     color: colors.onInk,
   },
+  // Facilitetsmærker på kæde-kortet (se FacilityTags). Ingen nye farver (ADR 0006): ønsket er en
+  // blæk-pille med ✓, ikke oplyst en stiplet blæk-kant med "?", og andre faciliteter er dæmpet
+  // tekst uden kant. På blæk-blokken er farverne vendt om.
+  facilityTagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  facilityTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    borderRadius: shape.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  facilityTagWanted: {
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
+  },
+  facilityTagWantedOnInk: {
+    backgroundColor: colors.onInk,
+    borderColor: colors.onInk,
+  },
+  facilityTagNotStated: {
+    borderStyle: 'dashed',
+    borderColor: colors.ink,
+  },
+  facilityTagNotStatedOnInk: {
+    borderStyle: 'dashed',
+    borderColor: colors.onInk,
+  },
+  facilityTagText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
+  },
+  facilityTagOtherText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.muted,
+  },
+  facilityTagMore: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.text,
+    textDecorationLine: 'underline',
+  },
+  // Teksten i en blæk-pille (lys) og i en lys pille på blæk-blokken (blæk).
+  textOnInkPill: {
+    color: colors.onInk,
+  },
+  textOnPaperPill: {
+    color: colors.text,
+  },
   // Valg-kontroller: mærker man slår til og fra, et segment-valg med en glidende markør, en række
   // med en kontakt, et felt der åbner en liste (dropdown) og grupper af rækker som i Indstillinger.
   chipRow: {

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import CenterTitle, { centerTitleLabel } from './CenterTitle';
+import FacilityTags from './FacilityTags';
 import FavoriteButton from './FavoriteButton';
 import HonestPrice from './HonestPrice';
 import InfoButton from './InfoButton';
@@ -12,19 +13,32 @@ import NotStatedRow from './NotStatedRow';
 import Reveal from './Reveal';
 import { centerDisplayName } from '../data/centerDisplayName';
 import { formatDistance, formatPrice, offerBasisText } from '../data/centerDetail';
-import { otherCentersLabel } from '../data/findView';
+import {
+  FACILITY_TAG_ROW_LIMIT,
+  facilityTags,
+  notStatedWithoutFacilities,
+  otherCentersLabel,
+} from '../data/findView';
 import { openSignupPage } from '../services/Signup';
 
 // Kort for én Kæde i listen på Find (chainMatch er et ChainMatch fra Matchning). Kortet viser
 // Kædens bedste Center: titel (logo, pin, navn), afstand, Ærlig årspris for det billigste Tilbud
-// for brugeren som et stort tal med Tilbuddets navn (og Rabat), "Ikke oplyst" og "Du sparer". ♥ og
+// for brugeren som et stort tal med Tilbuddets navn (og Rabat), facilitetsmærker (ønskede først,
+// højst 6 og "+N mere"; filters er de aktive Filtre), "Ikke oplyst" for binding, abonnementstype
+// og maskiner og "Du sparer". ♥ og
 // "Tilmeld {Tilbud}" gælder Kædens bedste Center og dets billigste Tilbud. Titlen og "Om centret"
 // åbner Centerdetalje. Nederst kan Kædens andre matchende Centre foldes ud; hver række viser kort
-// navn, afstand og ærlig årspris og åbner Centerdetalje (rækkerne har ingen Tilmeld). Det
+// navn, afstand, ærlig årspris og højst 4 facilitetsmærker og åbner Centerdetalje (rækkerne har ingen Tilmeld). Det
 // Anbefalede Center er en mørk blok med prisen i lyst blæk, så listen får en rytme i stedet for
 // ens kort. index er pladsen i listen; kortene toner ind forskudt efter den (den vises ikke, så den
 // ikke ligner en rangering). onShowDetails(centerId) åbner Centerdetalje.
-export default function ChainCard({ chainMatch, isRecommended, onShowDetails, index = 0 }) {
+export default function ChainCard({
+  chainMatch,
+  filters,
+  isRecommended,
+  onShowDetails,
+  index = 0,
+}) {
   const [showOthers, setShowOthers] = useState(false);
   const { best: match, others } = chainMatch;
   const { center, chain, bestOffer } = match;
@@ -78,7 +92,8 @@ export default function ChainCard({ chainMatch, isRecommended, onShowDetails, in
         <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
           {offerBasisText(bestOffer)}
         </Text>
-        <NotStatedRow notStated={match.notStated} onInk={ink} />
+        <FacilityTags result={facilityTags(center, filters)} onInk={ink} expandable />
+        <NotStatedRow notStated={notStatedWithoutFacilities(match.notStated)} onInk={ink} />
         {match.savingPerMonth != null && match.savingPerMonth > 0 && (
           <Text style={[GlobalStyle.savingText, GlobalStyle.paragraph]}>
             Du sparer {formatPrice(Math.round(match.savingPerMonth))} i forhold til dit nuværende
@@ -119,6 +134,7 @@ export default function ChainCard({ chainMatch, isRecommended, onShowDetails, in
                 <OtherCenterRow
                   key={other.center.id}
                   match={other}
+                  filters={filters}
                   onInk={ink}
                   onPress={() => onShowDetails(other.center.id)}
                 />
@@ -130,18 +146,22 @@ export default function ChainCard({ chainMatch, isRecommended, onShowDetails, in
   );
 }
 
-// Én af Kædens andre Centre: kort navn, afstand og ærlig årspris. Et tryk åbner Centerdetalje.
-function OtherCenterRow({ match, onInk, onPress }) {
+// Én af Kædens andre Centre: kort navn, afstand, ærlig årspris og højst 4 facilitetsmærker. Et
+// tryk åbner Centerdetalje, så "+N mere" kan ikke trykkes her. Skærmlæseren hører mærkerne som en
+// del af rækken.
+function OtherCenterRow({ match, filters, onInk, onPress }) {
   const { center, chain } = match;
   const name = centerDisplayName(center.name, chain);
   const distance = match.distanceKm != null ? formatDistance(match.distanceKm) : 'Afstand ukendt';
   const price = formatPrice(Math.round(match.honestYearlyPrice));
+  const tags = facilityTags(center, filters, { limit: FACILITY_TAG_ROW_LIMIT });
+  const tagsLabel = tags.tags.map((tag) => `, ${tag.accessibilityLabel}`).join('');
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${distance}, ${price}, ærlig årspris`}
+      accessibilityLabel={`${name}, ${distance}, ${price}, ærlig årspris${tagsLabel}`}
       accessibilityHint="Åbner detaljer om centret"
       style={({ pressed }) => [GlobalStyle.chainOtherRow, pressed && GlobalStyle.cardPressed]}
     >
@@ -153,6 +173,7 @@ function OtherCenterRow({ match, onInk, onPress }) {
           {name}
         </Text>
         <Text style={[GlobalStyle.mutedText, onInk && GlobalStyle.mutedOnInk]}>{distance}</Text>
+        <FacilityTags result={tags} onInk={onInk} />
       </View>
       <Text style={[GlobalStyle.chainOtherPrice, onInk && GlobalStyle.textOnInk]}>{price}</Text>
       <Ionicons name="chevron-forward" size={16} color={onInk ? colors.onInk : colors.text} />

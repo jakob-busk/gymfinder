@@ -56,6 +56,54 @@ export function centerKeywords(center) {
   );
 }
 
+// Højst så mange facilitetsmærker vises på et kæde-kort; resten ligger bag "+N mere".
+export const FACILITY_TAG_LIMIT = 6;
+// Højst så mange mærker i rækkerne for Kædens andre Centre.
+export const FACILITY_TAG_ROW_LIMIT = 4;
+
+const TAG_ORDER = { wanted: 0, notStated: 1, other: 2 };
+const TAG_SUFFIX = { wanted: ', ønsket', notStated: ', ikke oplyst', other: '' };
+
+// Facilitetsmærker for et Center ud fra de aktive Filtre, i den rækkefølge de vises:
+//   'wanted'    Filteret er slået til, og Centret har faciliteten (✓)
+//   'notStated' Filteret er slået til, og det er "Ikke oplyst" (?)
+//   'other'     Centret har med sikkerhed faciliteten, men den er ikke ønsket (dæmpet)
+// Faciliteter, Centret ikke har (eller ikke vides at have) uden at være ønsket, får intet mærke.
+// Inden for hver status står faciliteterne i samme rækkefølge som facilities. limit er, hvor
+// mange der vises; resten er hidden ("+N mere"). facilities og labels kan udvides, så flere
+// faciliteter ikke kræver en ny funktion.
+export function facilityTags(
+  center,
+  filters,
+  { limit = FACILITY_TAG_LIMIT, facilities = FACILITY_FILTERS, labels = NOT_STATED_LABELS } = {},
+) {
+  const active = filters ?? {};
+  const tags = [];
+  for (const key of facilities) {
+    const value = center?.facilities?.[key];
+    const wanted = active[key] === true;
+    let status = null;
+    if (wanted && value === true) status = 'wanted';
+    else if (wanted && value == null) status = 'notStated';
+    else if (!wanted && value === true) status = 'other';
+    if (!status) continue;
+    const label = labels[key] ?? key;
+    tags.push({ key, label, status, accessibilityLabel: label + TAG_SUFFIX[status] });
+  }
+  // Array.prototype.sort er stabil, så faciliteternes rækkefølge bevares inden for en status.
+  tags.sort((a, b) => TAG_ORDER[a.status] - TAG_ORDER[b.status]);
+
+  const visible = tags.slice(0, limit);
+  const hidden = tags.slice(limit);
+  return { tags, visible, hidden, hiddenCount: hidden.length };
+}
+
+// "Ikke oplyst"-nøglerne fra Matchning uden faciliteterne, som i stedet vises som mærker
+// (se facilityTags). Tilbage er fx binding, abonnementstype og maskiner.
+export function notStatedWithoutFacilities(notStated) {
+  return (notStated ?? []).filter((key) => !FACILITY_FILTERS.includes(key));
+}
+
 const FILTER_SUGGESTIONS = {
   sauna: 'Slå Sauna fra',
   groupClasses: 'Slå Holdtræning fra',

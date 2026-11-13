@@ -2,9 +2,11 @@ import {
   DEFAULT_LOCATION,
   centerKeywords,
   discountProfileText,
+  facilityTags,
   sampleDataNotice,
   loosenFilterSuggestions,
   mapRegion,
+  notStatedWithoutFacilities,
   otherCentersLabel,
   pinKind,
 } from './findView';
@@ -61,6 +63,140 @@ describe('centerKeywords', () => {
   test('giver ingen nøgleord, når faciliteterne er ukendte eller mangler', () => {
     expect(centerKeywords({ facilities: { sauna: false } })).toEqual([]);
     expect(centerKeywords({})).toEqual([]);
+  });
+});
+
+describe('facilityTags', () => {
+  const statuses = (tags) => tags.map((tag) => `${tag.key}:${tag.status}`);
+
+  test('ønskede står først, derefter ikke oplyste ønsker og til sidst de andre', () => {
+    const center = { facilities: { sauna: true, groupClasses: null, open24h: true } };
+    const { tags } = facilityTags(center, { groupClasses: true, open24h: true });
+    expect(statuses(tags)).toEqual(['open24h:wanted', 'groupClasses:notStated', 'sauna:other']);
+  });
+
+  test('giver mærker med navn og skærmlæser-tekst efter status', () => {
+    const center = { facilities: { sauna: true, groupClasses: null, open24h: true } };
+    const { tags } = facilityTags(center, { sauna: true, groupClasses: true });
+    expect(tags).toEqual([
+      { key: 'sauna', label: 'Sauna', status: 'wanted', accessibilityLabel: 'Sauna, ønsket' },
+      {
+        key: 'groupClasses',
+        label: 'Holdtræning',
+        status: 'notStated',
+        accessibilityLabel: 'Holdtræning, ikke oplyst',
+      },
+      { key: 'open24h', label: 'Døgnåbent', status: 'other', accessibilityLabel: 'Døgnåbent' },
+    ]);
+  });
+
+  test('viser ikke faciliteter, der mangler eller er ukendte uden at være ønsket', () => {
+    const center = { facilities: { sauna: false, groupClasses: null } };
+    expect(facilityTags(center, {}).tags).toEqual([]);
+    expect(facilityTags({}, null).tags).toEqual([]);
+  });
+
+  test('uden Filtre er alle Centrets faciliteter "andre"', () => {
+    const center = { facilities: { sauna: true, groupClasses: true } };
+    expect(statuses(facilityTags(center, undefined).tags)).toEqual([
+      'sauna:other',
+      'groupClasses:other',
+    ]);
+  });
+
+  // Flere faciliteter end de tre nuværende, så grænsen og "+N mere" kan testes.
+  const MANY = ['sauna', 'groupClasses', 'open24h', 'pool', 'spa', 'parking', 'crossfit', 'boxing'];
+  const MANY_LABELS = {
+    sauna: 'Sauna',
+    groupClasses: 'Holdtræning',
+    open24h: 'Døgnåbent',
+    pool: 'Svømmehal',
+    spa: 'Spa',
+    parking: 'Parkering',
+    crossfit: 'Crossfit',
+    boxing: 'Boksning',
+  };
+  const manyCenter = {
+    facilities: Object.fromEntries(MANY.map((key) => [key, key !== 'crossfit' ? true : null])),
+  };
+
+  test('virker med flere faciliteter end de tre nuværende', () => {
+    const { tags } = facilityTags(
+      manyCenter,
+      { boxing: true, crossfit: true },
+      { facilities: MANY, labels: MANY_LABELS },
+    );
+    expect(statuses(tags)).toEqual([
+      'boxing:wanted',
+      'crossfit:notStated',
+      'sauna:other',
+      'groupClasses:other',
+      'open24h:other',
+      'pool:other',
+      'spa:other',
+      'parking:other',
+    ]);
+    expect(tags[0].accessibilityLabel).toBe('Boksning, ønsket');
+    expect(tags[1].accessibilityLabel).toBe('Crossfit, ikke oplyst');
+  });
+
+  test('viser højst 6 mærker og skjuler resten bag "+N mere"', () => {
+    const result = facilityTags(
+      manyCenter,
+      { boxing: true },
+      {
+        facilities: MANY,
+        labels: MANY_LABELS,
+      },
+    );
+    expect(result.tags).toHaveLength(7);
+    expect(result.visible.map((tag) => tag.key)).toEqual([
+      'boxing',
+      'sauna',
+      'groupClasses',
+      'open24h',
+      'pool',
+      'spa',
+    ]);
+    expect(result.hidden.map((tag) => tag.key)).toEqual(['parking']);
+    expect(result.hiddenCount).toBe(1);
+  });
+
+  test('grænsen kan sættes lavere (rækkerne for de andre Centre viser højst 4)', () => {
+    const result = facilityTags(
+      manyCenter,
+      {},
+      {
+        facilities: MANY,
+        labels: MANY_LABELS,
+        limit: 4,
+      },
+    );
+    expect(result.visible).toHaveLength(4);
+    expect(result.hiddenCount).toBe(3);
+  });
+
+  test('skjuler intet, når der er 6 mærker eller færre', () => {
+    const center = { facilities: { sauna: true, groupClasses: true, open24h: true } };
+    const result = facilityTags(center, {});
+    expect(result.visible).toHaveLength(3);
+    expect(result.hidden).toEqual([]);
+    expect(result.hiddenCount).toBe(0);
+  });
+});
+
+describe('notStatedWithoutFacilities', () => {
+  test('beholder binding, abonnementstype og maskiner, men ikke faciliteterne (de er mærker)', () => {
+    expect(
+      notStatedWithoutFacilities([
+        'sauna',
+        'machines',
+        'groupClasses',
+        'binding',
+        'subscriptionType',
+      ]),
+    ).toEqual(['machines', 'binding', 'subscriptionType']);
+    expect(notStatedWithoutFacilities(['open24h'])).toEqual([]);
   });
 });
 
