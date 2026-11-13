@@ -117,7 +117,7 @@ function Tabs() {
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.borderStrong },
         tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 0.2 },
-        // Den aktive fane får en lime pille bag ikonet (se TabIcon).
+        // Den aktive fane får en violet pille bag ikonet (se TabIcon).
         tabBarIcon: ({ color, size, focused }) => (
           <TabIcon name={TAB_ICONS[route.name]} color={color} size={size} focused={focused} />
         ),
@@ -179,7 +179,7 @@ export default function App() {
   // Ved log ind skifter uid'et, og profilen for kontoen hentes.
   const { authUser, account, authReady, createAccount, logIn, logOut } = useAuthSession();
 
-  // Appens skrifter (Inter og Bricolage Grotesque). Appen venter, til de er hentet.
+  // Appens skrifter (Nunito og Fredoka). Appen venter, til de er hentet.
   const [fontsLoaded, fontError] = useFonts(APP_FONTS);
 
   // Profil, Favoritter og Prisalarm venter alle på login og følger samme uid.

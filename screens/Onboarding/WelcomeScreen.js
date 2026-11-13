@@ -21,9 +21,9 @@ const POINTS = [
 // Det, der regnes med i en Ærlig årspris, løber forbi på båndet.
 const MARQUEE_WORDS = ['Ærlig årspris', 'Oprettelsesgebyr', 'Admingebyr', 'Kampagnepris', 'Rabat'];
 
-// Velkomst: logo, en stor overskrift som på en plakat, Ronnie på sin sol, et bånd med det, der
-// regnes med i prisen, hvad GymFinder kan, og "Kom i gang" før brugeren giver oplysninger.
-// Delene falder på plads ét efter ét. Har brugeren allerede en konto (fx på en ny telefon), kan
+// Velkomst: logo, en stor overskrift som på en plakat, Ronnie på sin cirkel med en hilsen, et bånd
+// med det, der regnes med i prisen, hvad GymFinder kan, og "Kom i gang" før brugeren giver
+// oplysninger. Delene falder på plads ét efter ét. Har brugeren allerede en konto (fx på en ny telefon), kan
 // onboarding springes over med Log ind.
 export default function WelcomeScreen({ navigation }) {
   const { accountsAvailable } = useContext(UserContext);
@@ -41,7 +41,7 @@ export default function WelcomeScreen({ navigation }) {
             </Reveal>
             <Reveal index={1} distance={30}>
               <Text style={GlobalStyle.welcomeTagline}>
-                {/* "billigst" står på en lime markering; mellemrummene ligger inden i, så den får luft. */}
+                {/* "billigst" står på en mint markering; mellemrummene ligger inden i, så den får luft. */}
                 Fitnesscentret, der reelt er
                 <Text style={GlobalStyle.welcomeHighlight}>{' billigst '}</Text>
                 for dig.
@@ -49,8 +49,13 @@ export default function WelcomeScreen({ navigation }) {
             </Reveal>
           </View>
 
-          <Reveal index={3}>
-            <RonnieMascot size="large" pose="vinker" style={GlobalStyle.welcomeRonnie} />
+          <Reveal index={3} style={GlobalStyle.welcomeRonnie}>
+            {/* Ronnie hilser i en taleboble, hvis spids peger ned mod ham. */}
+            <View style={GlobalStyle.welcomeBubble}>
+              <View style={[GlobalStyle.bubbleTail, GlobalStyle.bubbleTailDown]} />
+              <Text style={GlobalStyle.welcomeBubbleText}>Hej, jeg er Ronnie!</Text>
+            </View>
+            <RonnieMascot size="large" pose="vinker" />
           </Reveal>
 
           <Reveal index={4}>

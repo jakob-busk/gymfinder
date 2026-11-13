@@ -8,7 +8,7 @@ const COPIES = 3;
 const SPEED = 36;
 
 // Et skråt bånd, hvor ordene løber stille forbi, som på en stadion-banner. words er en liste af
-// korte ord; de sættes sammen med en lime ✳ imellem. Teksten står tre gange efter hinanden, og
+// korte ord; de sættes sammen med en mint ✳ imellem. Teksten står tre gange efter hinanden, og
 // båndet flyttes præcis én kopi, før det starter forfra, så løkken ikke kan ses.
 export default function Marquee({ words }) {
   const [copyWidth, setCopyWidth] = useState(0);

@@ -1,65 +1,78 @@
 import { Easing, Platform, StyleSheet } from 'react-native';
 
-// GymFinders udseende: "Tribune". En lys sportsplakat trykt på varmt kalkpapir: sort blæk,
-// én signalfarve (orange) til handlinger og ♥, og limegrøn til Anbefalet og besparelser.
-// Typografien bærer designet: Bricolage Grotesque i stor skala med stram spærring til titler og
-// priser, Inter til alt, der skal læses. Rytmen skifter bevidst: det Anbefalede Center står som
-// en mørk blok (bento) mellem lyse kort, priser står som store tal, og lister toner ind forskudt.
-// Aldrig ren sort eller hvid, og aldrig farve bag selve prisen, kun bag mærket.
+// GymFinders udseende: "Tribune, men venlig" (variant 7). Rytmen og bevægelsen fra Tribune: store
+// pristal, det Anbefalede Center som en mørk blæk-blok mellem lyse kort, løbenumre, felter som
+// blanket-linjer og lister, der toner ind forskudt. Varmen fra "Varm og venlig": creme papir,
+// rundere hjørner, Nunito og Fredoka i stedet for skarp grotesk, og Ronnie på farvede pastelcirkler
+// med talebobler. Farverne er valgt, så ingen af dem ligner en Kædes: dyb violet til handlinger,
+// logo-prik, ♥ og aktiv fane (Fitness X er orange, PureGym grøn/turkis, SATS rød/mørkeblå), og mint
+// til besparelser og Anbefalet. Aldrig ren sort eller hvid, ingen skygger, og aldrig farve bag
+// selve prisen, kun bag mærket.
 const colors = {
-  background: '#EFEBE2',
-  surface: '#F8F5EF',
-  surfaceRaised: '#E4DED2',
-  inputBackground: '#F8F5EF',
+  background: '#FDF1E0',
+  surface: '#FFFCF7',
+  surfaceRaised: '#F7E4CC',
+  inputBackground: '#FFFCF7',
   text: '#1B1915',
-  muted: '#6E685D',
+  muted: '#6B6358',
+  // Kun til løbenumre og andet pynt, der ikke skal læses (for svag til brødtekst).
   faint: '#A39C8F',
   border: 'rgba(27, 25, 21, 0.10)',
-  borderStrong: 'rgba(27, 25, 21, 0.28)',
+  borderStrong: 'rgba(27, 25, 21, 0.24)',
   backdrop: 'rgba(27, 25, 21, 0.45)',
   // Blæk-blokken: det Anbefalede Center, aktive valg og brugerens chatbobler.
   ink: '#1B1915',
-  onInk: '#F3EFE7',
+  onInk: '#F7F1E8',
   onInkMuted: '#A8A193',
-  primary: '#FF4B1F',
-  onPrimary: '#1B1915',
-  primaryLight: '#FFE1D6',
-  accent: '#D7F23C',
+  // Den ene handlingsfarve: dyb violet. Langt fra alle Kædernes farver.
+  primary: '#5B3CD6',
+  onPrimary: '#FFFCF7',
+  primaryLight: '#E7E0FB',
+  // Mint er pop-farven på blæk-blokken og markeringen af det gode nyt. På lyst papir er den for
+  // lys til tekst, så besparelser skrives i en dyb mintgrøn.
+  accent: '#8EEBC0',
   onAccent: '#1B1915',
-  // Lime er for lys til tekst på papir, så besparelser skrives i en dyb grøn.
-  accentText: '#3E7A00',
-  accentLight: '#EEF6C8',
-  badgeBackground: '#D7F23C',
+  accentText: '#17734F',
+  accentLight: '#DDF5E8',
+  badgeBackground: '#8EEBC0',
   badgeText: '#1B1915',
-  error: '#C42B1C',
-  warning: '#9A5B00',
-  warningLight: '#F6E6C4',
+  // Advarsel og fejl er dæmpede, så de ikke råber.
+  error: '#B4382E',
+  warning: '#8A5A00',
+  warningLight: '#FFF1CF',
   // ♥ på Centre, der er Favoritter (og dem, der kan blive det).
-  favorite: '#FF4B1F',
-  // Pins på kortet på Find: Anbefalet, de andre Centre og brugerens egen placering.
-  recommendedPin: '#D7F23C',
+  favorite: '#5B3CD6',
+  // Pins på kortet på Find: Anbefalet, de andre Centre og brugerens egen placering ("du er her"-blå).
+  recommendedPin: '#34C98A',
   centerPin: '#1B1915',
-  userPin: '#3B5BFF',
-  tabBar: '#EFEBE2',
-  tabActive: '#1B1915',
-  tabInactive: '#A39C8F',
-  headerBackground: '#EFEBE2',
+  userPin: '#2F7BF6',
+  tabBar: '#FDF1E0',
+  tabActive: '#5B3CD6',
+  tabInactive: '#6B6358',
+  headerBackground: '#FDF1E0',
   headerText: '#1B1915',
+  // Pastellerne: Ronnies cirkler og små pynt-detaljer.
+  peach: '#FFD8C2',
+  mint: '#CDEFDC',
+  lavender: '#E3DAFB',
+  sun: '#FFE59A',
 };
 
-// To familier, ikke flere: Bricolage Grotesque til titler, tal og logo, Inter til al læsetekst.
+// To familier: Nunito til al tekst og alle priser (runde ender, men tal i lige kolonner) og
+// Fredoka til titler og logo (rund, men tung nok til at stå som en plakat-titel).
 const fonts = {
-  body: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  display: 'BricolageGrotesque_800ExtraBold',
-  displayMedium: 'BricolageGrotesque_600SemiBold',
-  logo: 'BricolageGrotesque_800ExtraBold',
+  body: 'Nunito_400Regular',
+  medium: 'Nunito_600SemiBold',
+  semibold: 'Nunito_700Bold',
+  bold: 'Nunito_800ExtraBold',
+  figure: 'Nunito_800ExtraBold',
+  display: 'Fredoka_700Bold',
+  displayMedium: 'Fredoka_600SemiBold',
+  logo: 'Fredoka_700Bold',
 };
 
-// Store flader er bløde, knapper og mærker er piller, og kvitteringen er skarp som en bon.
-const shape = { radius: 22, blockRadius: 30, pill: 999, titleSize: 34 };
+// Store flader er bløde, knapper og mærker er piller, og kvitteringen er lidt skarpere som en bon.
+const shape = { radius: 24, blockRadius: 32, receiptRadius: 12, pill: 999, titleSize: 34 };
 
 // Bevægelse: én blød "power4.out"-kurve til næsten alt, og en kurve med lidt fjeder til tryk.
 // Kun transform og opacity animeres, så det holder 60 fps. På web findes ingen native driver,
@@ -78,39 +91,81 @@ const motion = {
   pressScale: 0.96,
 };
 
-// Lyse detaljer: kortstil, baggrunde bag app-ikon og splash.
+// Detaljerne omkring stilen: Ronnies cirkelfarve pr. positur og en lys, varm kortstil.
 const brand = {
+  // Ronnies cirkel følger hans humør: solgul når han jubler, mint når han peger, lavendel når han
+  // tænker eller trækker på skuldrene, og fersken ellers.
+  ronnieTones: {
+    vinker: colors.peach,
+    jubler: colors.sun,
+    peger: colors.mint,
+    tænker: colors.lavender,
+    'trækker på skuldrene': colors.lavender,
+    'sveder/løfter': colors.peach,
+    'tommel op': colors.peach,
+  },
   mapInterfaceStyle: 'light',
-  // Lys, afdæmpet kortstil til Google Maps (Android), så pins i blæk og lime står frem.
+  // Lys, varm kortstil til Google Maps (Android), så pins i blæk og mint står frem.
   mapStyle: [
-    { elementType: 'geometry', stylers: [{ color: '#EAE5DA' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#6E685D' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#F3EFE7' }] },
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#F8F5EF' }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#DDD3BF' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#C9D3CC' }] },
+    { elementType: 'geometry', stylers: [{ color: '#F6EDE0' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#6B6358' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#FDF1E0' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFCF7' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#EADFF7' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#D3E4EA' }] },
     { featureType: 'poi', stylers: [{ visibility: 'off' }] },
     { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   ],
 };
 
-// Store titler: tæt linjeafstand og negativ spærring, som på en plakat.
-const display = (size, tracking = -0.045) => ({
+// Store titler i Fredoka: tæt linjeafstand og kun let negativ spærring. Fredoka er bred og rund,
+// så Tribunes stramme spærring (-4,5 %) får bogstaverne til at klumpe; -1,5 % holder plakat-
+// følelsen. Linjehøjden er lidt over 1, fordi Fredoka har høje accenter (Æ, Ø, Å).
+const display = (size, tracking = -0.015) => ({
   fontFamily: fonts.display,
   fontSize: size,
-  lineHeight: Math.round(size * 0.98),
+  lineHeight: Math.round(size * 1.04),
   letterSpacing: size * tracking,
   color: colors.text,
 });
 
+// Store pristal i Nunito ExtraBold med tal i lige kolonner, så priser kan sammenlignes på et blik.
+const figure = (size, tracking = -0.03) => ({
+  fontFamily: fonts.figure,
+  fontSize: size,
+  lineHeight: Math.round(size * 1.02),
+  letterSpacing: size * tracking,
+  color: colors.text,
+  fontVariant: ['tabular-nums'],
+});
+
 // Små versaler over sektioner og i mærker: luftig spærring, så de kan læses i lille størrelse.
 const kicker = {
-  fontFamily: fonts.semibold,
+  fontFamily: fonts.bold,
   fontSize: 11,
-  letterSpacing: 1.6,
+  letterSpacing: 1.4,
   textTransform: 'uppercase',
   color: colors.muted,
 };
+
+// Ronnies scene: cirklen ligger bag ham og er lidt mindre end billedet, så hænderne stikker ud over
+// kanten, som et klistermærke.
+function ronnieStage(width, height, circle) {
+  return {
+    stage: { width, height, alignItems: 'center', justifyContent: 'center' },
+    circle: {
+      position: 'absolute',
+      width: circle,
+      height: circle,
+      borderRadius: circle / 2,
+      top: (height - circle) / 2,
+      left: (width - circle) / 2,
+    },
+  };
+}
+const ronnieLargeScene = ronnieStage(240, 200, 186);
+const ronnieSmallScene = ronnieStage(150, 128, 116);
+const ronnieHintScene = ronnieStage(60, 60, 56);
 
 const GlobalStyle = StyleSheet.create({
   // Yderste lag på tab-skærme (SafeAreaView), så indhold ikke ligger under statuslinjen.
@@ -139,11 +194,12 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 0,
   },
   headerRule: {
-    height: 2,
+    height: 3,
+    borderRadius: 2,
     marginTop: 12,
     backgroundColor: colors.text,
   },
-  // Logoet: "GymFinder" i plakatskrift med en lille orange prik, der pulserer svagt.
+  // Logoet: "GymFinder" i Fredoka med en lille violet prik, der pulserer svagt.
   logoRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -153,22 +209,22 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
   },
   logoSmall: {
-    fontSize: 26,
-    lineHeight: 28,
-    letterSpacing: -1.2,
+    fontSize: 27,
+    lineHeight: 30,
+    letterSpacing: -0.4,
   },
   logoLarge: {
-    fontSize: 30,
-    lineHeight: 32,
-    letterSpacing: -1.4,
+    fontSize: 32,
+    lineHeight: 35,
+    letterSpacing: -0.5,
   },
   logoDot: {
-    width: 9,
-    height: 9,
+    width: 10,
+    height: 10,
     borderRadius: 5,
     backgroundColor: colors.primary,
     marginLeft: 3,
-    marginBottom: 6,
+    marginBottom: 7,
   },
   titleRow: {
     flexDirection: 'row',
@@ -192,77 +248,80 @@ const GlobalStyle = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 12,
   },
-  // Ronnie i fire størrelser. Han står altid på en limegrøn skive, som en sol bag ham, så han
-  // ligner et klistermærke på plakaten.
-  ronnieStage: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ronnieDisc: {
-    position: 'absolute',
-    backgroundColor: colors.accent,
-    borderRadius: shape.pill,
-  },
-  ronnieDiscLarge: {
-    width: 190,
-    height: 190,
-  },
-  ronnieDiscSmall: {
-    width: 110,
-    height: 110,
-  },
+  // Ronnie i fem størrelser: stor (Velkomst, afslutning), lille (tomme skærme), ved en taleboble,
+  // avatar (ved Ronnies beskeder) og mini (i knapper). Billedet er 791 × 566, så højden er
+  // bredde / 1,4. Cirklens farve følger positur (brand.ronnieTones).
   ronnieLarge: {
     width: 240,
     height: 172,
-    marginVertical: 12,
   },
   ronnieSmall: {
-    width: 130,
-    height: 94,
-    marginVertical: 8,
+    width: 150,
+    height: 107,
   },
-  // Små Ronnier (avatar og i knapper/hints) sidder i en rund lime-ramme.
-  ronnieBadge: {
-    backgroundColor: colors.accent,
-    borderRadius: shape.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  ronnieBadgeAvatar: {
-    width: 40,
-    height: 40,
-    marginRight: 8,
-  },
-  ronnieBadgeTiny: {
-    width: 32,
-    height: 32,
-  },
-  ronnieAvatar: {
-    width: 40,
-    height: 30,
+  ronnieHintImage: {
+    width: 58,
+    height: 41,
   },
   ronnieTiny: {
-    width: 32,
+    width: 34,
     height: 24,
+  },
+  ronnieLargeStage: { ...ronnieLargeScene.stage, marginVertical: 8 },
+  ronnieLargeCircle: ronnieLargeScene.circle,
+  ronnieSmallStage: { ...ronnieSmallScene.stage, marginVertical: 6 },
+  ronnieSmallCircle: ronnieSmallScene.circle,
+  ronnieHintStage: ronnieHintScene.stage,
+  ronnieHintCircle: ronnieHintScene.circle,
+  ronnieAvatarStage: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   centeredSelf: {
     alignSelf: 'center',
   },
-  // Lille Ronnie med en kort replik (adresse, Rabatprofil, prisfald).
+  // Ronnie med en kort replik i en taleboble (adresse, Rabatprofil, prisfald, Find henter).
   ronnieHint: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.accentLight,
-    borderRadius: shape.radius,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
     marginBottom: 14,
   },
-  ronnieHintText: {
+  ronnieHintBubble: {
     flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: shape.radius,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  // Taleboblens spids: en drejet firkant i boblens farve. Til venstre peger den mod Ronnie ved
+  // siden af, nedad peger den mod Ronnie under boblen.
+  bubbleTail: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: colors.surface,
+  },
+  bubbleTailLeft: {
+    left: -6,
+    top: '50%',
+    marginTop: -7,
+    transform: [{ rotate: '45deg' }],
+  },
+  bubbleTailDown: {
+    bottom: -6,
+    left: '50%',
+    marginLeft: -7,
+    transform: [{ rotate: '45deg' }],
+  },
+  ronnieHintText: {
     fontFamily: fonts.medium,
+    fontSize: 15,
     color: colors.text,
     lineHeight: 21,
   },
@@ -279,7 +338,7 @@ const GlobalStyle = StyleSheet.create({
     gap: 14,
   },
   modalTitle: {
-    ...display(24, -0.03),
+    ...display(24, -0.01),
     flexShrink: 1,
   },
   modalText: {
@@ -299,7 +358,7 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabel: {
-    ...display(22, -0.03),
+    ...display(22, -0.01),
     marginTop: 28,
     marginBottom: 10,
   },
@@ -311,8 +370,8 @@ const GlobalStyle = StyleSheet.create({
   },
   infoTitle: {
     fontFamily: fonts.displayMedium,
-    fontSize: 17,
-    letterSpacing: -0.3,
+    fontSize: 18,
+    letterSpacing: -0.1,
     color: colors.text,
     marginBottom: 4,
   },
@@ -383,8 +442,8 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 6,
   },
   cardPrice: {
-    ...display(52, -0.055),
-    lineHeight: 50,
+    ...figure(52, -0.035),
+    lineHeight: 52,
   },
   cardPriceUnitBox: {
     paddingBottom: 6,
@@ -410,8 +469,8 @@ const GlobalStyle = StyleSheet.create({
   cardTitle: {
     fontFamily: fonts.display,
     fontSize: 21,
-    lineHeight: 23,
-    letterSpacing: -0.6,
+    lineHeight: 24,
+    letterSpacing: -0.2,
     color: colors.text,
   },
   // Tekst i den mørke blok.
@@ -424,7 +483,7 @@ const GlobalStyle = StyleSheet.create({
   priceOnInk: {
     color: colors.accent,
   },
-  // Anbefalet / Billigst her: lime pille med sort tekst, fordi det handler om den bedste pris.
+  // Anbefalet / Billigst her: mint pille med blæk-tekst, fordi det handler om den bedste pris.
   badge: {
     backgroundColor: colors.badgeBackground,
     borderRadius: shape.pill,
@@ -446,7 +505,7 @@ const GlobalStyle = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   bigPrice: {
-    ...display(40, -0.05),
+    ...figure(40),
   },
   distanceText: {
     flexShrink: 1,
@@ -461,13 +520,13 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     marginBottom: 6,
   },
-  // Besparelse: en lille lime pille, så det gode nyt kan ses på afstand.
+  // Besparelse: en lille mint pille med dyb mintgrøn tekst, så det gode nyt kan ses på afstand.
   savingText: {
     alignSelf: 'flex-start',
     fontFamily: fonts.semibold,
-    color: colors.onAccent,
+    color: colors.accentText,
     backgroundColor: colors.accentLight,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -481,7 +540,7 @@ const GlobalStyle = StyleSheet.create({
   },
   detailsBox: {
     backgroundColor: colors.surfaceRaised,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 12,
     marginBottom: 10,
   },
@@ -490,7 +549,8 @@ const GlobalStyle = StyleSheet.create({
     color: colors.text,
     marginTop: 6,
   },
-  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin sol, et skråt bånd med prisbegreber,
+  // Velkomst: logo, en kæmpe overskrift, Ronnie på sin cirkel med en taleboble, et skråt bånd med
+  // prisbegreber,
   // tre nummererede punkter og knapperne nederst.
   welcomeRoot: {
     flex: 1,
@@ -510,16 +570,30 @@ const GlobalStyle = StyleSheet.create({
     marginTop: 12,
   },
   welcomeTagline: {
-    ...display(40, -0.05),
-    lineHeight: 41,
+    ...display(40, -0.02),
+    lineHeight: 43,
   },
   welcomeHighlight: {
     backgroundColor: colors.accent,
+    borderRadius: 10,
   },
   welcomeRonnie: {
     alignSelf: 'flex-end',
-    marginTop: -12,
+    alignItems: 'center',
+    marginTop: -8,
     marginRight: -8,
+  },
+  welcomeBubble: {
+    backgroundColor: colors.surface,
+    borderRadius: shape.radius,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    marginBottom: 4,
+  },
+  welcomeBubbleText: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 17,
+    color: colors.text,
   },
   welcomePoints: {
     borderTopWidth: 1.5,
@@ -543,9 +617,9 @@ const GlobalStyle = StyleSheet.create({
   welcomePointText: {
     flex: 1,
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 15,
     color: colors.text,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   welcomeActions: {
     gap: 6,
@@ -566,7 +640,7 @@ const GlobalStyle = StyleSheet.create({
     flexShrink: 0,
     fontFamily: fonts.display,
     fontSize: 20,
-    letterSpacing: -0.4,
+    letterSpacing: -0.1,
     color: colors.onInk,
   },
   marqueeStar: {
@@ -589,8 +663,8 @@ const GlobalStyle = StyleSheet.create({
   },
   stepProgressTrack: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.surfaceRaised,
     overflow: 'hidden',
   },
@@ -670,12 +744,13 @@ const GlobalStyle = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.background,
   },
-  // Felter: papir med en tynd blæklinje under, som en blanket, i stedet for en kasse.
+  // Felter: papir med en blæklinje under, som en blanket, i stedet for en kasse. Hjørnerne
+  // foroven er bløde, så feltet ikke føles som et skema.
   input: {
     borderBottomWidth: 1.5,
     borderBottomColor: colors.text,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 14,
@@ -684,7 +759,7 @@ const GlobalStyle = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 16,
   },
-  // Knapper: primær (den ene handling på skærmen, orange pille), sekundær (blæk-omrids), tekst
+  // Knapper: primær (den ene handling på skærmen, violet pille), sekundær (blæk-omrids), tekst
   // (understreget som et link) og ghost (rolig flade). Alle trykkes ind med en lille fjeder.
   buttonPrimary: {
     backgroundColor: colors.primary,
@@ -741,8 +816,7 @@ const GlobalStyle = StyleSheet.create({
   buttonTextPrimary: {
     color: colors.onPrimary,
     fontFamily: fonts.bold,
-    fontSize: 15,
-    letterSpacing: -0.1,
+    fontSize: 16,
     textAlign: 'center',
   },
   buttonTextSecondary: {
@@ -907,7 +981,7 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 16,
   },
   sheetTitle: {
-    ...display(26, -0.035),
+    ...display(26, -0.01),
     marginBottom: 10,
   },
   sheetOption: {
@@ -1189,10 +1263,10 @@ const GlobalStyle = StyleSheet.create({
   offerTabPriceActive: {
     color: colors.accent,
   },
-  // Kvitteringen: en skarp bon på lyst papir med stiplede linjer og en stor total nederst.
+  // Kvitteringen: en bon på lyst papir (lidt skarpere hjørner end kortene) med stiplede linjer og en stor total nederst.
   receipt: {
     backgroundColor: colors.surface,
-    borderRadius: 6,
+    borderRadius: shape.receiptRadius,
     padding: 20,
   },
   receiptKicker: {
@@ -1230,11 +1304,11 @@ const GlobalStyle = StyleSheet.create({
   receiptTotalLabel: {
     fontFamily: fonts.display,
     fontSize: 18,
-    letterSpacing: -0.4,
+    letterSpacing: -0.1,
     color: colors.text,
   },
   receiptTotal: {
-    ...display(40, -0.05),
+    ...figure(40),
   },
   facilityGrid: {
     flexDirection: 'row',
@@ -1245,7 +1319,7 @@ const GlobalStyle = StyleSheet.create({
   facilityCell: {
     width: '48%',
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 14,
   },
   warningBox: {
@@ -1257,8 +1331,8 @@ const GlobalStyle = StyleSheet.create({
   warningTitle: {
     color: colors.warning,
     fontFamily: fonts.display,
-    fontSize: 17,
-    letterSpacing: -0.3,
+    fontSize: 18,
+    letterSpacing: -0.1,
     marginBottom: 4,
   },
   // Favoritter: ♥-knappen og rækkerne på Favoritter-skærmen.
@@ -1274,7 +1348,7 @@ const GlobalStyle = StyleSheet.create({
     backgroundColor: colors.surfaceRaised,
   },
   favoriteButtonOnInk: {
-    backgroundColor: 'rgba(243, 239, 231, 0.10)',
+    backgroundColor: 'rgba(247, 241, 232, 0.10)',
   },
   favoriteRow: {
     flexDirection: 'row',
@@ -1289,7 +1363,7 @@ const GlobalStyle = StyleSheet.create({
     alignSelf: 'flex-start',
     color: colors.onAccent,
     backgroundColor: colors.accent,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -1347,7 +1421,7 @@ const GlobalStyle = StyleSheet.create({
     marginTop: 8,
     marginLeft: 48,
   },
-  // Ronnies første besked: Ronnie på sin sol med en taleboble ved siden af, og forslagene under.
+  // Ronnies første besked: Ronnie på sin cirkel med en taleboble (med spids) ved siden af, og forslagene under.
   greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1358,7 +1432,6 @@ const GlobalStyle = StyleSheet.create({
   greetingBubble: {
     maxWidth: 190,
     borderRadius: shape.radius,
-    borderBottomLeftRadius: 6,
     paddingVertical: 10,
     paddingHorizontal: 14,
     marginBottom: 24,
@@ -1389,7 +1462,7 @@ const GlobalStyle = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 15,
   },
-  // Fanebjælken: den aktive fane får en lime pille bag ikonet, der vokser frem.
+  // Fanebjælken: den aktive fane får en violet pille bag ikonet, der vokser frem.
   tabIcon: {
     width: 52,
     height: 30,
@@ -1399,7 +1472,7 @@ const GlobalStyle = StyleSheet.create({
   tabIconPill: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: shape.pill,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primary,
   },
 });
 

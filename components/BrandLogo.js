@@ -3,7 +3,7 @@ import { Animated, Text, View } from 'react-native';
 
 import GlobalStyle, { motion } from '../styles/GlobalStyle';
 
-// Tekstlogoet "GymFinder" i plakatskrift med en orange prik bagefter, der pulserer langsomt som
+// Tekstlogoet "GymFinder" i Fredoka med en violet prik bagefter, der pulserer langsomt som
 // en puls i hvile. size er 'small' (toppen af Find) eller 'large' (Velkomst).
 export default function BrandLogo({ size = 'small' }) {
   const sizeStyle = size === 'large' ? GlobalStyle.logoLarge : GlobalStyle.logoSmall;

@@ -13,7 +13,7 @@ const kr = (amount) => `${Math.round(amount)} kr`;
 // Kort for ét Center i listen: løbenummer, navn, Ærlig årspris for det billigste Tilbud for
 // brugeren som et stort tal, og kun to handlinger: "Se detaljer" (åbner Centerdetalje, ligesom et
 // tryk på navnet) og "Tilmeld". ♥ gør Centret til Favorit. Detaljerne om tilbuddet står på
-// Centerdetalje. Det Anbefalede Center er en mørk blok med prisen i lime, så listen får en rytme
+// Centerdetalje. Det Anbefalede Center er en mørk blok med prisen i mint, så listen får en rytme
 // i stedet for ens kort. index er pladsen i listen; kortene toner ind forskudt efter den.
 export default function CenterCard({ match, isRecommended, onShowDetails, index = 0 }) {
   const { center, chain, bestOffer } = match;

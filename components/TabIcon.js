@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import GlobalStyle, { colors, motion } from '../styles/GlobalStyle';
 
-// Ikonet i fanebjælken. Den aktive fane får en lime pille bag ikonet, der vokser frem med en lille
-// fjeder, når man skifter fane, så skiftet kan ses og mærkes.
+// Ikonet i fanebjælken. Den aktive fane får en violet pille bag ikonet, der vokser frem med en
+// lille fjeder, når man skifter fane, så skiftet kan ses og mærkes.
 export default function TabIcon({ name, focused, color, size }) {
   const grow = useRef(new Animated.Value(focused ? 1 : 0)).current;
 
@@ -33,7 +33,7 @@ export default function TabIcon({ name, focused, color, size }) {
       />
       <Ionicons
         name={focused ? name : `${name}-outline`}
-        color={focused ? colors.onAccent : color}
+        color={focused ? colors.onPrimary : color}
         size={size - 2}
       />
     </View>

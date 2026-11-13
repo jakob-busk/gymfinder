@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlobalStyle, { colors } from '../styles/GlobalStyle';
 
 // Et mærke, man slår til og fra, fx en maskine i Filtre. Valgt bliver sort med et
-// lime flueben.
+// mint flueben.
 export default function Chip({ label, selected, onPress }) {
   return (
     <Pressable

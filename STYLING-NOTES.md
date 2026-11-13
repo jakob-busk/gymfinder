@@ -1,91 +1,114 @@
-# Styling-prototype 2: "Tribune" (Awwwards)
+# Styling-prototype 7: "Tribune, men venlig" (blanding af 2 og 6)
 
-Branch: `proto/styling-2-awwwards`. Bygget efter principperne i
-[claude-skill-awwwards](https://github.com/tponscr-debug/claude-skill-awwwards), oversat til React Native.
+Branch: `proto/styling-7-blanding`, lavet ud fra `proto/styling-2-awwwards`.
 
-## Kunstnerisk retning (besluttet før koden)
+## Idé
 
-- **Følelse:** selvsikker og lidt fræk, men troværdig. Man skal mærke energi (fitness) og ro (priser).
-- **Branche:** fitness + prisgennemsigtighed. Fitness-apps er typisk mørke, neon eller "sporty gradient";
-  GymFinder skiller sig ud ved at ligne en sportsplakat/avis-sportssektion trykt på kalkpapir.
-- **Arketype:** *Monochrome + Pop* (varm variant): blæk på papir, én signalfarve og én pop-farve.
-- **Idé:** Prisen er helten. Den står som et kæmpe tal, som et resultat på en tavle, og kvitteringen
-  på Centerdetalje er en rigtig bon. Ronnie er et klistermærke på en limegrøn sol, der trækker vejret.
+Strukturen og bevægelsen fra Tribune (variant 2), men med varmen fra Varm og venlig (variant 6).
+Prisen er stadig helten: store pristal, det Anbefalede Center som en mørk blæk-blok mellem lyse kort,
+løbenumre og lister, der toner ind forskudt. Ovenpå kommer creme papir, rundere hjørner, runde
+skrifter og Ronnie på pastelcirkler med talebobler. Paletten er ny, så ingen farve ligner en Kæde:
+Fitness X er orange, PureGym grøn/turkis og SATS rød/mørkeblå. Handlinger er derfor dyb violet, og
+det gode nyt (besparelse, Anbefalet) er mint.
 
 ## Palette
 
 | Rolle | Farve |
 |---|---|
-| Baggrund (kalk) | `#EFEBE2` |
-| Flade (papir) | `#F8F5EF`, hævet `#E4DED2` |
-| Tekst / blæk-blok | `#1B1915` (aldrig ren sort), på blæk `#F3EFE7` |
-| Dæmpet tekst | `#6E685D`, svag `#A39C8F` |
-| Signal (handlinger, ♥, logo-prik) | `#FF4B1F` |
-| Pop (Anbefalet, Ronnies sol, aktiv fane) | `#D7F23C` |
-| Besparelse på papir | `#3E7A00` / lys `#EEF6C8` |
-| Advarsel / fejl | `#9A5B00` på `#F6E6C4` / `#C42B1C` |
-| Linjer | `rgba(27,25,21,0.10)` og `0.28` |
+| Baggrund (creme) | `#FDF1E0` |
+| Flade (papir) / sand | `#FFFCF7` / `#F7E4CC` |
+| Tekst og blæk-blok | `#1B1915` (aldrig ren sort), på blæk `#F7F1E8`, dæmpet på blæk `#A8A193` |
+| Dæmpet tekst | `#6B6358` |
+| Pynt (kun løbenumre) | `#A39C8F` |
+| Handling, logo-prik, ♥, aktiv fane | violet `#5B3CD6`, tekst på den `#FFFCF7`, lys `#E7E0FB` |
+| Pop på blæk-blok, Anbefalet-mærke, "billigst" | mint `#8EEBC0` med blæk-tekst |
+| Besparelse på lyst papir | mintgrøn `#17734F` på `#DDF5E8` |
+| Pins | Anbefalet `#34C98A`, andre Centre `#1B1915`, dig `#2F7BF6` |
+| Advarsel / fejl (dæmpet) | `#8A5A00` på `#FFF1CF` / `#B4382E` |
+| Pasteller (Ronnies cirkler) | fersken `#FFD8C2`, mint `#CDEFDC`, lavendel `#E3DAFB`, solgul `#FFE59A` |
 
-## Skrifttyper (max 2 familier)
+Baggrunden er en tand dybere end 6's `#FFF6EA`: ellers kan papirkortene (`#FFFCF7`) ikke ses, nu hvor
+der ikke er skygger (forskel 1,09:1, samme som i variant 2).
 
-- **Bricolage Grotesque** 800 (titler, priser, logo) og 600 (små overskrifter). Stram negativ spærring
-  (ca. -4,5 % på titler, -5,5 % på priser), linjehøjde ~0,98.
-- **Inter** 400/500/600/700 til al læsetekst. Små versaler med +1,6 spærring som "kickers".
-- Fjernet: `@expo-google-fonts/audiowide`, `@expo-google-fonts/monoton`. Tilføjet:
-  `@expo-google-fonts/bricolage-grotesque`.
+### Kontrast (WCAG, udregnet)
 
-## Vigtigste beslutninger
+| Par | Forhold |
+|---|---|
+| Brødtekst `#1B1915` på baggrund / flade / sand | 15,7 / 17,2 / 14,1 |
+| Dæmpet `#6B6358` på baggrund / flade / sand | 5,3 / 5,8 / 4,8 |
+| **Tekst `#FFFCF7` på primærknap `#5B3CD6`** | **6,7** |
+| Violet tekst på baggrund / flade (aktiv fane, løbenumre på Velkomst) | 6,2 / 6,7 |
+| Mintgrøn `#17734F` på baggrund / flade / mint-pille | 5,2 / 5,7 / 5,1 |
+| Mint `#8EEBC0` på blæk (pris i blæk-blok) og blæk på mint (mærker) | 12,4 |
+| Lys tekst / dæmpet tekst på blæk | 15,6 / 6,8 |
+| Fejl `#B4382E` på baggrund | 5,3 |
+| Advarsel `#8A5A00` på `#FFF1CF` | 5,3 |
+| Inaktiv fane `#6B6358` | 5,3 |
+| Løbenummer `#A39C8F` på flade | 2,7 (kun pynt, ikke læsetekst) |
 
-- **Lys stil:** `DefaultTheme` i stedet for `DarkTheme`, `StatusBar style="dark"`, lys kortstil
-  (`brand.mapStyle` + `brand.mapInterfaceStyle = 'light'`), lys tab-bar og header,
-  `userInterfaceStyle: light` og kalk-baggrund i `app.json`.
-- **Rytme frem for skabelon:** det Anbefalede Center er en mørk blæk-blok (bento-hero) med prisen i lime
-  midt i en liste af lyse papirkort. Kort har løbenummer (01, 02 …) og prisen som 52 px tal.
-- **Ingen skygger/glød**, ingen gradients. Flader adskilles af tone, ikke af rammer.
-- **Former:** kort 22 px, store blokke 30 px, knapper/mærker/felter som piller, kvitteringen skarp (6 px).
-- **Felter** er "blanket-linjer" (papir med tyk blæklinje under) i stedet for kasser.
-- **Bevægelse** (kun transform/opacity, `useNativeDriver` kun uden for web, kurve `power4.out`):
-  - `Reveal`: forskudt indtoning (70 ms pr. element, max 8) af kort på Find og Favoritter, profilgrupper,
-    chatbeskeder, Ronnie-forslag, faciliteter og alle dele af Velkomst.
-  - Tryk-feedback: alle knapper fjedrer ind (`usePressScale`), ♥ slår et slag.
-  - Segment-valg (maks. afstand): sort pille glider mellem valgene med fjeder.
-  - Fanebjælke: lime pille vokser frem bag aktivt ikon.
-  - Onboarding: fremdriftsbjælke i 6 streger, hvor det aktuelle trin fyldes op.
-  - Centerdetalje: kvitteringen toner ind igen, når man skifter Tilbud.
-  - Levende detaljer: logoets orange prik pulserer; på Velkomst vipper Ronnie og hans sol "trækker
-    vejret" i et andet tempo; et skråt blæk-bånd med prisbegreberne (Ærlig årspris, Oprettelsesgebyr,
-    Admingebyr, Kampagnepris, Rabat) løber stille forbi.
-- **App-ikon, splash, favicon og Android-ikon** er genereret på ny: Ronnie på lime sol på kalkpapir
-  (splash med "GymFinder" + orange prik).
+### Kædernes farver
 
-## Strukturelle komponentændringer
+Appen har ingen kædelogoer (`components/BrandLogo.js` er kun GymFinders eget logo, og hverken
+`assets/` eller `data/` har kædelogoer). Tjekket mod kædernes kendte farver: Fitness X (orange),
+PureGym (grøn/turkis og navy), SATS (rød og mørkeblå), LOOP Fitness. Violet `#5B3CD6` (farvetone ca.
+252°) ligger tydeligt mellem SATS' blå og de røde/orange toner og kan ikke forveksles med nogen af dem.
+Mint ligger i det grønne område, men er en lys pastel, der kun bruges til besparelser/Anbefalet,
+aldrig til handlinger.
 
-- Nye: `components/Reveal.js`, `components/usePressScale.js`, `components/Marquee.js`, `components/TabIcon.js`.
-- `ButtonComponent`: gradient fjernet, Animated-wrapper med tryk-skala, ny prop `onInk`.
-- `BrandLogo`: ét ord "GymFinder" + pulserende prik (før to farvede ord i neon).
-- `ScreenHeader`: neonlinje → blæklinje, titel toner ind.
-- `RonnieMascot`: sol bag stor/lille Ronnie, rund lime-ramme om avatar/tiny, åndedræt på `large`, ny prop `style`.
-- `SegmentedControl`: glidende indikator. `OnboardingStep`: fremdriftsbjælke + Reveal.
-- `CenterCard`: løbenummer, stort pristal med enhed ved siden af, mørk blok for Anbefalet, ny prop `index`.
-- `FavoriteButton`: rund knap + hjerteslag, prop `onInk`. `NotStatedRow`: prop `onInk`.
-- `CenterPinInfo` og Favoritter-kort: prisen som stort tal i stedet for en tekstlinje.
-- `WelcomeScreen`: ny opbygning (logo, kæmpe overskrift med lime-markeret "billigst", Ronnie til højre,
-  bånd, nummererede punkter 01-03 i stedet for ikoner). Samme tekster.
-- `App.js`: lyst tema, `TabIcon`, outline-ikoner for inaktive faner.
-- Små: `Chip` (sort valgt + lime flueben), `ToggleRow` (blæk-spor, lime tommelfinger), `SettingsRow`
-  (pil frem i blæk), `CenterMap.web` (piller uden 📍), `MapLegend` (antal i versaler).
+## Skrifttyper
+
+- **Nunito** 400/600/700/800 til al tekst og alle priser. Store pristal (52 og 40 px) er Nunito
+  ExtraBold med `tabular-nums` (ny hjælper `figure()`), så tallene står i lige kolonner. Det løser
+  2's svaghed med proportionale cifre i Bricolage.
+- **Fredoka** 700 til titler, logo og bånd, 600 til små overskrifter og taleboblen på Velkomst.
+- Spærring: Fredoka er bred og rund, så 2's -4,5 % fik bogstaverne til at klumpe. Titler har nu
+  -1,5 % (modaler og sektioner -1 %), logoet ca. -1,5 %. Linjehøjde 1,04 i stedet for 0,98, fordi
+  Fredoka har høje Æ/Ø/Å. Priser har -3 til -3,5 %.
+- Fjernet: `@expo-google-fonts/bricolage-grotesque` og `@expo-google-fonts/inter`. Tilføjet:
+  `@expo-google-fonts/fredoka` og `@expo-google-fonts/nunito`.
+
+## Taget fra 2 (Tribune)
+
+Lys stil og navigationstema, layout-rytmen, store pristal, blæk-blokken for Anbefalet, løbenumre,
+fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-indikator, tab-pille,
+`Reveal`, `usePressScale`, `Marquee`, den pulserende logo-prik, ingen skygger og ingen gradients.
+
+## Taget fra 6 (Varm og venlig)
+
+- Skrifterne (se ovenfor).
+- Ronnie: farvet cirkel bag ham, der følger positur (`brand.ronnieTones`), ny størrelse `hint`,
+  avatar som farvet cirkel, pop-ind med fjeder og et roligt vip i store/små størrelser, der slås fra
+  ved "reducer bevægelse" (`AccessibilityInfo.isReduceMotionEnabled`). Erstatter Ronnie på lime sol.
+- Talebobler med spids: `RonnieHint`, Ronnies første besked i Spørg Ronnie og "Hej, jeg er Ronnie!"
+  over Ronnie på Velkomst.
+- Varmen: creme baggrund, rundere hjørner (kort 24, blokke 32, kvittering 12 i stedet for 6, felter
+  16 foroven, faciliteter 20), tykkere og afrundet fremdriftsbjælke og headerlinje.
+
+## Strukturelle ændringer (i forhold til variant 2)
+
+- `RonnieMascot`: ny opbygning med cirkel-scene pr. størrelse (som i 6), `motion`-hook med
+  reducer-bevægelse, behold prop `style`. Lime-badges og åndende sol er fjernet.
+- `RonnieHint`: Ronnie (`hint`) + taleboble med spids i stedet for lime boks.
+- `WelcomeScreen`: taleboble over Ronnie; Ronnie og boblen står i samme `Reveal`. Samme tekster.
+- `AskRonnieScreen`: spids på Ronnies første taleboble.
+- `LoginScreen`: Ronnie er fjernet, så reglen "kun ved godt nyt, aldrig ved login" overholdes.
+- `TabIcon`: violet pille med lyst ikon. `GlobalStyle`: ny `figure()` til priser, `ronnieStage()`.
+- `app.json`: baggrunde `#FDF1E0`. App-ikon, favicon, Android-ikoner og splash er genereret på ny
+  med Pillow (Ronnie på ferskencirkel på creme; splash med "GymFinder" i Fredoka og violet prik).
+  Monokrom-ikonet er uændret.
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før: 1220. Efter: 1407 (flere styles til de nye præsentationsdele + `motion`-eksport og hjælpere `display()`/`kicker`).
+Før (variant 2): 1407. Efter: 1480 (pasteller, `ronnieTones`, `figure()`, Ronnie-scener og
+taleboble-spidser). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
 
-- Lime `#D7F23C` som pin-farve på Android (`pinColor`) kan blive afrundet til nærmeste nuance.
-- `fontVariant: tabular-nums` virker ikke med Bricolage, så store pristal har proportionale cifre.
-- Ronnie-billedet har stadig pink/turkis svedbånd fra neon-temaet; de passer kun nogenlunde til paletten.
-- Velkomst er høj; på små skærme (< 700 px) skal man scrolle lidt for at se knapperne (ScrollView).
-- Ingen `prefers-reduced-motion`-gren endnu (RN's `AccessibilityInfo.isReduceMotionEnabled` kunne bruges).
-- `expo-linear-gradient` er ikke længere importeret nogen steder, men pakken er bevaret (kun fontpakker
-  skulle ryddes).
-- Animationer er ikke testet på fysisk enhed i denne runde, kun bundlet på web.
+- Ronnies svedbånd er pink/turkis/lilla; lilla passer fint til violet, turkis lidt mindre.
+- Løbenumrene (`#A39C8F`) har kun 2,7:1; de er pynt, men kan gøres mørkere, hvis de skal læses.
+- Mint `#34C98A` som `pinColor` på Android kan blive afrundet til nærmeste standardnuance.
+- Velkomst er blevet lidt højere af taleboblen; på små skærme skal man scrolle (ScrollView).
+- Logo-prikken og båndet på Velkomst bevæger sig stadig, selv med "reducer bevægelse" (kun Ronnie
+  respekterer indstillingen).
+- Animationer er kun bundlet på web, ikke afprøvet på fysisk enhed.
+- `expo-linear-gradient` er stadig installeret, men bruges ikke.

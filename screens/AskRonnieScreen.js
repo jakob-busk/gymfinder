@@ -276,6 +276,7 @@ export default function AskRonnieScreen({ navigation, route }) {
                   <View style={GlobalStyle.greetingRow}>
                     <RonnieMascot size="small" />
                     <View style={[GlobalStyle.bubbleRonnie, GlobalStyle.greetingBubble]}>
+                      <View style={[GlobalStyle.bubbleTail, GlobalStyle.bubbleTailLeft]} />
                       <Text style={GlobalStyle.bubbleText}>
                         Hej, jeg er Ronnie, din AI-hjælper! Skriv for hjælp.
                       </Text>
