@@ -7,25 +7,47 @@ import SelectMenu from './SelectMenu';
 import { parseMonthlyPrice } from '../data/userProfile';
 
 // Nuværende medlemskab: brugerens egen månedspris og eventuelt hvilken Kæde, eller "Ingen".
-// onChange får { monthlyPrice, chainId } eller null (Ingen). chains er Kæderne fra centerdata.
-export default function CurrentMembershipEditor({ currentMembership, chains, onChange }) {
+// onChange får { monthlyPrice, chainId } eller null (Ingen, eller intet gyldigt prisfelt).
+// chains er Kæderne fra centerdata. onCompleteChange(true/false) fortæller, om valget er
+// færdigt: "Ingen", eller "Jeg er medlem et sted" med en gyldig månedspris.
+// Et tomt eller ugyldigt prisfelt nulstiller medlemskabet (onChange(null)), så en gammel pris
+// aldrig bliver stående i stilhed; feltet siger selv, hvad der mangler.
+export default function CurrentMembershipEditor({
+  currentMembership,
+  chains,
+  onChange,
+  onCompleteChange,
+}) {
   const [hasMembership, setHasMembership] = useState(currentMembership != null);
   const [priceText, setPriceText] = useState(
     currentMembership ? String(currentMembership.monthlyPrice) : '',
   );
+  // Kæden huskes her, så den ikke forsvinder, mens prisfeltet er tomt.
+  const [chainId, setChainId] = useState(currentMembership?.chainId ?? null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!currentMembership) return;
     setHasMembership(true);
-    setPriceText(String(currentMembership.monthlyPrice));
+    setChainId(currentMembership.chainId ?? null);
+    // Skriver kun over feltet, når prisen kommer udefra (fx efter login), ikke mens man skriver.
+    setPriceText((text) =>
+      parseMonthlyPrice(text) === currentMembership.monthlyPrice
+        ? text
+        : String(currentMembership.monthlyPrice),
+    );
   }, [currentMembership]);
 
-  const chainId = currentMembership?.chainId ?? null;
+  const priceValid = parseMonthlyPrice(priceText) != null;
+  const complete = !hasMembership || priceValid;
+  useEffect(() => {
+    onCompleteChange?.(complete);
+  }, [complete, onCompleteChange]);
 
   const handleNone = () => {
     setHasMembership(false);
     setPriceText('');
+    setChainId(null);
     setError(null);
     onChange(null);
   };
@@ -33,19 +55,29 @@ export default function CurrentMembershipEditor({ currentMembership, chains, onC
   const handlePriceChange = (text) => {
     setPriceText(text);
     const price = parseMonthlyPrice(text);
-    // "249," er ikke en fejl endnu: brugeren er ved at skrive øre.
-    const isTyping = !text.trim() || /[.,]$/.test(text.trim());
-    setError(price == null && !isTyping ? 'Skriv månedsprisen i kr, fx 299.' : null);
-    if (price != null) onChange({ monthlyPrice: price, chainId });
+    const trimmed = text.trim();
+    // "249," er ikke en fejl endnu: brugeren er ved at skrive øre. Prisen før kommaet gælder.
+    if (price == null && /^\d+[.,]$/.test(trimmed)) {
+      setError(null);
+      return;
+    }
+    if (price != null) {
+      setError(null);
+      onChange({ monthlyPrice: price, chainId });
+      return;
+    }
+    setError(
+      trimmed
+        ? 'Skriv månedsprisen i kr, fx 299. Indtil da gemmes intet medlemskab.'
+        : 'Skriv din månedspris. Uden den gemmes intet medlemskab.',
+    );
+    onChange(null);
   };
 
   const handleChain = (id) => {
-    const price = currentMembership?.monthlyPrice;
-    if (price == null) {
-      setError('Skriv først din månedspris.');
-      return;
-    }
-    onChange({ monthlyPrice: price, chainId: id });
+    setChainId(id);
+    const price = parseMonthlyPrice(priceText);
+    if (price != null) onChange({ monthlyPrice: price, chainId: id });
   };
 
   const handleChoice = (member) => {

@@ -1,5 +1,5 @@
 // Ansvarlig: Jakob
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 
 import OnboardingStep from '../../components/OnboardingStep';
 import CurrentMembershipEditor from '../../components/CurrentMembershipEditor';
@@ -11,6 +11,8 @@ import { useCenterData } from '../../services/CenterData';
 export default function CurrentMembershipScreen({ navigation }) {
   const { user, setUser } = useContext(UserContext);
   const { chains } = useCenterData();
+  // false, når "Jeg er medlem et sted" er valgt uden en gyldig månedspris. Så spærres Næste.
+  const [complete, setComplete] = useState(true);
 
   const setCurrentMembership = (currentMembership) => {
     setUser((current) => ({ ...current, currentMembership }));
@@ -27,12 +29,15 @@ export default function CurrentMembershipScreen({ navigation }) {
       title="Er du medlem et sted i dag?"
       intro="Skriv hvad du betaler om måneden, så viser vi, hvor meget du kan spare ved at skifte."
       onNext={() => navigation.navigate('Præferencer')}
+      nextDisabled={!complete}
+      nextDisabledReason="Skriv din månedspris, eller vælg Ingen."
       onSkip={handleSkip}
     >
       <CurrentMembershipEditor
         currentMembership={user.currentMembership}
         chains={chains}
         onChange={setCurrentMembership}
+        onCompleteChange={setComplete}
       />
     </OnboardingStep>
   );
