@@ -221,12 +221,6 @@ export default function CenterDetailScreen({ navigation, route }) {
         <Text style={[GlobalStyle.mapLegend, GlobalStyle.centeredText]}>
           Åbner {selected.offer.name} på {chain?.name ?? 'kædens'} egen side.
         </Text>
-        <ButtonComponent
-          title="Spørg Ronnie om dette Center"
-          type="text"
-          ronnie
-          onPress={handleAskRonnie}
-        />
       </View>
 
       {/* Udregningen bag prisen (kvitteringen) er foldet sammen fra start. */}
@@ -259,6 +253,14 @@ export default function CenterDetailScreen({ navigation, route }) {
           </Reveal>
         ))}
       </View>
+
+      {/* Ronnie står nederst, langt fra prisen: han er aldrig med ved priser. */}
+      <ButtonComponent
+        title="Spørg Ronnie om dette Center"
+        type="text"
+        ronnie
+        onPress={handleAskRonnie}
+      />
     </ScrollView>
   );
 }
