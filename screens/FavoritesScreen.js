@@ -7,6 +7,7 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import CenterTitle from '../components/CenterTitle';
 import InfoButton from '../components/InfoButton';
+import OfflineNotice from '../components/OfflineNotice';
 import PriceAlertEditor from '../components/PriceAlertEditor';
 import Reveal from '../components/Reveal';
 import RonnieHint from '../components/RonnieHint';
@@ -248,6 +249,7 @@ export default function FavoritesScreen({ navigation }) {
   );
 
   const renderContent = () => {
+    if (centerData.offline) return <OfflineNotice onRetry={centerData.retry} />;
     if (loading) return <ActivityIndicator />;
 
     return (

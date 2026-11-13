@@ -9,6 +9,7 @@ import CenterTitle from '../components/CenterTitle';
 import FavoriteButton from '../components/FavoriteButton';
 import InfoButton from '../components/InfoButton';
 import OfferReceipt from '../components/OfferReceipt';
+import OfflineNotice from '../components/OfflineNotice';
 import Reveal from '../components/Reveal';
 import {
   facilityRows,
@@ -35,7 +36,7 @@ import { openSignupPage } from '../services/Signup';
 export default function CenterDetailScreen({ navigation, route }) {
   const centerId = route?.params?.centerId;
   const { user } = useContext(UserContext);
-  const { centers, chains, loading } = useCenterData();
+  const { centers, chains, loading, offline, retry } = useCenterData();
   const [selectedOfferId, setSelectedOfferId] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const center = centers.find((entry) => entry.id === centerId);
@@ -44,6 +45,14 @@ export default function CenterDetailScreen({ navigation, route }) {
     () => matchCenter({ center, chains, user, today: new Date() }),
     [center, chains, user],
   );
+
+  if (offline) {
+    return (
+      <View style={GlobalStyle.container}>
+        <OfflineNotice onRetry={retry} />
+      </View>
+    );
+  }
 
   if (loading) {
     return (

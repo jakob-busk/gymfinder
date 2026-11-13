@@ -9,6 +9,7 @@ import CenterCard from '../components/CenterCard';
 import CenterMap from '../components/CenterMap';
 import CenterPinInfo from '../components/CenterPinInfo';
 import MapLegend from '../components/MapLegend';
+import OfflineNotice from '../components/OfflineNotice';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
@@ -163,6 +164,16 @@ export default function FindScreen({ navigation }) {
       )}
     </>
   );
+
+  // Uden forbindelse: besked og "Prøv igen" i stedet for kort og liste.
+  if (centerData.offline) {
+    return (
+      <SafeAreaView style={GlobalStyle.container} edges={['top']}>
+        <ScreenHeader logo />
+        <OfflineNotice onRetry={centerData.retry} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={GlobalStyle.container} edges={['top']}>
