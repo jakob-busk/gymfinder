@@ -8,25 +8,37 @@ Strukturen og bevægelsen fra Tribune (variant 2), men med varmen fra Varm og ve
 Prisen er stadig helten: store pristal, det Anbefalede Center som en mørk blæk-blok mellem lyse kort,
 løbenumre og lister, der toner ind forskudt. Ovenpå kommer creme papir, rundere hjørner, runde
 skrifter og Ronnie på en lys cirkel med talebobler. Stilen er bevidst rolig: få farver og lette
-vægte. Farverne har tre roller: **violet = handling, mint = godt nyt, blæk = alt andet**. Ingen af
-dem ligner en Kæde (Fitness X er orange, PureGym grøn/turkis, SATS rød/mørkeblå).
+vægte. Paletten er kun **creme/papir, blæk og violet** (plus dæmpet rød til fejl): violet er kun
+handling, blæk er alt andet. Ingen af dem ligner en Kæde (Fitness X er orange, PureGym grøn/turkis,
+SATS rød/mørkeblå).
 
 ## Palette
 
-Kun to flader og tre roller. Ingen pasteller, ingen sand-flade, ingen gul og ingen ekstra grøn/blå.
+Kun to flader og to farver oven på dem. Ingen mint, ingen pasteller, ingen sand-flade og ingen gul.
 
 | Rolle | Farve |
 |---|---|
 | Baggrund (creme) | `#FDF1E0` |
 | Flade (lyst papir, også felter, segment-spor og kort på web) | `#FFFCF7` |
-| Blæk: tekst, blæk-blok, andre Centre-pins, advarsler | `#1B1915`, på blæk `#F7F1E8` / dæmpet `#A8A193` |
+| Blæk: tekst, blæk-blok, Centre-pins, advarsler, godt nyt | `#1B1915`, på blæk `#F7F1E8` / dæmpet `#A8A193` |
 | Dæmpet tekst og løbenumre | `#6B6358` |
 | Linjer og spor | blæk med 10 % / 24 % gennemsigtighed |
-| Handling: knapper, ♥, logo-prik, aktiv fane, kontakter, din placering | violet `#5B3CD6`, tekst på den `#FFFCF7` |
+| Handling: knapper, ♥, logo-prik, aktiv fane, kontakter, "du er her" | violet `#5B3CD6`, tekst på den `#FFFCF7` |
 | Lys violet: Ronnies cirkel (altid samme farve) | `#E7E0FB` |
-| Godt nyt: Anbefalet-mærke og -pin, pris i blæk-blok, "billigst" | mint `#8EEBC0` med blæk-tekst |
-| Besparelse på lyst papir | mintgrøn `#17734F` på `#DDF5E8` |
 | Fejl (dæmpet) | `#B4382E` |
+
+### Godt nyt uden ekstra farve
+
+- **Anbefalet** er stadig den mørke blæk-blok; prisen står i lys `#F7F1E8`.
+- **Mærker** (Anbefalet, Billigst her) er en lys pille (`#F7F1E8`) med 1,5 px blæk-kant og blæk-tekst.
+  Den samme pille virker på blæk-blokken og på lyst papir.
+- **Besparelse og prisfald** er en creme pille med blæk-kant og halvfed blæk-tekst.
+- **"billigst" på Velkomst** står omvendt: lys tekst på en blæk-markering.
+- **Kortpins:** Anbefalet er en stor papirprik med tyk blæk-ring (24 px), andre Centre er små
+  blækprikker med papirkant (14 px), "du er her" er en violet pin. På web er Anbefalet en papirpille
+  med blæk-kant, de andre blæk-piller. Forklaringen under kortet bruger de samme prikker.
+- **Bånd og fanepriser:** stjernen i Velkomst-båndet og prisen på det aktive Tilbud er dæmpet lys
+  på blæk.
 
 Advarsler (fx "Prisen stiger, når du fylder 30") har ingen egen farve: lyst papir, blæk-kant og et
 `alert-circle-outline`-ikon ved titlen. Kortstilen (Android) er neutral creme/grå uden farvede veje.
@@ -41,9 +53,9 @@ skygger (forskel 1,09:1, samme som i variant 2).
 | Dæmpet `#6B6358` på baggrund / flade | 5,3 / 5,8 |
 | **Tekst `#FFFCF7` på primærknap `#5B3CD6`** | **6,7** |
 | Violet på baggrund / flade (aktiv fane) | 6,2 / 6,7 |
-| Mintgrøn `#17734F` på baggrund / flade / mint-pille | 5,2 / 5,7 / 5,1 |
-| Mint `#8EEBC0` på blæk (pris i blæk-blok) og blæk på mint (mærker) | 12,4 |
-| Lys tekst / dæmpet tekst på blæk (også løbenummer i blæk-blokken) | 15,6 / 6,8 |
+| Lys tekst `#F7F1E8` på blæk (pris i blæk-blok) | 15,6 |
+| Dæmpet lys `#A8A193` på blæk | 6,8 |
+| Blæk-tekst på lys mærke-pille `#F7F1E8` | 15,6 |
 | Fejl `#B4382E` på baggrund | 5,3 |
 | Blæk på lys violet (Ronnie-cirkel) | 13,8 |
 | Inaktiv fane `#6B6358` | 5,3 |
@@ -54,8 +66,6 @@ Appen har ingen kædelogoer (`components/BrandLogo.js` er kun GymFinders eget lo
 `assets/` eller `data/` har kædelogoer). Tjekket mod kædernes kendte farver: Fitness X (orange),
 PureGym (grøn/turkis og navy), SATS (rød og mørkeblå), LOOP Fitness. Violet `#5B3CD6` (farvetone ca.
 252°) ligger tydeligt mellem SATS' blå og de røde/orange toner og kan ikke forveksles med nogen af dem.
-Mint ligger i det grønne område, men er en lys pastel, der kun bruges til besparelser/Anbefalet,
-aldrig til handlinger.
 
 ## Skrifttyper og vægte
 
@@ -109,7 +119,10 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 - `LoginScreen`: Ronnie er fjernet, så reglen "kun ved godt nyt, aldrig ved login" overholdes.
 - Versaler fjernet: mærkerne "ANBEFALET"/"BILLIGST HER" (CenterCard, CenterPinInfo, OfferReceipt),
   `kicker`-stilen, spærring på fanetitler og datoformatet "DD-MM-ÅÅÅÅ" → "dd-mm-åååå" (felt og fejltekst).
-- Færre farver: `brand.ronnieTones`, pastellerne og `surfaceRaised` er fjernet. `ToggleRow` er
+- Færre farver: `brand.ronnieTones`, pastellerne, `surfaceRaised` og hele mint-familien (`accent*`,
+  `badgeBackground`, `recommendedPin`, `centerPin`) er fjernet. `CenterMap` tegner Centrene som
+  egne prikker (`mapPinRecommended`/`mapPinCenter`) i stedet for `pinColor`; `CenterMap.web` og
+  `MapLegend` bruger de samme styles. `ToggleRow` er
   violet, når den er slået til; `Chip` har et lyst flueben på blæk; løbenummeret i blæk-blokken er
   lyst dæmpet. `AskRonnieScreen` og `CenterDetailScreen` har et ikon ved advarslens titel.
 - `TabIcon`: violet pille med lyst ikon. `GlobalStyle`: ny `figure()` til priser, `ronnieStage()`.
@@ -119,14 +132,16 @@ fremdriftsbjælken i onboarding, felter som blanket-linjer, glidende segment-ind
 
 ## Linjetal `styles/GlobalStyle.js`
 
-Før (variant 2): 1407. Efter: 1472 (`figure()`, Ronnie-scener, taleboble-spidser og advarsels-
-ikonrække; pasteller og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
+Før (variant 2): 1407. Efter: 1508 (`figure()`, Ronnie-scener, taleboble-spidser, advarsels-
+ikonrække og pin-prikker; pasteller, mint og `ronnieTones` er fjernet igen). Oprindeligt på `main`: 1220.
 
 ## Kendte svagheder
 
 - Ronnies svedbånd er pink/turkis/lilla; lilla passer fint til violet, turkis lidt mindre.
-- Mint-pinnen for Anbefalet er lys (1,2:1 mod kortet). Den skiller sig ud fra de mørke pins, men
-  står svagt mod selve kortet, og Android kan runde `pinColor` af til nærmeste standardnuance.
+- Centrene er nu egne prikker på kortet (native) i stedet for standard-pins. De er ikke afprøvet på
+  en telefon; på Android kan egne markører i sjældne tilfælde blive klippet eller tegnet forsinket.
+- Uden en farve til godt nyt hviler alt på form (blok, kant, pille). Det er roligt, men Anbefalet på
+  web-pillerne og i forklaringen er mindre iøjnefaldende end før.
 - Ronnies cirkel (lys violet) ligger tæt på cremen (1,14:1); den er pynt, så det er bevidst blødt.
 - Velkomst er blevet lidt højere af taleboblen; på små skærme skal man scrolle (ScrollView).
 - Logo-prikken og båndet på Velkomst bevæger sig stadig, selv med "reducer bevægelse" (kun Ronnie

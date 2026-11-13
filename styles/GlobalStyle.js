@@ -4,9 +4,11 @@ import { Easing, Platform, StyleSheet } from 'react-native';
 // pristal, det Anbefalede Center som en mørk blæk-blok mellem lyse kort, løbenumre, felter som
 // blanket-linjer og lister, der toner ind forskudt. Varmen fra "Varm og venlig": creme papir,
 // rundere hjørner, Nunito og Fredoka og Ronnie på en lys cirkel med talebobler.
-// Farverne har tre roller og ikke flere: violet er handling (knapper, ♥, logo-prik, aktiv fane, din
-// placering), mint er godt nyt (besparelse, Anbefalet) og blæk er alt andet. Ingen af dem ligner en
-// Kædes farve (Fitness X er orange, PureGym grøn/turkis, SATS rød/mørkeblå). Kun to flader (creme
+// Farverne er creme/papir, blæk og violet, og ikke flere (plus dæmpet rød til fejl). Violet er kun
+// handling (knapper, ♥, logo-prik, aktiv fane, kontakter, din placering); alt andet er blæk. Godt nyt
+// (Anbefalet, besparelser, prisfald) får ingen ekstra farve, men vises med form og kontrast: den mørke
+// blæk-blok, lyse piller med blæk-kant og blæk på papir. Ingen af farverne ligner en Kædes (Fitness X
+// er orange, PureGym grøn/turkis, SATS rød/mørkeblå). Kun to flader (creme
 // og lyst papir), ingen skygger, aldrig ren sort eller hvid, og aldrig farve bag selve prisen.
 // Vægtene er rolige: Fredoka 600/500 til titler, Nunito 700 kun til pristal, ellers 600 og 400.
 const colors = {
@@ -26,21 +28,11 @@ const colors = {
   primary: '#5B3CD6',
   onPrimary: '#FFFCF7',
   primaryLight: '#E7E0FB',
-  // Godt nyt: mint. På lyst papir er den for lys til tekst, så besparelser skrives i dyb mintgrøn.
-  accent: '#8EEBC0',
-  onAccent: '#1B1915',
-  accentText: '#17734F',
-  accentLight: '#DDF5E8',
-  badgeBackground: '#8EEBC0',
-  badgeText: '#1B1915',
   // Fejl er dæmpet rød. Advarsler har ingen egen farve; de står i blæk med et ikon og en kant.
   error: '#B4382E',
   // ♥ på Centre, der er Favoritter (og dem, der kan blive det).
   favorite: '#5B3CD6',
-  // Pins på kortet på Find: Anbefalet er godt nyt (mint), de andre Centre er blæk, og din egen
-  // placering er violet.
-  recommendedPin: '#8EEBC0',
-  centerPin: '#1B1915',
+  // Din egen placering på kortet er violet. Centrenes pins er blæk og papir (se mapPin*).
   userPin: '#5B3CD6',
   tabBar: '#FDF1E0',
   tabActive: '#5B3CD6',
@@ -83,7 +75,7 @@ const motion = {
   pressScale: 0.96,
 };
 
-// Lys, neutral kortstil til Google Maps (Android) i creme og grå, så pins i blæk, mint og violet
+// Lys, neutral kortstil til Google Maps (Android) i creme og grå, så pins i blæk og violet
 // er det eneste med farve.
 const brand = {
   mapInterfaceStyle: 'light',
@@ -462,11 +454,14 @@ const GlobalStyle = StyleSheet.create({
     color: colors.onInkMuted,
   },
   priceOnInk: {
-    color: colors.accent,
+    color: colors.onInk,
   },
-  // Anbefalet / Billigst her: mint pille med blæk-tekst, fordi det handler om den bedste pris.
+  // Anbefalet / Billigst her: lys pille med blæk-kant og blæk-tekst. Den samme pille virker både
+  // på blæk-blokken (lys mod mørk) og på lyst papir (kanten tegner den).
   badge: {
-    backgroundColor: colors.badgeBackground,
+    backgroundColor: colors.onInk,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
     borderRadius: shape.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -474,7 +469,7 @@ const GlobalStyle = StyleSheet.create({
   badgeText: {
     ...kicker,
     fontSize: 12,
-    color: colors.badgeText,
+    color: colors.text,
   },
   // Priser står altid roligt: neutral farve og tal i lige kolonner.
   priceText: {
@@ -500,12 +495,15 @@ const GlobalStyle = StyleSheet.create({
     color: colors.muted,
     marginBottom: 6,
   },
-  // Besparelse: en lille mint pille med dyb mintgrøn tekst, så det gode nyt kan ses på afstand.
+  // Besparelse: en pille i cremefarve med blæk-kant og blæk-tekst, så det gode nyt kan ses på
+  // afstand uden en ekstra farve.
   savingText: {
     alignSelf: 'flex-start',
     fontFamily: fonts.semibold,
-    color: colors.accentText,
-    backgroundColor: colors.accentLight,
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
     borderRadius: 12,
     overflow: 'hidden',
     paddingHorizontal: 10,
@@ -553,8 +551,10 @@ const GlobalStyle = StyleSheet.create({
     ...display(34, -0.015),
     lineHeight: 37,
   },
+  // "billigst" står omvendt: lys tekst på en blæk-markering.
   welcomeHighlight: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.ink,
+    color: colors.onInk,
     borderRadius: 10,
   },
   welcomeRonnie: {
@@ -623,7 +623,7 @@ const GlobalStyle = StyleSheet.create({
     color: colors.onInk,
   },
   marqueeStar: {
-    color: colors.accent,
+    color: colors.onInkMuted,
   },
   // Onboarding: et trin med fremdriftsbjælke, stor titel, indhold og knapperne nederst.
   stepContent: {
@@ -692,7 +692,7 @@ const GlobalStyle = StyleSheet.create({
   },
   confirmedText: {
     fontFamily: fonts.medium,
-    color: colors.accentText,
+    color: colors.text,
     marginBottom: 10,
   },
   // Adressefeltet: forslagene under feltet, mens brugeren skriver.
@@ -1103,7 +1103,7 @@ const GlobalStyle = StyleSheet.create({
     fontSize: 12,
   },
   webMapPinTextRecommended: {
-    color: colors.onAccent,
+    color: colors.text,
   },
   pinInfo: {
     position: 'absolute',
@@ -1140,12 +1140,44 @@ const GlobalStyle = StyleSheet.create({
     marginBottom: 8,
   },
   legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
+  },
+  // Pins: Anbefalet er en stor papirprik med tyk blæk-ring, de andre Centre er små blækprikker med
+  // en papirkant, så de kan ses på kortet. Bruges både på kortet (native) og i forklaringen.
+  mapPinRecommended: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 6,
+    borderColor: colors.ink,
+  },
+  mapPinCenter: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.ink,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  mapPinUser: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.userPin,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  // På web er Centrene piller: Anbefalet papir med blæk-kant, de andre blæk.
+  webMapPinRecommended: {
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.ink,
+  },
+  webMapPinCenter: {
+    backgroundColor: colors.ink,
+    borderWidth: 2,
+    borderColor: colors.ink,
   },
   emptyState: {
     alignItems: 'center',
@@ -1245,9 +1277,10 @@ const GlobalStyle = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   offerTabPriceActive: {
-    color: colors.accent,
+    color: colors.onInkMuted,
   },
-  // Kvitteringen: en bon på lyst papir (lidt skarpere hjørner end kortene) med stiplede linjer og en stor total nederst.
+  // Kvitteringen: en bon på lyst papir (lidt skarpere hjørner end kortene) med stiplede linjer og
+  // en stor total nederst.
   receipt: {
     backgroundColor: colors.surface,
     borderRadius: shape.receiptRadius,
@@ -1351,10 +1384,13 @@ const GlobalStyle = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  // Prisfald: samme pille som en besparelse.
   priceDropText: {
     alignSelf: 'flex-start',
-    color: colors.onAccent,
-    backgroundColor: colors.accent,
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
     borderRadius: 12,
     overflow: 'hidden',
     paddingHorizontal: 8,

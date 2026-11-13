@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
+import { View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
 import GlobalStyle, { brand, colors } from '../styles/GlobalStyle';
 import { mapRegion } from '../data/findView';
 
 // Kort med brugerens egen pin og én pin pr. Center i matches (CenterMatch fra Matchning).
-// Det Anbefalede Center har sin egen farve. onSelect(centerId) kaldes ved tryk på en Center-pin.
+// Centrene er prikker i blæk: det Anbefalede Center er større med en tyk ring, så det kan ses uden
+// en ekstra farve. Din egen placering er en violet pin. onSelect(centerId) kaldes ved tryk på en Center-pin.
 // Uden provider bruges Apple Maps på iOS og Google Maps på Android, så det virker i Expo Go.
 export default function CenterMap({ userLocation, matches, recommendedId, onSelect }) {
   const mapRef = useRef(null);
@@ -43,14 +45,15 @@ export default function CenterMap({ userLocation, matches, recommendedId, onSele
         const isRecommended = center.id === recommendedId;
         return (
           <Marker
-            // Nøglen skifter med Anbefalet, da Android ikke altid opdaterer pinColor på en pin.
+            // Nøglen skifter med Anbefalet, da Android ikke altid tegner en pin om, når den ændres.
             key={`${center.id}-${isRecommended}`}
             coordinate={center.location}
-            pinColor={isRecommended ? colors.recommendedPin : colors.centerPin}
             zIndex={isRecommended ? 1 : 0}
             onPress={() => onSelect(center.id)}
             accessibilityLabel={center.name}
-          />
+          >
+            <View style={isRecommended ? GlobalStyle.mapPinRecommended : GlobalStyle.mapPinCenter} />
+          </Marker>
         );
       })}
     </MapView>
