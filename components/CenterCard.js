@@ -5,12 +5,12 @@ import GlobalStyle, { colors } from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import CenterTitle, { centerTitleLabel } from './CenterTitle';
 import FavoriteButton from './FavoriteButton';
+import HonestPrice from './HonestPrice';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
 import Reveal from './Reveal';
 import {
   formatDistance,
-  formatNumber,
   formatPrice,
   offerBasisText,
 } from '../data/centerDetail';
@@ -75,20 +75,7 @@ export default function CenterCard({ match, isRecommended, onShowDetails, index 
           <FavoriteButton center={center} chain={chain} onInk={ink} />
         </View>
 
-        <View style={GlobalStyle.cardPriceRow}>
-          <Text style={[GlobalStyle.cardPrice, ink && GlobalStyle.priceOnInk]}>
-            {formatNumber(Math.round(match.honestYearlyPrice))}
-          </Text>
-          <View style={GlobalStyle.cardPriceUnitBox}>
-            <Text style={[GlobalStyle.cardPriceUnit, ink && GlobalStyle.textOnInk]}>kr.</Text>
-            <View style={GlobalStyle.inlineRow}>
-              <Text style={[GlobalStyle.cardPriceCaption, ink && GlobalStyle.mutedOnInk]}>
-                ærlig årspris · gns. pr. md.
-              </Text>
-              <InfoButton term="honestYearlyPrice" onInk={ink} />
-            </View>
-          </View>
-        </View>
+        <HonestPrice amount={match.honestYearlyPrice} size="card" onInk={ink} />
         {/* Hvilket Tilbud prisen og Tilmeld gælder, og om en Rabat er regnet med. */}
         <Text style={[GlobalStyle.mutedText, ink && GlobalStyle.mutedOnInk]}>
           {offerBasisText(bestOffer)}

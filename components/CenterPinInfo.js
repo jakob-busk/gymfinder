@@ -3,9 +3,10 @@ import { Text, View } from 'react-native';
 import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from './ButtonComponent';
 import CenterTitle from './CenterTitle';
+import HonestPrice from './HonestPrice';
 import InfoButton from './InfoButton';
 import NotStatedRow from './NotStatedRow';
-import { formatDistance, formatNumber } from '../data/centerDetail';
+import { formatDistance } from '../data/centerDetail';
 import { centerKeywords } from '../data/findView';
 
 // Boksen der vises på kortet, når man trykker på en Center-pin: titel (logo, pin, navn), Ærlig årspris (stort tal),
@@ -30,16 +31,7 @@ export default function CenterPinInfo({ match, isRecommended, onShowDetails, onC
           </View>
         )}
       </View>
-      <View style={GlobalStyle.cardPriceRow}>
-        <Text style={GlobalStyle.bigPrice}>{formatNumber(Math.round(match.honestYearlyPrice))}</Text>
-        <View style={GlobalStyle.cardPriceUnitBox}>
-          <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
-          <View style={GlobalStyle.inlineRow}>
-            <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
-            <InfoButton term="honestYearlyPrice" />
-          </View>
-        </View>
-      </View>
+      <HonestPrice amount={match.honestYearlyPrice} />
       <Text style={GlobalStyle.distanceText}>
         {match.distanceKm != null ? `${formatDistance(match.distanceKm)} fra dig` : 'Afstand ukendt'}
         {keywords.length > 0 ? ` · ${keywords.join(', ')}` : ''}

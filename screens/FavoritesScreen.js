@@ -7,14 +7,14 @@ import GlobalStyle from '../styles/GlobalStyle';
 import ButtonComponent from '../components/ButtonComponent';
 import CenterTitle from '../components/CenterTitle';
 import { confirmAction } from '../components/confirm';
-import InfoButton from '../components/InfoButton';
+import HonestPrice from '../components/HonestPrice';
 import OfflineNotice from '../components/OfflineNotice';
 import PriceAlertEditor from '../components/PriceAlertEditor';
 import Reveal from '../components/Reveal';
 import RonnieHint from '../components/RonnieHint';
 import RonnieMascot from '../components/RonnieMascot';
 import ScreenHeader from '../components/ScreenHeader';
-import { formatNumber, formatPrice } from '../data/centerDetail';
+import { formatPrice } from '../data/centerDetail';
 import { TRY_AGAIN_MESSAGE } from '../data/errors';
 import { favoriteRows } from '../data/favorites';
 import { changeCurrentMembershipThreshold, newCurrentMembershipAlert } from '../data/priceAlerts';
@@ -131,18 +131,7 @@ export default function FavoritesScreen({ navigation }) {
             <CenterTitle chain={row.chain} name={row.center?.name ?? 'Ukendt Center'} />
             {row.match ? (
               <>
-                <View style={GlobalStyle.cardPriceRow}>
-                  <Text style={GlobalStyle.bigPrice}>
-                    {formatNumber(Math.round(row.honestYearlyPrice))}
-                  </Text>
-                  <View style={GlobalStyle.cardPriceUnitBox}>
-                    <Text style={GlobalStyle.cardPriceUnit}>kr.</Text>
-                    <View style={GlobalStyle.inlineRow}>
-                      <Text style={GlobalStyle.cardPriceCaption}>ærlig årspris · gns. pr. md.</Text>
-                      <InfoButton term="honestYearlyPrice" />
-                    </View>
-                  </View>
-                </View>
+                <HonestPrice amount={row.honestYearlyPrice} />
                 <PriceChange priceChange={row.priceChange} />
                 <View style={GlobalStyle.favoriteDetails}>
                   <ButtonComponent
