@@ -7,7 +7,11 @@ import {
   formatNumber,
   formatPrice,
   matchCenter,
+  chainGenitive,
+  offerAccessLabel,
+  offerAccessPhrase,
   offerBasisText,
+  offerLabels,
   offerSignupUrl,
   partnerInfo,
   priceBreakdown,
@@ -209,6 +213,7 @@ describe('turns30Notice', () => {
     );
     // Måned 3 løber 22. dec.–22. jan., og brugeren fylder 30 den 15. januar 2027.
     expect(turns30Notice('1997-01-15', best)).toEqual({
+      offerId: 'basis',
       offerName: 'Basis',
       birthdayMonth: 'januar 2027',
       fromPeriod: 3,
@@ -327,13 +332,18 @@ describe('aboutCenterRows', () => {
     const match = matchCenter({ center: c, chains: [CHAIN], user: user(), today: TODAY });
     const selected =
       match.offers.find((priced) => priced.offer.id === selectedOfferId) ?? match.bestOffer;
-    return aboutCenterRows({ center: c, offers: match.offers, selectedOffer: selected });
+    return aboutCenterRows({
+      center: c,
+      chain: CHAIN,
+      offers: match.offers,
+      selectedOffer: selected,
+    });
   }
 
   test('viser adresse, abonnementstyper, binding for det valgte abonnement og faciliteter', () => {
     expect(aboutRows()).toEqual([
       { key: 'address', label: 'Adresse', value: 'Gaden 1, 1000 København' },
-      { key: 'subscriptionTypes', label: 'Abonnementstyper', value: 'Lokalt center' },
+      { key: 'access', label: 'Adgang', value: 'Kun dette center' },
       { key: 'binding', label: 'Binding', value: 'Ingen' },
       { key: 'sauna', label: 'Sauna', value: 'Ja' },
       { key: 'groupClasses', label: 'Holdtræning', value: 'Nej' },
@@ -348,8 +358,8 @@ describe('aboutCenterRows', () => {
       offer({ id: 'b', subscriptionType: 'Lokal center' }),
       offer({ id: 'c', subscriptionType: 'Landsdækkende' }),
     ];
-    const row = aboutRows({ offers }).find((entry) => entry.key === 'subscriptionTypes');
-    expect(row.value).toBe('Lokalt center, landsdækkende');
+    const row = aboutRows({ offers }).find((entry) => entry.key === 'access');
+    expect(row.value).toBe('Kun dette center, alle Kæde-centre');
   });
 
   test('viser bindingen for det valgte abonnement', () => {
@@ -368,7 +378,7 @@ describe('aboutCenterRows', () => {
   test('viser "ikke oplyst", hvor adresse og abonnementstype er ukendte', () => {
     const rows = aboutRows({ address: '', offers: [offer({ subscriptionType: null })] });
     expect(rows.find((entry) => entry.key === 'address').value).toBe('Ikke oplyst');
-    expect(rows.find((entry) => entry.key === 'subscriptionTypes').value).toBe('Ikke oplyst');
+    expect(rows.find((entry) => entry.key === 'access').value).toBe('Ikke oplyst');
   });
 
   test('viser kun maskiner, når de kendes', () => {
@@ -446,11 +456,78 @@ describe('signupLink', () => {
 });
 
 describe('offerBasisText', () => {
-  test('siger, hvilket Tilbud prisen gælder, og hvilken Rabat der er regnet med', () => {
-    expect(offerBasisText(bestOfferFor())).toBe('for Basis');
-    expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }))).toBe(
-      'for Basis · med studierabat',
+  test('siger adgangen først, produktnavnet bagefter og hvilken Rabat der er regnet med', () => {
+    expect(offerBasisText(bestOfferFor(), 'Kæde')).toBe('Kun dette center · Basis');
+    expect(offerBasisText(bestOfferFor({}, { discountProfile: ['student'] }), 'Kæde')).toBe(
+      'Kun dette center · Basis · med studierabat',
     );
+    expect(offerBasisText(bestOfferFor({ subscriptionType: 'Landsdækkende' }), 'PureGym')).toBe(
+      'Alle PureGym-centre · Basis',
+    );
+  });
+
+  test('ukendt Abonnementstype: kun produktnavnet, ikke to gange', () => {
+    expect(offerBasisText(bestOfferFor({ subscriptionType: null }), 'Kæde')).toBe('Basis');
+  });
+});
+
+describe('offerAccessLabel og offerAccessPhrase', () => {
+  test('beskriver Tilbuddet ved den adgang, det giver', () => {
+    expect(offerAccessLabel(offer(), 'PureGym')).toBe('Kun dette center');
+    expect(offerAccessLabel(offer({ subscriptionType: 'Landsdækkende' }), 'PureGym')).toBe(
+      'Alle PureGym-centre',
+    );
+    expect(offerAccessLabel(offer({ subscriptionType: 'Landsdækkende' }))).toBe(
+      'Alle kædens centre',
+    );
+  });
+
+  test('falder tilbage til Tilbuddets navn, når Abonnementstypen er ukendt', () => {
+    expect(offerAccessLabel(offer({ subscriptionType: null }), 'PureGym')).toBe('Basis');
+    expect(offerAccessLabel(offer({ subscriptionType: 'Noget nyt' }), 'PureGym')).toBe('Basis');
+  });
+
+  test('offerAccessPhrase er til midt i en sætning', () => {
+    expect(offerAccessPhrase(offer(), 'PureGym')).toBe('kun dette center');
+    expect(offerAccessPhrase(offer({ subscriptionType: 'Landsdækkende' }), 'PureGym')).toBe(
+      'alle PureGym-centre',
+    );
+    expect(offerAccessPhrase(offer({ subscriptionType: null }), 'PureGym')).toBe('Basis');
+  });
+});
+
+describe('offerLabels', () => {
+  const priced = (overrides) => ({ offer: offer(overrides) });
+
+  test('viser kun produktnavnet, når to Tilbud har samme adgang', () => {
+    const labels = offerLabels(
+      [
+        priced({ id: 'core', name: 'Core', subscriptionType: 'Lokal center' }),
+        priced({ id: 'plus', name: 'Plus', subscriptionType: 'Lokal center' }),
+        priced({ id: 'unl', name: 'Unlimited', subscriptionType: 'Landsdækkende' }),
+      ],
+      'PureGym',
+    );
+    expect(labels).toEqual({
+      core: { label: 'Kun dette center', productName: 'Core', ambiguous: true },
+      plus: { label: 'Kun dette center', productName: 'Plus', ambiguous: true },
+      unl: { label: 'Alle PureGym-centre', productName: 'Unlimited', ambiguous: false },
+    });
+  });
+
+  test('et Tilbud uden kendt Abonnementstype har navnet som label og intet produktnavn', () => {
+    const labels = offerLabels([priced({ id: 'x', name: 'X', subscriptionType: null })], 'K');
+    expect(labels.x).toEqual({ label: 'X', productName: null, ambiguous: false });
+  });
+});
+
+describe('chainGenitive', () => {
+  test('Kædens navn i ejefald', () => {
+    expect(chainGenitive('PureGym')).toBe('PureGyms');
+    expect(chainGenitive('Fitness X')).toBe("Fitness X'");
+    expect(chainGenitive('SATS')).toBe("SATS'");
+    expect(chainGenitive('Fitnessworld')).toBe('Fitnessworlds');
+    expect(chainGenitive(null)).toBe('kædens');
   });
 });
 

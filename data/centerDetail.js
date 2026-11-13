@@ -64,12 +64,66 @@ export function subscriptionTypeLabel(subscriptionType) {
   return SUBSCRIPTION_TYPE_LABELS[subscriptionType] ?? subscriptionType;
 }
 
-// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: "for Basis", og "· med studierabat",
+// Den adgang et Tilbud giver, med småt til brug midt i en sætning: "kun dette center" eller
+// "alle PureGym-centre". null for ukendte Abonnementstyper.
+function accessText(subscriptionType, chainName) {
+  if (subscriptionType === 'Lokal center') return 'kun dette center';
+  if (subscriptionType === 'Landsdækkende') {
+    return chainName ? `alle ${chainName}-centre` : 'alle kædens centre';
+  }
+  return null;
+}
+
+// Et Tilbud beskrevet ved den adgang, det giver (fra Abonnementstypen), fordi kædernes
+// produktnavne ("Core", "Unlimited") ikke siger brugeren noget: "Kun dette center" eller
+// "Alle PureGym-centre". Kendes Abonnementstypen ikke, bruges Tilbuddets navn.
+export function offerAccessLabel(offer, chainName) {
+  const text = accessText(offer?.subscriptionType, chainName);
+  return text ? capitalize(text) : (offer?.name ?? null);
+}
+
+// Som offerAccessLabel, men til midt i en sætning: "kun dette center", "alle PureGym-centre"
+// (Tilbuddets navn står, som det er, når Abonnementstypen ikke kendes).
+export function offerAccessPhrase(offer, chainName) {
+  return accessText(offer?.subscriptionType, chainName) ?? offer?.name ?? null;
+}
+
+// Adgangen for hvert af et Centers Tilbud: { [offerId]: { label, productName, ambiguous } }.
+// productName er Kædens produktnavn som ekstra info (null, når label allerede er navnet), og
+// ambiguous er true, når et andet af Centrets Tilbud har samme label, så produktnavnet skal vises
+// for at skelne dem. pricedOffers er prissatte Tilbud fra Matchning.
+export function offerLabels(pricedOffers, chainName) {
+  const entries = pricedOffers.map((priced) => {
+    const label = offerAccessLabel(priced.offer, chainName);
+    const productName = label === priced.offer.name ? null : priced.offer.name;
+    return [priced.offer.id, { label, productName }];
+  });
+  const counts = {};
+  for (const [, { label }] of entries) counts[label] = (counts[label] ?? 0) + 1;
+  return Object.fromEntries(
+    entries.map(([id, entry]) => [
+      id,
+      { ...entry, ambiguous: counts[entry.label] > 1 && entry.productName != null },
+    ]),
+  );
+}
+
+// Kædens navn i ejefald: "PureGyms", "Fitness X'" (navne på s, x eller z får kun apostrof).
+// Uden navn: "kædens".
+export function chainGenitive(chainName) {
+  if (!chainName) return 'kædens';
+  return /[sxz]$/i.test(chainName) ? `${chainName}'` : `${chainName}s`;
+}
+
+// Hvilket Tilbud en pris gælder, som en kort linje ved prisen: adgangen først og Kædens
+// produktnavn bagefter som ekstra info, fx "Kun dette center · Core", og "· med studierabat",
 // når en Rabat (eller Makkerpris) er regnet med i Ærlig årspris.
-export function offerBasisText(pricedOffer) {
+export function offerBasisText(pricedOffer, chainName) {
   const option = pricedOffer.yearlyOption;
-  const discount = option?.discountGroup ? ` · med ${option.label}` : '';
-  return `for ${pricedOffer.offer.name}${discount}`;
+  const label = offerAccessLabel(pricedOffer.offer, chainName);
+  const productName = label === pricedOffer.offer.name ? null : pricedOffer.offer.name;
+  const discount = option?.discountGroup ? `med ${option.label}` : null;
+  return [label, productName, discount].filter(Boolean).join(' · ');
 }
 
 // Matchning for ét Center uden Filtre, så Centerdetalje viser alle Centrets Tilbud, også dem
@@ -174,7 +228,7 @@ export function receiptLines(rows) {
 
 // Advarsel, når brugeren fylder 30 inden for året, og prisen for den billigste mulighed stiger
 // med det. Ingen advarsel, hvis den valgte mulighed har fast pris (fx Makkerpris).
-// Returnerer { offerName, birthdayMonth: 'marts 2027', fromPeriod: 5, priceBefore, priceAfter }
+// Returnerer { offerId, offerName, birthdayMonth: 'marts 2027', fromPeriod: 5, priceBefore, priceAfter }
 // eller null. Priserne er inkl. Admingebyr.
 export function turns30Notice(birthDate, pricedOffer) {
   const fromPeriod = pricedOffer?.turns30InMonth;
@@ -185,6 +239,7 @@ export function turns30Notice(birthDate, pricedOffer) {
 
   const [year, month] = birthDate.split('-').map(Number);
   return {
+    offerId: pricedOffer.offer.id,
     offerName: pricedOffer.offer.name,
     birthdayMonth: `${MONTH_NAMES[month - 1]} ${year + 30}`,
     fromPeriod,
@@ -255,8 +310,9 @@ export function facilityRows(center) {
   return rows;
 }
 
-// Centrets Abonnementstyper (fra alle dets Tilbud) uden dubletter: "Lokalt center, landsdækkende".
-function subscriptionTypesText(offers) {
+// Den adgang Centrets Tilbud giver (fra deres Abonnementstyper) uden dubletter, lokalt center
+// først: "Kun dette center, alle PureGym-centre". Ukendte typer vises, som de står.
+function accessSummary(offers, chainName) {
   const known = Object.keys(SUBSCRIPTION_TYPE_LABELS);
   const types = [
     ...new Set(offers.map((priced) => priced.offer.subscriptionType).filter(Boolean)),
@@ -265,20 +321,21 @@ function subscriptionTypesText(offers) {
     return rank(a) - rank(b);
   });
   if (types.length === 0) return 'Ikke oplyst';
-  return capitalize(types.map(subscriptionTypeLabel).join(', '));
+  return capitalize(types.map((type) => accessText(type, chainName) ?? type).join(', '));
 }
 
-// Tabellen "Om centret" på Centerdetalje: adresse, Abonnementstyper, Binding for det valgte
-// Tilbud og faciliteter (Ja / Nej / Ikke oplyst). Maskiner er kun med, når de kendes. Viser kun
-// data, vi har. offers og selectedOffer er prissatte Tilbud fra Matchning.
+// Tabellen "Om centret" på Centerdetalje: adresse, Adgang (fra Abonnementstyperne), Binding for
+// det valgte Tilbud og faciliteter (Ja / Nej / Ikke oplyst). Maskiner er kun med, når de kendes.
+// Viser kun data, vi har. offers og selectedOffer er prissatte Tilbud fra Matchning; chain er
+// Centrets Kæde (til "Alle PureGym-centre").
 // Returnerer [{ key, label, value }].
-export function aboutCenterRows({ center, offers = [], selectedOffer }) {
+export function aboutCenterRows({ center, chain, offers = [], selectedOffer }) {
   const facilities = facilityRows(center).filter(
     (row) => row.key !== 'machines' || center?.machines != null,
   );
   return [
     { key: 'address', label: 'Adresse', value: center?.address || 'Ikke oplyst' },
-    { key: 'subscriptionTypes', label: 'Abonnementstyper', value: subscriptionTypesText(offers) },
+    { key: 'access', label: 'Adgang', value: accessSummary(offers, chain?.name) },
     {
       key: 'binding',
       label: 'Binding',
